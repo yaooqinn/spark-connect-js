@@ -1,0 +1,34 @@
+# version: v1
+# plugins:
+#   - plugin: buf.build/community/stephenh-ts-proto
+#     out: src/gen
+#     opt:
+#       - outputServices=grpc-js
+#       - outputClientImpl=grpc-web
+
+# buf.gen.yaml
+# version: v2
+# managed:
+#   enabled: true
+# plugins:
+#   - remote: buf.build/grpc/web:v1.5.0
+#     out: src/gen
+#     opt:
+#       - import_style=commonjs
+#       - mode=grpcweb
+#   # dependencies
+#   - remote: buf.build/protocolbuffers/js:v3.21.2
+#     out: src/gen
+#     opt:
+#       - import_style=commonjs,binary
+
+version: v2
+inputs:
+  - directory: protobuf
+plugins:
+  - local: protoc-gen-es
+    opt:
+      - target=ts
+      - import_extension=none
+      - js_import_style=module
+    out: src/gen
