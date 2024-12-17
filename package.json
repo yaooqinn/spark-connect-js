@@ -17,14 +17,11 @@
     "@types/jest": "^29.5.14",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.7.2",
-    "xhr2": "^0.2.1"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.3",
     "@grpc/grpc-js": "^1.12.4",
-    "@grpc/proto-loader": "^0.7.13",
-    "@types/async-lock": "^1.4.2",
     "google-protobuf": "^3.21.4",
     "uuid": "^11.0.3"
   }
