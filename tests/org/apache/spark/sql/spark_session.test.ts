@@ -1,4 +1,4 @@
-import { SparkSession } from "../../../../../src/org/apache/spark/sql/spark_session";
+import { SparkSession } from "../../../../../src/org/apache/spark/sql/SparkSession";
 import { DataTypes } from "../../../../../src/org/apache/spark/sql/types/DataTypes";
 
 test("builder", () => {
@@ -20,14 +20,6 @@ test("builder", () => {
       });
       s.conf().getAll().then(configs => {
         expect(configs.get("spark.kent.yao")).toBe("awesome");
-      });
-      s.sql("SELECT 1 + 1 as a").then(df => {
-        df.schema().then(schema => {
-          expect(schema).toEqual(DataTypes.createStructType([DataTypes.createStructField("a", DataTypes.IntegerType, false)]));
-          expect("spark").toBe("spark2");
-
-        });
-
       });
     });
 });

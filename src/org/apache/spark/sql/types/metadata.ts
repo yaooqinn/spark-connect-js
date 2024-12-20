@@ -148,6 +148,10 @@ export class Metadata {
   static empty(): Metadata {
     return Metadata.EMPTY;
   }
+
+  toString(): string {
+    return this.json();
+  }
 }
 
 export class MetadataBuilder {

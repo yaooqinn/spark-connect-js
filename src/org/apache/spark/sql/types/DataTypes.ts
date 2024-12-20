@@ -134,7 +134,6 @@ export class DataTypes {
 
   static fromProto(proto: t.DataType): DataType {
     switch(proto.kind.case) {
-      case undefined: 
       case "null":
         return DataTypes.NullType;
       case "boolean":

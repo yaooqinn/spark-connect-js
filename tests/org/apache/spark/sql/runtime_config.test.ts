@@ -1,5 +1,5 @@
-import { Client } from "../../../../../src/client/Client";
-import { RuntimeConfig } from "../../../../../src/org/apache/spark/sql/runtime_config";
+import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
+import { RuntimeConfig } from "../../../../../src/org/apache/spark/sql/RuntimeConfig";
 
 function withClient(f: (client: Client) => void) {
   const builder = Client.builder();

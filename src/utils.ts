@@ -1,6 +1,6 @@
 export class PlanIdGenerator {
   private static instance: PlanIdGenerator;
-  private currentId: number = 0;
+  private currentId: bigint = 0n;
   private constructor() {}
 
   public static getInstance(): PlanIdGenerator {
@@ -10,7 +10,7 @@ export class PlanIdGenerator {
     return PlanIdGenerator.instance;
   }
 
-  public getNextId(): number {
+  public getNextId(): bigint {
     return this.currentId++;
   }
 }
