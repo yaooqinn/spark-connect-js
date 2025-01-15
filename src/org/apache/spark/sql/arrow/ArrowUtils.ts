@@ -116,7 +116,10 @@ export function bigNumToNumber(bn: any, scale?: number) {
       const denominator = BigInt(10) ** BigInt(scale);
       const quotient = number / denominator;
       const remainder = negative ? -(number % denominator) : number % denominator;
-      return Number(`${bigIntToNumber(quotient)}.${remainder.toString().padStart(scale, '0')}`);
+      const integerPart = bigIntToNumber(quotient);
+      const fractionPart = remainder.toString().padStart(scale, '0');
+      const sign = negative && integerPart === 0 ? '-' : '';
+      return Number(`${sign}${integerPart}.${fractionPart}`);
   }
   return bigIntToNumber(number);
 };

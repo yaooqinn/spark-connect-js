@@ -72,4 +72,11 @@ test("decimal big num to number", () => {
   expect(bigNumToNumber(n1, 15)).toBeCloseTo(18446.744082299486);
   expect(bigNumToNumber(n1, 20)).toBeCloseTo(0.18446744082299486);
   expect(bigNumToNumber(n1, 25)).toBeCloseTo(0.0000018446744082299486);
+
+  const negative = new BN(new Uint32Array([0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF]), true);
+  expect(bigNumToNumber(negative)).toBe(-1);
+  expect(bigNumToNumber(negative, 1)).toBe(-0.1);
+  expect(bigNumToNumber(negative, 2)).toBe(-0.01);
+  expect(bigNumToNumber(negative, 3)).toBe(-0.001);
+  expect(bigNumToNumber(negative, 4)).toBe(-0.0001);
 });
