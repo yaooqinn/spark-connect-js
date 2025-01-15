@@ -1,0 +1,16 @@
+{
+  "appenders": {
+    "stdout": { "type": "stdout", "layout": { "type": "colored" } },
+    "file": {
+      "type": "dateFile",
+      "filename": "logs/app",
+      "pattern": "yyyy-MM-dd.log",
+      "alwaysIncludePattern": true,
+      "layout": { "type": "pattern", "pattern": "%d{yyyy-MM-dd hh:mm:ss.SSS} [%p] %c - %m%n" }
+    }
+  },
+  "pm2": true,
+  "categories": {
+    "default": { "appenders": ["stdout", "file"], "level": "info" }
+  }
+}
