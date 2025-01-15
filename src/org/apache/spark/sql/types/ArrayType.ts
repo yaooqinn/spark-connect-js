@@ -46,4 +46,8 @@ export class ArrayType extends DataType {
   override toString(): string {
     return `ArrayType(${this.elementType}, ${this.containsNull})`;
   }
+
+  override existsRecursively(f: (dt: DataType) => boolean): boolean {
+    return f(this) || this.elementType.existsRecursively(f);
+  }
 }

@@ -1,9 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { ClientBuilder, Configuration } from "./client_builder";
 import * as grpc from '@grpc/grpc-js';
 import * as b from '../../../../../gen/spark/connect/base_pb'; // proto import: "spark/connect/base.proto"
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import { logger } from '../../logger';
 import { type MessageShape, type DescMessage } from '@bufbuild/protobuf';
+import { fromStatus } from "../errors";
   
 
 export class Client {
@@ -38,15 +56,6 @@ export class Client {
     return `/spark.connect.SparkConnectService/${method}`;
   }
 
-  private handleGrpcError(err: any): any {
-    if (err instanceof Error && "code" in err && err.code === grpc.status.INTERNAL && "details" in err) {
-      logger.error(err.details);
-      new Error(err.details as string);
-    } else {
-      err;
-    }
-  }
-
   private runServiceCall<ReqType, RespType>(
       method: string,
       req: ReqType,
@@ -63,11 +72,11 @@ export class Client {
         {}, // call options
         (err: grpc.ServiceError | null, resp?: RespType) => {
           if (err) {
-            const handledErrr = this.handleGrpcError(err);
-            logger.error("Errored calling ", method, handledErrr);
+            const handledErrr = fromStatus(err);
+            logger.error("Errored calling", method + ": ", handledErrr);
             reject(handledErrr);
           } else if (resp) {
-            logger.debug("Received response by", method, JSON.stringify(resp));
+            logger.debug("Received response by", method + ": ", JSON.stringify(resp));
             resolve(resp);
           } else {
             const msg = "No response or error received by " + method;
@@ -98,7 +107,7 @@ export class Client {
           resolve(data);
         }
       ).on("error", (err: any) => {
-          const handledErrr = this.handleGrpcError(err);
+          const handledErrr = fromStatus(err);
           logger.error("Errored calling", method, handledErrr);
           reject(handledErrr);
         }
@@ -151,7 +160,7 @@ export class Client {
     );
   };
 
-  async execute(plan: b.Plan): Promise<b.ExecutePlanResponse> {
+  async execute(plan: b.Plan): Promise<b.ExecutePlanResponse[]> {
     const req = create(b.ExecutePlanRequestSchema, {
       sessionId: this.session_id_,
       userContext: this.user_context_,
@@ -160,11 +169,77 @@ export class Client {
       tags: [] // TODO: FIXME
     });
 
-    return this.runServerStreamCall<b.ExecutePlanRequest, b.ExecutePlanResponse>(
-      "ExecutePlan",
-      req,
-      this.serializer(b.ExecutePlanRequestSchema),
-      this.deserializer(b.ExecutePlanResponseSchema),
-    );
+    const method = "ExecutePlan";
+    logger.debug("Sending stream request by", method, req.plan?.opType.value);
+    // TODO: Etract this into a helper function
+    return new Promise((resolve, reject) => {
+      const call = this.client_.makeServerStreamRequest<b.ExecutePlanRequest, b.ExecutePlanResponse>(
+        this.api(method),
+        this.serializer(b.ExecutePlanRequestSchema),
+        this.deserializer(b.ExecutePlanResponseSchema),
+        req,
+        this.metadata_,
+        {}
+      )
+      const results: b.ExecutePlanResponse[] = [];
+      call.on("data", (data: b.ExecutePlanResponse) => {
+        const responseType = data.responseType
+        switch (responseType.case) {
+          case "executionProgress":
+            const stageInfo = this.stringifyStageInfo(data.operationId, responseType.value);
+            if (stageInfo.length > 0) {
+              logger.debug(stageInfo);
+            }
+            break;
+          default:
+            if (data.metrics) {
+              logger.debug(`Metrics: ${this.stringifyMetrics(data.metrics)}`);
+            }
+            // TODO: do we need 
+            results.push(data);
+        }
+      });
+      
+      call.on("error", (err: any) => {
+        let handledErr = fromStatus(err);
+        logger.error("Errored calling", method + ":", handledErr);
+        reject(handledErr);
+      });
+
+      call.on("status", (status: grpc.StatusObject) => {
+        if (status.code !== grpc.status.OK) {
+          reject(status);
+        }
+      });
+
+      call.on("end", () => {
+        logger.debug(`End of`, method, req.plan?.opType.value, `Forwarding ${results.length} responses`);
+        resolve(results)
+      });
+    });
   };
+
+  private stringifyStageInfo(id: string, progress: b.ExecutePlanResponse_ExecutionProgress): string {
+    let ret = "";
+    if (progress.stages.length > 0) {
+      ret += "Execution Progress: id " + id;
+      ret += ("\n\tStages:\n" + progress.stages.map(info => {
+          const state = info.done ? "[DONE]" : "[RUNNING]";
+          return `\t\tStage ${info.stageId}${state}: ${info.numCompletedTasks}/${info.numTasks} tasks completed, reading ${info.inputBytesRead} bytes`
+        }).join("\n"))
+      if (progress.numInflightTasks > 0) {
+        ret += `\n\tRunning tasks: ${progress.numInflightTasks}`;
+      }
+    }
+    return ret;
+  }
+
+  private stringifyMetrics(metrics: b.ExecutePlanResponse_Metrics): string {
+    return metrics.metrics.map(metric => {
+      return (`${metric.name}[${metric.planId}|${metric.parent}]: ` + 
+        Object.entries(metric.executionMetrics).map(([key, value]) => {
+          return `${value.name}(${key}): ${value.value}`;
+      }).join(", "));
+    }).join("\n");
+  }
 }

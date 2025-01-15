@@ -48,4 +48,8 @@ export class MapType extends DataType {
   override toString(): string {
     return `MapType(${this.keyType}, ${this.valueType}, ${this.valueContainsNull})`;
   }
+
+  override existsRecursively(f: (dt: DataType) => boolean): boolean {
+    return f(this) || this.keyType.existsRecursively(f) || this.valueType.existsRecursively(f);
+  }
 }

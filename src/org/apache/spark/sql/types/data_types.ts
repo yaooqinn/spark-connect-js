@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-
-
 export abstract class DataType {
 
   defaultSize(): number {
@@ -39,11 +37,15 @@ export abstract class DataType {
   toString(): string {
     return this.constructor.name;
   }
+
+  existsRecursively(f: (dt: DataType) => boolean): boolean {
+    return f(this);
+  }
 }
 
 export abstract class AtomicType extends DataType {}
 
-abstract class NumericType extends AtomicType {}
+export abstract class NumericType extends AtomicType {}
 
 export abstract class IntegralType extends NumericType {}
 

@@ -43,6 +43,10 @@ export class StructType extends DataType {
     return `STRUCT<${this.fields.map(f => `${f.sql()}`).join(", ")}>`;
   }
 
+  override existsRecursively(f: (dt: DataType) => boolean): boolean {
+    return f(this) || this.fields.some(field => field.dataType.existsRecursively(f));
+  }
+
   fieldNames(): string[] {
     return this.fields.map(f => f.name);
   }
@@ -51,7 +55,15 @@ export class StructType extends DataType {
     return this.fieldNames();
   }
 
-  override toString(): string {
+  toDDL(): string {
+    return this.fields.map(f => f.toDDL()).join(", ");
+  }
+
+  toString(): string {
     return `StructType(${this.fields.map(f => f.toString()).join(", ")})`;
+  }
+
+  get [Symbol.toStringTag]() {
+    return this.toString();
   }
 }

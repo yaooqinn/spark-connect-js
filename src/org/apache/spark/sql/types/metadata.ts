@@ -28,7 +28,7 @@ type MetadataType = { [key: string]: any };
  * The default constructor is private. User should use either [[MetadataBuilder]] or
  * `Metadata.fromJson()` to create Metadata instances.
  *
- * @param {MetadataType} an immutable map that stores the data
+ * @param { MetadataType } an immutable map that stores the data
  * @since 1.0.0
  * @author Kent Yao
  */
@@ -149,9 +149,10 @@ export class Metadata {
     return Metadata.EMPTY;
   }
 
-  toString(): string {
+  get [Symbol.toStringTag]() {
     return this.json();
   }
+
 }
 
 export class MetadataBuilder {
@@ -210,6 +211,13 @@ export class MetadataBuilder {
 
   putMetadataArray(key: string, value: Metadata[]): MetadataBuilder {
     return this.put(key, value.map((m) => m.metadata));
+  }
+
+  putAll(map: Map<string, any>): MetadataBuilder {
+    map.forEach((value, key) => {
+      this.metadata.set(key, value);
+    });
+    return this;
   }
 
   build(): Metadata {

@@ -17,7 +17,6 @@
 
 import { AnsiIntervalType } from "./data_types";
 
-
 export class YearMonthIntervalType extends AnsiIntervalType {
   startField: number;
   endField: number;

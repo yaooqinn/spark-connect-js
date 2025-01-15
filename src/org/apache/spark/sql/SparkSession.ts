@@ -25,26 +25,29 @@ import { RuntimeConfig } from './RuntimeConfig';
 import { ClientBuilder } from './grpc/client_builder';
 import { PlanIdGenerator } from '../../../../utils';
 import { logger } from '../logger';
+import { DataFrameReader } from './DataFrameReader';
+import { createLocalRelation, createLocalRelationFromArrowTable, PlanBuilder, RelationBuilder } from './proto/ProtoUtils';
+import { StructType } from './types/StructType';
+import { Table } from 'apache-arrow';
+import { Row } from './Row';
+import { tableFromRows } from './arrow/ArrowUtils';
 
 /**
  * @since 1.0.0
  */
 export class SparkSession {
-  private client_: Client;
-  private planIdGenerator_: PlanIdGenerator = PlanIdGenerator.getInstance();
+  public planIdGenerator: PlanIdGenerator = PlanIdGenerator.getInstance();
   private conf_: RuntimeConfig;
   private version_?: string;
   
-  constructor(client: Client) {
-    this.client_ = client;
+  constructor(public client: Client) {
     this.conf_ = new RuntimeConfig(client);
   }
 
   public static builder(): SparkSessionBuilder { return new SparkSessionBuilder(); }
 
-  get client(): Client { return this.client_; }
 
-  session_id(): string { return this.client_.session_id_; }
+  session_id(): string { return this.client.session_id_; }
 
   async version(): Promise<string> {
     if (!this.version_) {
@@ -68,13 +71,18 @@ export class SparkSession {
     return this.version_ || "unknown";
   }
   
-  conf(): RuntimeConfig { return this.conf_; }
+  conf(): RuntimeConfig { return this.conf_; };
+
+  emptyDataFrame(): DataFrame {
+    const plan = this.newPlanWithRelation(r => r.relType = { case: "localRelation", value: createLocalRelation() });
+    return new DataFrame(this, plan);
+  }
 
   // TODO: support other parameters
   sql(sqlStr: string): Promise<DataFrame> {
     const sqlCmd = create(cmd.SqlCommandSchema, { sql: sqlStr});
     return this.sqlInternal(sqlCmd);
-  }
+  };
 
   private async sqlInternal(sqlCmd: cmd.SqlCommand): Promise<DataFrame> {
     const command = create(cmd.CommandSchema, {
@@ -83,24 +91,92 @@ export class SparkSession {
         case: "sqlCommand"
       }
     });
-    const plan = create(b.PlanSchema, { opType: { value: command, case: "command" }});
-    return this.client.execute(plan).then(resp => {
+    return this.execute(command).then(resps => {
+      const resp = resps.filter(resp => resp.responseType.case === "sqlCommandResult")[0];
       const responseType = resp.responseType;
-      const relationCommon = create(r.RelationCommonSchema, {
-        planId: this.planIdGenerator_.getNextId(),
-        sourceInfo: ""
-      });
       if (responseType.case === "sqlCommandResult" && responseType.value.relation) {
         const relation = responseType.value.relation;
-        relation.common = relationCommon;
-        const final = create(b.PlanSchema, { opType: { case: "root", value: relation } });
+        relation.common = this.newRelationCommon();
+        this.newPlan({ value: relation, case: "root" });
+        const final = this.newPlan({ value: relation, case: "root" });
         return new DataFrame(this, final);
       } else {
         // TODO: not quite sure what to do here
-        return new DataFrame(this, plan);
+        return new DataFrame(this, this.newPlan({ value: command, case: "command" }));
       };
-
     });
+  };
+
+  read(): DataFrameReader {
+    return new DataFrameReader(this);
+  }
+
+  createDataFrame(data: Row[], schema: StructType): DataFrame {
+    const table = tableFromRows(data, schema);
+    return this.createDataFrameFromArrowTable(table, schema);
+  }
+
+  createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
+    const local = createLocalRelationFromArrowTable(table, schema);
+    const relation = new RelationBuilder()
+      .setRelationCommon(this.newRelationCommon())
+      .setLocalRelation(local)
+      .build();
+    const plan = new PlanBuilder()
+      .setRelation(relation)
+      .build();
+    return new DataFrame(this, plan);
+  }
+
+  execute(cmd: cmd.Command): Promise<b.ExecutePlanResponse[]> {
+    const plan =  this.newPlan({ value: cmd, case: "command" });
+    return this.client.execute(plan);
+  }
+
+  table(name: string): DataFrame {
+    return this.read().table(name);
+  }
+
+  /**
+   * Convenience method to create a spark.connect.RelationCommon
+   * @private
+   * @returns a new RelationCommon instance
+   */
+  newRelationCommon(): r.RelationCommon {
+    return create(r.RelationCommonSchema, {
+      planId: this.planIdGenerator.getNextId(),
+      sourceInfo: ""
+    });
+  }
+
+  /**
+   * Convenience method to create a spark.connect.Relation
+   * @private 
+   */
+  newRelation(f: (r: r.Relation) => void): r.Relation {
+    const relation =  create(r.RelationSchema, {
+      common: this.newRelationCommon()
+    });
+    f(relation);
+    return relation;
+  }
+
+  /**
+   * Convenience method to create a spark.connect.Plan
+   * @private 
+   */
+  newPlan(operationType: { value: r.Relation; case: "root"; } | { value: cmd.Command; case: "command"; }): b.Plan {
+    const plan = create(b.PlanSchema, { opType: operationType });
+    return plan;
+  }
+
+  /**
+   * Convenience method to create a spark.connect.Plan with a Relation
+   * @private 
+   */
+  newPlanWithRelation(f: (r: r.Relation) => void): b.Plan {
+    const relation = this.newRelation(f);
+    return this.newPlan({ value: relation, case: "root" });
   }
 }
 

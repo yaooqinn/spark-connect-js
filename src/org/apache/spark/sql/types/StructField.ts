@@ -17,8 +17,9 @@
 
 import * as t from "../../../../../gen/spark/connect/types_pb";
 import { DataType } from "./data_types";
-import { Metadata } from "./metadata";
 import { DataTypes } from "./DataTypes";
+import { Metadata } from "./metadata";
+import { quoteIfNeeded } from "./utils";
 
 /**
  * A field inside a StructType.
@@ -33,16 +34,12 @@ import { DataTypes } from "./DataTypes";
  * @author Kent Yao
  */
 export class StructField {
-  name: string;
-  dataType: DataType;
-  nullable: boolean
-  metadata: Metadata;
 
-  constructor(name: string, dataType: DataType, nullable: boolean = true, metadata: Metadata = Metadata.empty()) {
-    this.name = name;
-    this.dataType = dataType;
-    this.nullable = nullable;
-    this.metadata = metadata;
+  constructor(
+    public name: string,
+    public dataType: DataType,
+    public nullable: boolean = true,
+    public metadata: Metadata = Metadata.empty()) {
   }
 
   toString(): string {
@@ -67,11 +64,25 @@ export class StructField {
     return `${this.name}: ${this.dataType.sql()}${this.getDDLComment()}${this.getDDLNull()}`;
   }
 
+  toDDL(): string {
+    // TODO: quoting the name needed?
+    // TODO: support default value
+    return `${quoteIfNeeded(this.name)} ${this.dataType.sql()}${this.getDDLComment()}${this.getDDLNull()}`;
+  }
+
+  get metadataMap(): Map<string, string> {
+    const ret = new Map<string, string>();
+    for (const key in this.metadata.metadata) {
+      ret.set(key, this.metadata.get(key));
+    }
+    return ret;
+  }
+
   static fromProto(proto: t.DataType_StructField): StructField {
     if (!proto.dataType) {
       throw new Error("StructField data type is null");
     } else {
-      const dataType = DataTypes.fromProto(proto.dataType);
+      const dataType = DataTypes.fromProtoType(proto.dataType);
       const metadata = proto.metadata ? Metadata.fromJson(proto.metadata) : undefined;
       return new StructField(proto.name, dataType, proto.nullable, metadata);
     }

@@ -14,3 +14,10 @@ export class PlanIdGenerator {
     return this.currentId++;
   }
 }
+
+export function bigIntToNumber(value: bigint): number {
+  if (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER) {
+    throw new TypeError(`Cannot convert bigint ${value} to number without losing precision`);
+  }
+  return Number(value);
+}
