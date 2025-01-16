@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { AnalyzePlanResponse, AnalyzePlanResponse_Explain, AnalyzePlanResponse_IsLocal, AnalyzePlanResponse_IsStreaming, AnalyzePlanResponse_Schema, AnalyzePlanResponse_SparkVersion, AnalyzePlanResponse_TreeString } from "../../../../../gen/spark/connect/base_pb";
+import { AnalyzePlanResponse, AnalyzePlanResponse_Explain, AnalyzePlanResponse_InputFiles, AnalyzePlanResponse_IsLocal, AnalyzePlanResponse_IsStreaming, AnalyzePlanResponse_Schema, AnalyzePlanResponse_SparkVersion, AnalyzePlanResponse_TreeString } from "../../../../../gen/spark/connect/base_pb";
 import { DataType } from "../../../../../gen/spark/connect/types_pb";
 
 export class AnalyzePlanResponseWraper {
@@ -84,6 +84,13 @@ export class AnalyzePlanResponseWraper {
       throw this.unexpectedType("sparkVersion");
     }
     return (this.resultValue as AnalyzePlanResponse_SparkVersion).version;
+  }
+
+  get inputFiles(): string[] {
+    if (this.resultType !== "inputFiles") {
+      throw this.unexpectedType("inputFiles");
+    }
+    return (this.resultValue as AnalyzePlanResponse_InputFiles).files;
   }
 
   private unexpectedType(typeName: string) {

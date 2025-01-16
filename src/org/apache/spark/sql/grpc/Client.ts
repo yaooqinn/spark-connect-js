@@ -131,8 +131,10 @@ export class Client {
     }
   }
 
-  async analyze(builder: AnalyzePlanRequestBuilder): Promise<b.AnalyzePlanResponse> {
-    const req = builder.sessionId(this.session_id_)
+  async analyze(f: (b: AnalyzePlanRequestBuilder) => void): Promise<b.AnalyzePlanResponse> {
+    const ab = new AnalyzePlanRequestBuilder();
+    f(ab);
+    const req = ab.sessionId(this.session_id_)
       .userContext(this.user_context_)
       .clientType(this.user_agent_)
       .build();

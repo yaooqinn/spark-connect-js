@@ -72,8 +72,7 @@ test("get all configs", async () => {
 
 test("analyze plan - sparkVersion", async () => {
     withClient(async client => {
-        new AnalyzePlanRequestBuilder().withSparkVersion()
-        client.analyze(new AnalyzePlanRequestBuilder().withSparkVersion()).then(resp => {
+        client.analyze(b => b.withSparkVersion()).then(resp => {
             expect(resp.result.case).toBe("sparkVersion");
             if (resp.result.value && 'version' in resp.result.value) {
                 expect(resp.result.value.version).toBe("4.0.0-SNAPSHOT");

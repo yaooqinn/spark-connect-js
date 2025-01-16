@@ -52,32 +52,29 @@ export class DataFrame {
     if (this.cachedSchema_) {
       return this.cachedSchema_;
     }
-    const builder = new AnalyzePlanRequestBuilder().setSchema(this.plan);
-    return this.analyze(builder).then(async resp => {
+    return this.analyze(b => b.setSchema(this.plan)).then(async resp => {
       this.cachedSchema_ = DataTypes.fromProtoType(resp.schema) as StructType;
       return this.cachedSchema_;
     });
   }
 
   async printSchema(level: number = 0): Promise<void> {
-    const builder = new AnalyzePlanRequestBuilder().withTreeString(this.plan, level);
-    return this.printSchema0(builder).then(console.log);
+    return this.printSchema0(b => b.withTreeString(this.plan, level)).then(console.log);
   }
   /** @ignore */
-  async printSchema0(builder: AnalyzePlanRequestBuilder): Promise<string> {
-    return this.analyze(builder).then(resp => resp.treeString);
+  async printSchema0(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<string> {
+    return this.analyze(f).then(resp => resp.treeString);
   }
 
   async explain(): Promise<void>;
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
-    const builder = new AnalyzePlanRequestBuilder().withExplain(this.plan, mode);
-    return this.explain0(builder).then(console.log);
+    return this.explain0(b => b.withExplain(this.plan, mode)).then(console.log);
   }
   /** @ignore */
-  async explain0(builder: AnalyzePlanRequestBuilder): Promise<string> {
-    return this.analyze(builder).then(r=> r.explain);
+  async explain0(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<string> {
+    return this.analyze(f).then(r=> r.explain);
   }
 
   async dtypes(): Promise<Array<[string, string]>> {
@@ -93,13 +90,11 @@ export class DataFrame {
   }
 
   async isLocal(): Promise<boolean> {
-    const builder = new AnalyzePlanRequestBuilder().withIsLocal(this.plan);
-    return this.analyze(builder).then(r => r.isLocal);
+    return this.analyze(b => b.withIsLocal(this.plan)).then(r => r.isLocal);
   }
 
   async isStreaming(): Promise<boolean> {
-    const builder = new AnalyzePlanRequestBuilder().withIsStreaming(this.plan);
-    return this.analyze(builder).then(r => r.isStreaming);
+    return this.analyze(b => b.withIsStreaming(this.plan)).then(r => r.isStreaming);
   }
 
   async checkpoint(): Promise<DataFrame>;
@@ -115,6 +110,10 @@ export class DataFrame {
 
   async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
     throw new Error("Not implemented"); // TODO
+  }
+
+  async inputFiles(): Promise<string[]> {
+    return this.analyze(b => b.withInputFiles(this.plan)).then(r => r.inputFiles);
   }
 
 
@@ -239,7 +238,7 @@ export class DataFrame {
     return this.spark.dataFrameFromRelationBuilder(f);
   }
 
-  private async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
-    return this.spark.analyze(builder);
+  private async analyze(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseWraper> {
+    return this.spark.analyze(f);
   }
 }

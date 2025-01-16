@@ -57,8 +57,7 @@ export class SparkSession {
 
   async version(): Promise<string> {
     if (!this.version_) {
-      const builder = new AnalyzePlanRequestBuilder().withSparkVersion();
-      return this.analyze(builder).then(resp => {
+      return this.analyze(b => b.withSparkVersion()).then(resp => {
         this.version_ = resp.version;
         return this.version_;
       });
@@ -124,8 +123,8 @@ export class SparkSession {
   }
 
   /** @ignore @private */
-  async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
-    return this.client.analyze(builder).then(resp => new AnalyzePlanResponseWraper(resp));
+  async analyze(f: (b: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseWraper> {
+    return this.client.analyze(f).then(resp => new AnalyzePlanResponseWraper(resp));
   }
 
   /** @ignore @private */
