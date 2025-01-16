@@ -1,0 +1,136 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { create } from "@bufbuild/protobuf";
+import { AnalyzePlanRequest, AnalyzePlanRequest_DDLParseSchema, AnalyzePlanRequest_Explain_ExplainMode, AnalyzePlanRequest_ExplainSchema, AnalyzePlanRequest_GetStorageLevelSchema, AnalyzePlanRequest_InputFilesSchema, AnalyzePlanRequest_IsLocalSchema, AnalyzePlanRequest_IsStreamingSchema, AnalyzePlanRequest_PersistSchema, AnalyzePlanRequest_SameSemanticsSchema, AnalyzePlanRequest_SchemaSchema, AnalyzePlanRequest_SemanticHashSchema, AnalyzePlanRequest_SparkVersionSchema, AnalyzePlanRequest_TreeStringSchema, AnalyzePlanRequest_UnpersistSchema, AnalyzePlanRequestSchema, Plan, UserContext } from "../../../../../gen/spark/connect/base_pb";
+import { Relation } from "../../../../../gen/spark/connect/relations_pb";
+import { StorageLevel } from "../../../../../gen/spark/connect/common_pb";
+
+
+export class AnalyzePlanRequestBuilder {
+  private request: AnalyzePlanRequest = create(AnalyzePlanRequestSchema, {});
+  constructor() {}
+  sessionId(sessionId: string) {
+    this.request.sessionId = sessionId;
+    return this;
+  }
+  userContext(userContext: UserContext) {
+    this.request.userContext = userContext;
+    return this;
+  }
+  clientType(clientType: string) {
+    this.request.clientType = clientType;
+    return this;
+  }
+  setSchema(plan?: Plan) {
+    this.request.analyze = { case: "schema", value : create(AnalyzePlanRequest_SchemaSchema, { plan: plan }) };
+    return this;
+  }
+  setExplain(plan: Plan): AnalyzePlanRequestBuilder;
+  setExplain(plan: Plan, mode: boolean): AnalyzePlanRequestBuilder;
+  setExplain(plan: Plan, mode: string): AnalyzePlanRequestBuilder;
+  setExplain(plan: Plan, mode: boolean | string | undefined = undefined): AnalyzePlanRequestBuilder {
+    const explain = create(AnalyzePlanRequest_ExplainSchema, { plan: plan });
+    if (typeof mode === "undefined") {
+      explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.SIMPLE;
+    } else if (typeof mode === "boolean") {
+      explain.explainMode = mode ? AnalyzePlanRequest_Explain_ExplainMode.EXTENDED : AnalyzePlanRequest_Explain_ExplainMode.SIMPLE;
+    } else {
+      switch (mode.trim().toLowerCase()) {
+        case "simple":
+          explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.SIMPLE;
+          break;
+        case "extended":
+          explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.EXTENDED;
+          break;
+        case "codegen":
+          explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.CODEGEN;
+          break;
+        case "cost":
+          explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.COST;
+          break;
+        case "formatted":
+          explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.FORMATTED;
+          break;
+        default:
+          throw new Error("Unsupported explain mode: " + mode);
+      }
+    }
+    this.request.analyze = { case: "explain", value : explain };
+    return this;
+  }
+  setTreeString(plan: Plan, level: number) {
+    const treeString = create(AnalyzePlanRequest_TreeStringSchema, { plan: plan, level: level }); 
+    this.request.analyze = { case: "treeString", value : treeString };
+    return this;
+  }
+  setIsLocal(plan: Plan) {
+    const isLocal = create(AnalyzePlanRequest_IsLocalSchema, { plan: plan });
+    this.request.analyze = { case: "isLocal", value : isLocal };
+    return this;
+  }
+  setIsStreaming(plan: Plan) {
+    const isStreaming = create(AnalyzePlanRequest_IsStreamingSchema, { plan: plan });
+    this.request.analyze = { case: "isStreaming", value : isStreaming };
+    return this;
+  }
+  setInputFiles(plan: Plan) {
+    const inputFiles = create(AnalyzePlanRequest_InputFilesSchema, { plan: plan });
+    this.request.analyze = { case: "inputFiles", value : inputFiles };
+    return this;
+  }
+  setSparkVersion() {
+    const sparkVersion = create(AnalyzePlanRequest_SparkVersionSchema, {});
+    this.request.analyze = { case: "sparkVersion", value : sparkVersion };
+    return this;
+  }
+  setDdlParser(ddlString: string) {
+    const ddlParser = create(AnalyzePlanRequest_DDLParseSchema, { ddlString: ddlString });
+    this.request.analyze = { case: "ddlParse", value : ddlParser };
+    return this;
+  }
+  setSameSemantics(target: Plan, other: Plan) {
+    const sameSemantics = create(AnalyzePlanRequest_SameSemanticsSchema, { targetPlan: target, otherPlan: other });
+    this.request.analyze = { case: "sameSemantics", value : sameSemantics };
+    return this;
+  }
+
+  setSemanticHash(plan: Plan) {
+    const semanticHash = create(AnalyzePlanRequest_SemanticHashSchema, { plan: plan });
+    this.request.analyze = { case: "semanticHash", value : semanticHash };
+    return this;
+  }
+  setPersist(relation: Relation, storageLevel: StorageLevel) {
+    const persist = create(AnalyzePlanRequest_PersistSchema, { relation: relation, storageLevel: storageLevel });
+    this.request.analyze = { case: "persist", value : persist };
+    return this;
+  }
+  setUnpersist(relation: Relation, blocking: boolean) {
+    const unpersist = create(AnalyzePlanRequest_UnpersistSchema, { relation: relation, blocking: blocking });
+    this.request.analyze = { case: "unpersist", value : unpersist };
+    return this;
+  }
+
+  setGetStorageLevel(relation: Relation) {
+    const getStorageLevel = create(AnalyzePlanRequest_GetStorageLevelSchema, { relation: relation });
+    this.request.analyze = { case: "getStorageLevel", value : getStorageLevel };
+    return this;
+  }
+  build(): AnalyzePlanRequest {
+    return this.request;
+  }
+}
