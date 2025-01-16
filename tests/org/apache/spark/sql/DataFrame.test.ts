@@ -160,6 +160,15 @@ test("isStreaming", async () => {
   }));
 });
 
+test("inputFiles", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
+    return df.inputFiles().then(files => {
+      expect(files.length).toBe(0);
+    });
+  }));
+});
+
 
 test("null", async () => {
   const spark = await sharedSpark;
