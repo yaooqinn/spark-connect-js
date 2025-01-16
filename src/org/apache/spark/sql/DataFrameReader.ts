@@ -16,7 +16,6 @@
  */
 
 import { DataFrame } from "./DataFrame";
-import { PlanBuilder, RelationBuilder } from "./proto/ProtoUtils";
 import { SparkSession } from "./SparkSession";
 import { StructType } from "./types/StructType";
 import { failIfHasCharVarchar } from "./types/utils";
@@ -139,14 +138,7 @@ export class DataFrameReader {
   }
 
   table(tableName: string): DataFrame {
-    const relation = new RelationBuilder()
-      .setRelationCommon(this.spark.newRelationCommon())
-      .setReadTable(tableName, this.extraOptions)
-      .build();
-    const plan = new PlanBuilder()
-      .setRelation(relation)
-      .build();
-    return new DataFrame(this.spark, plan);
+    return this.spark.dataFrameFromRelationBuilder(b => b.withReadTable(tableName, this.extraOptions));
   }
     
   /**
@@ -154,13 +146,6 @@ export class DataFrameReader {
    * 
    */
   private loadInternal(paths: string[] = [], predicates: string[] = []): DataFrame {
-    const relation = new RelationBuilder()
-      .setRelationCommon(this.spark.newRelationCommon())
-      .setReadDataSource(this.source, this.userSpecifiedSchema, paths, predicates, this.extraOptions)
-      .build();
-    const plan = new PlanBuilder()
-      .setRelation(relation)
-      .build();
-    return new DataFrame(this.spark, plan);
+    return this.spark.dataFrameFromRelationBuilder(b => b.withReadDataSource(this.source, this.userSpecifiedSchema, paths, predicates, this.extraOptions));
   }
 }

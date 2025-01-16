@@ -40,10 +40,10 @@ export class AnalyzePlanRequestBuilder {
     this.request.analyze = { case: "schema", value : create(AnalyzePlanRequest_SchemaSchema, { plan: plan }) };
     return this;
   }
-  setExplain(plan: Plan): AnalyzePlanRequestBuilder;
-  setExplain(plan: Plan, mode: boolean): AnalyzePlanRequestBuilder;
-  setExplain(plan: Plan, mode: string): AnalyzePlanRequestBuilder;
-  setExplain(plan: Plan, mode: boolean | string | undefined = undefined): AnalyzePlanRequestBuilder {
+  withExplain(plan: Plan): AnalyzePlanRequestBuilder;
+  withExplain(plan: Plan, mode: boolean): AnalyzePlanRequestBuilder;
+  withExplain(plan: Plan, mode: string): AnalyzePlanRequestBuilder;
+  withExplain(plan: Plan, mode: boolean | string | undefined = undefined): AnalyzePlanRequestBuilder {
     const explain = create(AnalyzePlanRequest_ExplainSchema, { plan: plan });
     if (typeof mode === "undefined") {
       explain.explainMode = AnalyzePlanRequest_Explain_ExplainMode.SIMPLE;
@@ -73,59 +73,59 @@ export class AnalyzePlanRequestBuilder {
     this.request.analyze = { case: "explain", value : explain };
     return this;
   }
-  setTreeString(plan: Plan, level: number) {
+  withTreeString(plan: Plan, level: number) {
     const treeString = create(AnalyzePlanRequest_TreeStringSchema, { plan: plan, level: level }); 
     this.request.analyze = { case: "treeString", value : treeString };
     return this;
   }
-  setIsLocal(plan: Plan) {
+  withIsLocal(plan: Plan) {
     const isLocal = create(AnalyzePlanRequest_IsLocalSchema, { plan: plan });
     this.request.analyze = { case: "isLocal", value : isLocal };
     return this;
   }
-  setIsStreaming(plan: Plan) {
+  withIsStreaming(plan: Plan) {
     const isStreaming = create(AnalyzePlanRequest_IsStreamingSchema, { plan: plan });
     this.request.analyze = { case: "isStreaming", value : isStreaming };
     return this;
   }
-  setInputFiles(plan: Plan) {
+  withInputFiles(plan: Plan) {
     const inputFiles = create(AnalyzePlanRequest_InputFilesSchema, { plan: plan });
     this.request.analyze = { case: "inputFiles", value : inputFiles };
     return this;
   }
-  setSparkVersion() {
+  withSparkVersion() {
     const sparkVersion = create(AnalyzePlanRequest_SparkVersionSchema, {});
     this.request.analyze = { case: "sparkVersion", value : sparkVersion };
     return this;
   }
-  setDdlParser(ddlString: string) {
+  withDdlParser(ddlString: string) {
     const ddlParser = create(AnalyzePlanRequest_DDLParseSchema, { ddlString: ddlString });
     this.request.analyze = { case: "ddlParse", value : ddlParser };
     return this;
   }
-  setSameSemantics(target: Plan, other: Plan) {
+  withSameSemantics(target: Plan, other: Plan) {
     const sameSemantics = create(AnalyzePlanRequest_SameSemanticsSchema, { targetPlan: target, otherPlan: other });
     this.request.analyze = { case: "sameSemantics", value : sameSemantics };
     return this;
   }
 
-  setSemanticHash(plan: Plan) {
+  withSemanticHash(plan: Plan) {
     const semanticHash = create(AnalyzePlanRequest_SemanticHashSchema, { plan: plan });
     this.request.analyze = { case: "semanticHash", value : semanticHash };
     return this;
   }
-  setPersist(relation: Relation, storageLevel: StorageLevel) {
+  withPersist(relation: Relation, storageLevel: StorageLevel) {
     const persist = create(AnalyzePlanRequest_PersistSchema, { relation: relation, storageLevel: storageLevel });
     this.request.analyze = { case: "persist", value : persist };
     return this;
   }
-  setUnpersist(relation: Relation, blocking: boolean) {
+  withUnpersist(relation: Relation, blocking: boolean) {
     const unpersist = create(AnalyzePlanRequest_UnpersistSchema, { relation: relation, blocking: blocking });
     this.request.analyze = { case: "unpersist", value : unpersist };
     return this;
   }
 
-  setGetStorageLevel(relation: Relation) {
+  withGetStorageLevel(relation: Relation) {
     const getStorageLevel = create(AnalyzePlanRequest_GetStorageLevelSchema, { relation: relation });
     this.request.analyze = { case: "getStorageLevel", value : getStorageLevel };
     return this;

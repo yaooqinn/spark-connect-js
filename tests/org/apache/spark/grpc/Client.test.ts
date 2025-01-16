@@ -18,6 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import * as connect from "../../../../../src/gen/spark/connect/base_pb";
+import { AnalyzePlanRequestBuilder } from "../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder";
 
 function withClient(f: (client: Client) => void) {
     const builder = Client.builder();
@@ -71,18 +72,8 @@ test("get all configs", async () => {
 
 test("analyze plan - sparkVersion", async () => {
     withClient(async client => {
-        const req = create(connect.AnalyzePlanRequestSchema, {
-            sessionId: client.session_id_,
-            userContext: client.user_context_,
-            clientType: client.user_agent_
-        });
-        client.analyze(req => {
-            req.analyze = {
-                case : "sparkVersion",
-                value : create(connect.AnalyzePlanRequest_SparkVersionSchema, {})
-            };
-        }).then(resp => {
-            // console.log(resp.result.toString());
+        new AnalyzePlanRequestBuilder().withSparkVersion()
+        client.analyze(new AnalyzePlanRequestBuilder().withSparkVersion()).then(resp => {
             expect(resp.result.case).toBe("sparkVersion");
             if (resp.result.value && 'version' in resp.result.value) {
                 expect(resp.result.value.version).toBe("4.0.0-SNAPSHOT");

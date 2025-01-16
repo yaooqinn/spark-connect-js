@@ -26,19 +26,23 @@ import { ClientBuilder } from './grpc/client_builder';
 import { PlanIdGenerator } from '../../../../utils';
 import { logger } from '../logger';
 import { DataFrameReader } from './DataFrameReader';
-import { createLocalRelation, createLocalRelationFromArrowTable, PlanBuilder, RelationBuilder } from './proto/ProtoUtils';
+import { createLocalRelation, createLocalRelationFromArrowTable } from './proto/ProtoUtils';
 import { StructType } from './types/StructType';
 import { Table } from 'apache-arrow';
 import { Row } from './Row';
 import { tableFromRows } from './arrow/ArrowUtils';
 import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
-import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWraper';
+import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWrapper';
+import { RelationBuilder } from './proto/RelationBuilder';
+import { PlanBuilder } from './proto/PlanBuilder';
+import { CommandBuilder } from './proto/CommandBuilder';
+import { ExecutePlanResponseWrapper } from './proto/ExecutePlanResponseWrapper';
 
 /**
  * @since 1.0.0
  */
 export class SparkSession {
-  public planIdGenerator: PlanIdGenerator = PlanIdGenerator.getInstance();
+  private planIdGenerator: PlanIdGenerator = PlanIdGenerator.getInstance();
   private conf_: RuntimeConfig;
   private version_?: string;
   
@@ -53,7 +57,7 @@ export class SparkSession {
 
   async version(): Promise<string> {
     if (!this.version_) {
-      const builder = new AnalyzePlanRequestBuilder().setSparkVersion();
+      const builder = new AnalyzePlanRequestBuilder().withSparkVersion();
       return this.analyze(builder).then(resp => {
         this.version_ = resp.version;
         return this.version_;
@@ -65,37 +69,22 @@ export class SparkSession {
   conf(): RuntimeConfig { return this.conf_; };
 
   emptyDataFrame(): DataFrame {
-    const plan = this.newPlanWithRelation(r => r.relType = { case: "localRelation", value: createLocalRelation() });
-    return new DataFrame(this, plan);
+    return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(createLocalRelation()));
   }
 
   // TODO: support other parameters
-  sql(sqlStr: string): Promise<DataFrame> {
-    const sqlCmd = create(cmd.SqlCommandSchema, { sql: sqlStr});
-    return this.sqlInternal(sqlCmd);
-  };
-
-  private async sqlInternal(sqlCmd: cmd.SqlCommand): Promise<DataFrame> {
-    const command = create(cmd.CommandSchema, {
-      commandType: {
-        value: sqlCmd,
-        case: "sqlCommand"
-      }
-    });
-    return this.execute(command).then(resps => {
-      const resp = resps.filter(resp => resp.responseType.case === "sqlCommandResult")[0];
-      const responseType = resp.responseType;
-      if (responseType.case === "sqlCommandResult" && responseType.value.relation) {
-        const relation = responseType.value.relation;
-        relation.common = this.newRelationCommon();
-        this.newPlan({ value: relation, case: "root" });
-        const final = this.newPlan({ value: relation, case: "root" });
-        return new DataFrame(this, final);
-      } else {
-        // TODO: not quite sure what to do here
-        return new DataFrame(this, this.newPlan({ value: command, case: "command" }));
-      };
-    });
+  async sql(sqlStr: string): Promise<DataFrame> {
+    const command = new CommandBuilder().withSqlCommand(sqlStr).build();
+    const resps = await this.execute(command);
+    const resp = resps.filter(r => r.isSqlCommandResult)[0];
+    const relation = resp.sqlCommandResult;
+    if (relation) {
+      relation.common = this.newRelationCommon();
+      return this.dataFrameFromRelation(relation);
+    } else {
+      // TODO: not quite sure what to do here
+      return new DataFrame(this, this.planFromCommand(command));
+    };
   };
 
   read(): DataFrameReader {
@@ -109,19 +98,12 @@ export class SparkSession {
 
   createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
     const local = createLocalRelationFromArrowTable(table, schema);
-    const relation = new RelationBuilder()
-      .setRelationCommon(this.newRelationCommon())
-      .setLocalRelation(local)
-      .build();
-    const plan = new PlanBuilder()
-      .setRelation(relation)
-      .build();
-    return new DataFrame(this, plan);
+    return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(local));
   }
 
-  execute(cmd: cmd.Command): Promise<b.ExecutePlanResponse[]> {
-    const plan =  this.newPlan({ value: cmd, case: "command" });
-    return this.client.execute(plan);
+  async execute(cmd: cmd.Command): Promise<ExecutePlanResponseWrapper[]> {
+    const plan = this.planFromCommand(cmd);
+    return this.client.execute(plan).then(resps => resps.map(resp => new ExecutePlanResponseWrapper(resp)));
   }
 
   table(name: string): DataFrame {
@@ -134,49 +116,48 @@ export class SparkSession {
    * @private
    * @returns a new RelationCommon instance
    */
-  newRelationCommon(): r.RelationCommon {
+  private newRelationCommon(): r.RelationCommon {
     return create(r.RelationCommonSchema, {
       planId: this.planIdGenerator.getNextId(),
       sourceInfo: ""
     });
   }
 
-  /**
-   * Convenience method to create a spark.connect.Relation
-   * @ignore
-   * @private 
-   */
-  newRelation(f: (r: r.Relation) => void): r.Relation {
-    const relation =  create(r.RelationSchema, {
-      common: this.newRelationCommon()
-    });
-    f(relation);
-    return relation;
-  }
-
-  /**
-   * Convenience method to create a spark.connect.Plan
-   * @ignore
-   * @private 
-   */
-  newPlan(operationType: { value: r.Relation; case: "root"; } | { value: cmd.Command; case: "command"; }): b.Plan {
-    const plan = create(b.PlanSchema, { opType: operationType });
-    return plan;
-  }
-
-  /**
-   * Convenience method to create a spark.connect.Plan with a Relation
-   * @ignore
-   * @private 
-   */
-  newPlanWithRelation(f: (r: r.Relation) => void): b.Plan {
-    const relation = this.newRelation(f);
-    return this.newPlan({ value: relation, case: "root" });
+  /** @ignore @private */
+  async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
+    return this.client.analyze(builder).then(resp => new AnalyzePlanResponseWraper(resp));
   }
 
   /** @ignore @private */
-  async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
-    return this.client.analyze2(builder).then(resp => new AnalyzePlanResponseWraper(resp));
+  planFromRelationBuilder(f: (builder: RelationBuilder) => void): b.Plan {
+    const withRelationCommonFunc = (builder: RelationBuilder) => {
+      builder.withRelationCommon(this.newRelationCommon());
+      f(builder);
+    }
+    return new PlanBuilder().withRelationBuilder(withRelationCommonFunc).build();
+  }
+
+  planFromRelation(relation: r.Relation): b.Plan {
+    return new PlanBuilder().withRelation(relation).build();
+  }
+
+  /** @ignore @private */
+  planFromCommandBuilder(f: (builder: CommandBuilder) => void): b.Plan {
+    return new PlanBuilder().withCommandBuilder(f).build();
+  }
+
+  /** @ignore @private */
+  planFromCommand(cmd: cmd.Command): b.Plan {
+    return new PlanBuilder().withCommand(cmd).build();
+  }
+  
+  /** @ignore @private */
+  dataFrameFromRelationBuilder(f: (builder: RelationBuilder) => void): DataFrame {
+    return new DataFrame(this, this.planFromRelationBuilder(f));
+  }
+
+  dataFrameFromRelation(relation: r.Relation): DataFrame {
+    return new DataFrame(this, this.planFromRelation(relation));
   }
 }
 

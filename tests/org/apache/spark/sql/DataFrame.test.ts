@@ -62,21 +62,21 @@ test("toDF api", async () => {
 test("explain api", async () => {
   const spark = await sharedSpark;
   await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan)).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, 'simple')).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, 'simple')).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "extended")).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, "extended")).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain).toContain("== Analyzed Logical Plan ==");
       expect(explain).toContain("== Optimized Logical Plan ==");
@@ -85,41 +85,41 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "codegen")).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, "codegen")).then(explain => {
       expect(explain).toContain("WholeStageCodegen");
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "cost")).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, "cost")).then(explain => {
       expect(explain).toContain("== Optimized Logical Plan ==");
       expect(explain).toContain("Statistics(sizeInBytes=");
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "formatted")).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, "formatted")).then(explain => {
       expect(explain).toContain("Arguments");
       expect(explain).toContain("== Physical Plan ==");
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, false)).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, false)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, true)).then(explain => {
+    return df.explain0(new AnalyzePlanRequestBuilder().withExplain(df.plan, true)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain).toContain("== Analyzed Logical Plan ==");
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    expect(() => new AnalyzePlanRequestBuilder().setExplain(df.plan, 'invalid')).toThrow('invalid');
+    expect(() => new AnalyzePlanRequestBuilder().withExplain(df.plan, 'invalid')).toThrow('invalid');
   }));
 });
 
@@ -127,7 +127,7 @@ test("printSchema api", async () => {
   const spark = await sharedSpark;
   [-1, 0, 1].forEach(async level => {
     await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-      return df.printSchema0(new AnalyzePlanRequestBuilder().setTreeString(df.plan, level)).then(schema => {
+      return df.printSchema0(new AnalyzePlanRequestBuilder().withTreeString(df.plan, level)).then(schema => {
         expect(schema).toContain("a: int");
       });
     }));

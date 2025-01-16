@@ -131,26 +131,11 @@ export class Client {
     }
   }
 
-  async analyze2(builder: AnalyzePlanRequestBuilder): Promise<b.AnalyzePlanResponse> {
+  async analyze(builder: AnalyzePlanRequestBuilder): Promise<b.AnalyzePlanResponse> {
     const req = builder.sessionId(this.session_id_)
-    .userContext(this.user_context_)
-    .clientType(this.user_agent_)
-    .build();
-    return this.runServiceCall<b.AnalyzePlanRequest, b.AnalyzePlanResponse>(
-      "AnalyzePlan",
-      req,
-      this.serializer(b.AnalyzePlanRequestSchema),
-      this.deserializer(b.AnalyzePlanResponseSchema),
-    );
-  };
-
-  async analyze(analysis: (req: b.AnalyzePlanRequest) => void): Promise<b.AnalyzePlanResponse> {
-    const req = create(b.AnalyzePlanRequestSchema, {
-      sessionId: this.session_id_,
-      userContext: this.user_context_,
-      clientType: this.user_agent_
-    });
-    analysis(req);
+      .userContext(this.user_context_)
+      .clientType(this.user_agent_)
+      .build();
     return this.runServiceCall<b.AnalyzePlanRequest, b.AnalyzePlanResponse>(
       "AnalyzePlan",
       req,
@@ -209,7 +194,6 @@ export class Client {
             if (data.metrics) {
               logger.debug(`Metrics: ${this.stringifyMetrics(data.metrics)}`);
             }
-            // TODO: do we need 
             results.push(data);
         }
       });

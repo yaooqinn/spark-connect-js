@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-import { create } from '@bufbuild/protobuf';
 import * as b from '../../../../gen/spark/connect/base_pb';
 import * as r from '../../../../gen/spark/connect/relations_pb';
 import { DataFrameWriter } from './DataFrameWriter';
@@ -24,10 +23,10 @@ import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
 import { DataTypes } from './types/DataTypes';
 import { StructType } from './types/StructType';
-import { PlanBuilder, RelationBuilder } from './proto/ProtoUtils';
 import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
-import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWraper';
+import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWrapper';
 import { StorageLevel } from '../../../../gen/spark/connect/common_pb';
+import { RelationBuilder } from './proto/RelationBuilder';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -38,12 +37,12 @@ export class DataFrame {
     if (cols.length === 0) {
       return this;
     } else {
-      return this.toNewDataFrame(b => b.setToDf(cols, this.getPlanRelation()));
+      return this.toNewDataFrame(b => b.withToDf(cols, this.getPlanRelation()));
     }
   }
 
   to(schema: StructType): DataFrame {
-    return this.toNewDataFrame(b => b.setToSchema(schema, this.getPlanRelation()));
+    return this.toNewDataFrame(b => b.withToSchema(schema, this.getPlanRelation()));
   }
 
   /**
@@ -61,7 +60,7 @@ export class DataFrame {
   }
 
   async printSchema(level: number = 0): Promise<void> {
-    const builder = new AnalyzePlanRequestBuilder().setTreeString(this.plan, level);
+    const builder = new AnalyzePlanRequestBuilder().withTreeString(this.plan, level);
     return this.printSchema0(builder).then(console.log);
   }
   /** @ignore */
@@ -73,7 +72,7 @@ export class DataFrame {
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
-    const builder = new AnalyzePlanRequestBuilder().setExplain(this.plan, mode);
+    const builder = new AnalyzePlanRequestBuilder().withExplain(this.plan, mode);
     return this.explain0(builder).then(console.log);
   }
   /** @ignore */
@@ -94,12 +93,12 @@ export class DataFrame {
   }
 
   async isLocal(): Promise<boolean> {
-    const builder = new AnalyzePlanRequestBuilder().setIsLocal(this.plan);
+    const builder = new AnalyzePlanRequestBuilder().withIsLocal(this.plan);
     return this.analyze(builder).then(r => r.isLocal);
   }
 
   async isStreaming(): Promise<boolean> {
-    const builder = new AnalyzePlanRequestBuilder().setIsStreaming(this.plan);
+    const builder = new AnalyzePlanRequestBuilder().withIsStreaming(this.plan);
     return this.analyze(builder).then(r => r.isStreaming);
   }
 
@@ -130,12 +129,7 @@ export class DataFrame {
   };
 
   limit(n: number): DataFrame {
-    const limitPlan = new PlanBuilder().withRelationBuilder(builder => {
-      builder
-        .setRelationCommon(this.spark.newRelationCommon())
-        .setLimit(n, this.getPlanRelation());
-    }).build();
-    return new DataFrame(this.spark, limitPlan);
+    return this.toNewDataFrame(b => b.withLimit(n, this.getPlanRelation()));
   }
 
   async head(): Promise<Row>;
@@ -155,32 +149,11 @@ export class DataFrame {
   };
 
   offset(n: number): DataFrame {
-    const offsetPlan = new PlanBuilder().withRelationBuilder(builder => {
-      builder
-        .setRelationCommon(this.spark.newRelationCommon())
-        .setOffset(n, this.getPlanRelation());
-    }).build();
-    return new DataFrame(this.spark, offsetPlan);
+    return this.toNewDataFrame(b => b.withOffset(n, this.getPlanRelation()));
   }
 
   tail(n: number): Promise<Row[]> {
-    const tailPlan = new PlanBuilder().withRelationBuilder(builder => {
-      builder
-        .setRelationCommon(this.spark.newRelationCommon())
-        .setTail(n, this.getPlanRelation());
-    }).build();
-    return new DataFrame(this.spark, tailPlan).collect();
-  }
-
-  // async head(n: number = 1): Promise<Row[]> {
-  //   return this.withResult(res => {
-  //     return res.toArray(n);
-  //   });
-  // }
-
-  select(...cols: string[]): DataFrame {
-    create(r.ProjectSchema, {});
-    return this;
+    return this.toNewDataFrame(b => b.withTail(n, this.getPlanRelation())).collect();
   }
 
   /**
@@ -235,12 +208,9 @@ export class DataFrame {
   async show(numRows: number, truncate: boolean | number, vertical: boolean): Promise<void>;
   async show(numRows: number = 20, truncate: boolean | number = true, vertical = false): Promise<void> {
     const truncateValue: number = typeof truncate === "number" ? truncate : (truncate ? 20 : 0);
-    const showString = create(r.ShowStringSchema, {
-      input: this.plan.opType.value as r.Relation,
-      numRows: numRows, truncate: truncateValue,
-      vertical: vertical });
-
-    const plan = this.spark.newPlanWithRelation(r => r.relType = { case: "showString", value: showString });
+    const plan = this.spark.planFromRelationBuilder(builder => {
+      builder.withShowString(numRows, truncateValue, vertical, this.getPlanRelation());
+    });
 
     return this.withResult(res => {
       console.log(res.toArray()[0].getString(0));
@@ -266,12 +236,7 @@ export class DataFrame {
   }
 
   private toNewDataFrame(f: (builder: RelationBuilder) => void): DataFrame {
-    const withRelationCommonFunc = (builder: RelationBuilder) => {
-      builder.setRelationCommon(this.spark.newRelationCommon());
-      f(builder);
-    }
-    const newPlan = new PlanBuilder().withRelationBuilder(withRelationCommonFunc).build();
-    return new DataFrame(this.spark, newPlan);
+    return this.spark.dataFrameFromRelationBuilder(f);
   }
 
   private async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
