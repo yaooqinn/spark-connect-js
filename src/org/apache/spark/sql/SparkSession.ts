@@ -31,6 +31,8 @@ import { StructType } from './types/StructType';
 import { Table } from 'apache-arrow';
 import { Row } from './Row';
 import { tableFromRows } from './arrow/ArrowUtils';
+import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
+import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWraper';
 
 /**
  * @since 1.0.0
@@ -51,21 +53,10 @@ export class SparkSession {
 
   async version(): Promise<string> {
     if (!this.version_) {
-      return this.client.analyze(req => {
-        req.analyze = {
-          value: create(b.AnalyzePlanRequest_SparkVersionSchema, {}),
-          case: "sparkVersion"
-        };
-      }).then(resp => {
-        if (resp.result.case === "sparkVersion") {
-          this.version_ = resp.result.value.version;
-          return this.version_;
-        } else {
-          throw new Error("Failed to get spark version");
-        }
-      }).catch(e => {
-        console.error(`Failed to get spark version, ${e}`);
-        throw e;
+      const builder = new AnalyzePlanRequestBuilder().setSparkVersion();
+      return this.analyze(builder).then(resp => {
+        this.version_ = resp.version;
+        return this.version_;
       });
     }
     return this.version_ || "unknown";
@@ -139,6 +130,7 @@ export class SparkSession {
 
   /**
    * Convenience method to create a spark.connect.RelationCommon
+   * @ignore
    * @private
    * @returns a new RelationCommon instance
    */
@@ -151,6 +143,7 @@ export class SparkSession {
 
   /**
    * Convenience method to create a spark.connect.Relation
+   * @ignore
    * @private 
    */
   newRelation(f: (r: r.Relation) => void): r.Relation {
@@ -163,6 +156,7 @@ export class SparkSession {
 
   /**
    * Convenience method to create a spark.connect.Plan
+   * @ignore
    * @private 
    */
   newPlan(operationType: { value: r.Relation; case: "root"; } | { value: cmd.Command; case: "command"; }): b.Plan {
@@ -172,11 +166,17 @@ export class SparkSession {
 
   /**
    * Convenience method to create a spark.connect.Plan with a Relation
+   * @ignore
    * @private 
    */
   newPlanWithRelation(f: (r: r.Relation) => void): b.Plan {
     const relation = this.newRelation(f);
     return this.newPlan({ value: relation, case: "root" });
+  }
+
+  /** @ignore @private */
+  async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
+    return this.client.analyze2(builder).then(resp => new AnalyzePlanResponseWraper(resp));
   }
 }
 

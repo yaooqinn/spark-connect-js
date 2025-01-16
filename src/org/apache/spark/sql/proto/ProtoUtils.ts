@@ -16,13 +16,13 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { LimitSchema, LocalRelation, LocalRelationSchema, OffsetSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Table as ArrowTable, tableToIPC } from "apache-arrow";
-import { StructType } from "../types/StructType";
 import { Plan, PlanSchema } from "../../../../../gen/spark/connect/base_pb";
 import { Command } from "../../../../../gen/spark/connect/commands_pb";
-import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
+import { LimitSchema, LocalRelation, LocalRelationSchema, OffsetSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { DataTypes } from "../types";
+import { StructType } from "../types/StructType";
+import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 
 export function createLocalRelation(
     schema: string = "",
@@ -133,4 +133,3 @@ export class PlanBuilder {
     return this.plan;
   }
 }
-

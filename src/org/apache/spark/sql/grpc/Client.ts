@@ -22,6 +22,7 @@ import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import { logger } from '../../logger';
 import { type MessageShape, type DescMessage } from '@bufbuild/protobuf';
 import { fromStatus } from "../errors";
+import { AnalyzePlanRequestBuilder } from "../proto/AnalyzePlanRequestBuilder";
   
 
 export class Client {
@@ -129,6 +130,19 @@ export class Client {
       return fromBinary(desc, buf);
     }
   }
+
+  async analyze2(builder: AnalyzePlanRequestBuilder): Promise<b.AnalyzePlanResponse> {
+    const req = builder.sessionId(this.session_id_)
+    .userContext(this.user_context_)
+    .clientType(this.user_agent_)
+    .build();
+    return this.runServiceCall<b.AnalyzePlanRequest, b.AnalyzePlanResponse>(
+      "AnalyzePlan",
+      req,
+      this.serializer(b.AnalyzePlanRequestSchema),
+      this.deserializer(b.AnalyzePlanResponseSchema),
+    );
+  };
 
   async analyze(analysis: (req: b.AnalyzePlanRequest) => void): Promise<b.AnalyzePlanResponse> {
     const req = create(b.AnalyzePlanRequestSchema, {

@@ -139,6 +139,9 @@ spark.then(spark => {
       console.log('=======\n', row);
       console.log('=======\n', row.toJSON());
     });
+
+  df.printSchema();
+  df2.printSchema(2);
   });
   // ,
   // date'2018-11-17' AS DATE,

@@ -18,14 +18,16 @@
 import { create } from '@bufbuild/protobuf';
 import * as b from '../../../../gen/spark/connect/base_pb';
 import * as r from '../../../../gen/spark/connect/relations_pb';
-import { logger } from '../logger';
 import { DataFrameWriter } from './DataFrameWriter';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
 import { DataTypes } from './types/DataTypes';
 import { StructType } from './types/StructType';
-import { PlanBuilder } from './proto/ProtoUtils';
+import { PlanBuilder, RelationBuilder } from './proto/ProtoUtils';
+import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
+import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWraper';
+import { StorageLevel } from '../../../../gen/spark/connect/common_pb';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -36,99 +38,49 @@ export class DataFrame {
     if (cols.length === 0) {
       return this;
     } else {
-      const newPlan = new PlanBuilder().withRelationBuilder(builder => {
-        builder
-          .setRelationCommon(this.spark.newRelationCommon())
-          .setToDf(cols, this.getPlanRelation());
-      }).build();
-      return new DataFrame(this.spark, newPlan);
+      return this.toNewDataFrame(b => b.setToDf(cols, this.getPlanRelation()));
     }
   }
 
   to(schema: StructType): DataFrame {
-    const newPlan = new PlanBuilder().withRelationBuilder(builder => {
-      builder
-        .setRelationCommon(this.spark.newRelationCommon())
-        .setToSchema(schema, this.getPlanRelation());
-    }).build();
-    return new DataFrame(this.spark, newPlan);
+    return this.toNewDataFrame(b => b.setToSchema(schema, this.getPlanRelation()));
   }
 
   /**
-   * Returns the schema of this Dataset.
+   * Returns the schema of this DataFrame.
    */
   async schema(): Promise<StructType> {
     if (this.cachedSchema_) {
       return this.cachedSchema_;
     }
-
-    const planReqSchema = create(b.AnalyzePlanRequest_SchemaSchema,
-      { plan: this.plan});
-
-    return this.spark.client.analyze(req =>
-      req.analyze = { value: planReqSchema, case: "schema"}).then(resp => {
-        if (resp.result.case === "schema" && resp.result.value.schema) {
-          logger.debug("Schema in protobuf:", JSON.stringify(resp.result.value.schema));
-          this.cachedSchema_ = DataTypes.fromProtoType(resp.result.value.schema) as StructType;
-          logger.debug("Schema in typecript:", this.cachedSchema_);
-          return this.cachedSchema_;
-        } else {
-          throw new Error("Failed to get schema");
-        }
-      });
+    const builder = new AnalyzePlanRequestBuilder().setSchema(this.plan);
+    return this.analyze(builder).then(async resp => {
+      this.cachedSchema_ = DataTypes.fromProtoType(resp.schema) as StructType;
+      return this.cachedSchema_;
+    });
   }
 
-  printSchema(level: number = 0): void {
-    // TODO: Implement printSchema and treeString for [[StructType]]
-    throw new Error("Method not implemented.");
+  async printSchema(level: number = 0): Promise<void> {
+    const builder = new AnalyzePlanRequestBuilder().setTreeString(this.plan, level);
+    return this.printSchema0(builder).then(console.log);
+  }
+  /** @ignore */
+  async printSchema0(builder: AnalyzePlanRequestBuilder): Promise<string> {
+    return this.analyze(builder).then(resp => resp.treeString);
   }
 
   async explain(): Promise<void>;
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
-    let modeStr;
-    if (mode === undefined) {
-      modeStr = "simple";
-    } else if (typeof mode === "boolean") {
-      modeStr = mode ? "extended" : "simple";
-    } else {
-      modeStr = mode;
-    }
-    const explain = create(b.AnalyzePlanRequest_ExplainSchema, {
-      plan: this.plan,
-    });
-    switch (modeStr.trim().toLowerCase()) {
-      case "simple":
-        explain.explainMode = b.AnalyzePlanRequest_Explain_ExplainMode.SIMPLE;
-        break;
-      case "extended":
-        explain.explainMode = b.AnalyzePlanRequest_Explain_ExplainMode.EXTENDED;
-        break;
-      case "codegen":
-        explain.explainMode = b.AnalyzePlanRequest_Explain_ExplainMode.CODEGEN;
-        break;
-      case "cost":
-        explain.explainMode = b.AnalyzePlanRequest_Explain_ExplainMode.COST;
-        break;
-      case "formatted":
-        explain.explainMode = b.AnalyzePlanRequest_Explain_ExplainMode.FORMATTED;
-        break;
-      default:
-        throw new Error("Unsupported explain mode: " + mode);
+    const builder = new AnalyzePlanRequestBuilder().setExplain(this.plan, mode);
+    return this.explain0(builder).then(console.log);
+  }
+  /** @ignore */
+  async explain0(builder: AnalyzePlanRequestBuilder): Promise<string> {
+    return this.analyze(builder).then(r=> r.explain);
   }
 
-  return this.spark.client.analyze(req => { req.analyze = { value: explain, case: "explain"} })
-    .then(resp => {
-      if (resp.result.case === "explain") {
-        console.log(resp.result.value.explainString);
-      }
-    });
-  }
-
-  // def dtypes: Array[(String, String)] = schema.fields.map { field =>
-  //   (field.name, field.dataType.toString)
-  // }
   async dtypes(): Promise<Array<[string, string]>> {
     return this.schema().then(s => s.fields.map(field => [field.name, field.dataType.toString()]));
   }
@@ -141,9 +93,31 @@ export class DataFrame {
     return this.head(1).then(rows => rows.length === 0);
   }
 
-  isLocal(): boolean {
-    return this.plan.opType.case === 'root' && this.plan.opType.value.relType.case === "localRelation";
+  async isLocal(): Promise<boolean> {
+    const builder = new AnalyzePlanRequestBuilder().setIsLocal(this.plan);
+    return this.analyze(builder).then(r => r.isLocal);
   }
+
+  async isStreaming(): Promise<boolean> {
+    const builder = new AnalyzePlanRequestBuilder().setIsStreaming(this.plan);
+    return this.analyze(builder).then(r => r.isStreaming);
+  }
+
+  async checkpoint(): Promise<DataFrame>;
+  async checkpoint(eager: boolean): Promise<DataFrame>;
+  async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
+  async localCheckpoint(): Promise<DataFrame>;
+  async localCheckpoint(eager: boolean): Promise<DataFrame>;
+  async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
+
+  async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
+
 
   write(): DataFrameWriter {
     return new DataFrameWriter(this);
@@ -255,12 +229,17 @@ export class DataFrame {
    * @param truncate If set to `true`, truncate the displayed columns to 20 characters, default is `true`
    * @param vertical If set to `true`, print output rows vertically (one line per column value)
    */
+  async show(): Promise<void>;
+  async show(numRows: number): Promise<void>;
+  async show(numRows: number, truncate: boolean | number): Promise<void>;
+  async show(numRows: number, truncate: boolean | number, vertical: boolean): Promise<void>;
   async show(numRows: number = 20, truncate: boolean | number = true, vertical = false): Promise<void> {
     const truncateValue: number = typeof truncate === "number" ? truncate : (truncate ? 20 : 0);
     const showString = create(r.ShowStringSchema, {
       input: this.plan.opType.value as r.Relation,
       numRows: numRows, truncate: truncateValue,
       vertical: vertical });
+
     const plan = this.spark.newPlanWithRelation(r => r.relType = { case: "showString", value: showString });
 
     return this.withResult(res => {
@@ -284,5 +263,18 @@ export class DataFrame {
     } else {
       throw new Error("Plan does not contain a relation");
     }
+  }
+
+  private toNewDataFrame(f: (builder: RelationBuilder) => void): DataFrame {
+    const withRelationCommonFunc = (builder: RelationBuilder) => {
+      builder.setRelationCommon(this.spark.newRelationCommon());
+      f(builder);
+    }
+    const newPlan = new PlanBuilder().withRelationBuilder(withRelationCommonFunc).build();
+    return new DataFrame(this.spark, newPlan);
+  }
+
+  private async analyze(builder: AnalyzePlanRequestBuilder): Promise<AnalyzePlanResponseWraper> {
+    return this.spark.analyze(builder);
   }
 }

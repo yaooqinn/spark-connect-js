@@ -16,22 +16,147 @@
  */
 
 import { bigintToDecimalBigNum, DecimalBigNumToNumber, getAsPlainJS } from '../../../../../src/org/apache/spark/sql/arrow/ArrowUtils';
+import { AnalyzePlanRequestBuilder } from '../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
 import { StructType } from '../../../../../src/org/apache/spark/sql/types/StructType';
 import { sharedSpark, timeoutOrSatisfied } from '../../../../helpers';
 
+test("to api", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1L as a").then(async df => {
+    return df.schema().then(rSchema => {
+      expect(rSchema.fields.length).toBe(1);
+      expect(rSchema.fields[0].name).toBe("a");
+      expect(rSchema.fields[0].dataType).toBe(DataTypes.LongType);
+      const f1 = DataTypes.createStructField("a", DataTypes.IntegerType, false);
+      const schema = DataTypes.createStructType([f1]);
+      return df.to(schema).schema().then(schema2 => {
+        expect(schema2.fields.length).toBe(1);
+        expect(schema2.fields[0].name).toBe("a");
+        expect(schema2.fields[0].dataType).toBe(DataTypes.IntegerType);
+      });
+    })
+  }));
+});
+
+test("toDF api", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1L as a, 2Y as b").then(async df => {
+    return df.schema().then(async rSchema => {
+      expect(rSchema.fields.length).toBe(2);
+      expect(rSchema.fields[0].name).toBe("a");
+      expect(rSchema.fields[0].dataType).toBe(DataTypes.LongType);
+      expect(rSchema.fields[1].name).toBe("b");
+      expect(rSchema.fields[1].dataType).toBe(DataTypes.ByteType);
+      return df.toDF('b', 'a').schema().then(async schema2 => {
+        expect(schema2.fields.length).toBe(2);
+        expect(schema2.fields[0].name).toBe("b");
+        expect(schema2.fields[0].dataType).toBe(DataTypes.LongType);
+        expect(schema2.fields[1].name).toBe("a");
+        expect(schema2.fields[1].dataType).toBe(DataTypes.ByteType);
+      });
+    })
+  }));
+});
+
 test("explain api", async () => {
   const spark = await sharedSpark;
   await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-    df.explain("simple");
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan)).then(explain => {
+      expect(explain).toContain("== Physical Plan ==");
+      expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, 'simple')).then(explain => {
+      expect(explain).toContain("== Physical Plan ==");
+      expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
+    });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    df.explain("extended");
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "extended")).then(explain => {
+      expect(explain).toContain("== Physical Plan ==");
+      expect(explain).toContain("== Analyzed Logical Plan ==");
+      expect(explain).toContain("== Optimized Logical Plan ==");
+      expect(explain).toContain("== Parsed Logical Plan ==");
+    });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    df.explain("codegen");
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "codegen")).then(explain => {
+      expect(explain).toContain("WholeStageCodegen");
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "cost")).then(explain => {
+      expect(explain).toContain("== Optimized Logical Plan ==");
+      expect(explain).toContain("Statistics(sizeInBytes=");
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, "formatted")).then(explain => {
+      expect(explain).toContain("Arguments");
+      expect(explain).toContain("== Physical Plan ==");
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, false)).then(explain => {
+      expect(explain).toContain("== Physical Plan ==");
+      expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
+    return df.explain0(new AnalyzePlanRequestBuilder().setExplain(df.plan, true)).then(explain => {
+      expect(explain).toContain("== Physical Plan ==");
+      expect(explain).toContain("== Analyzed Logical Plan ==");
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
+    expect(() => new AnalyzePlanRequestBuilder().setExplain(df.plan, 'invalid')).toThrow('invalid');
+  }));
+});
+
+test("printSchema api", async () => {
+  const spark = await sharedSpark;
+  [-1, 0, 1].forEach(async level => {
+    await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
+      return df.printSchema0(new AnalyzePlanRequestBuilder().setTreeString(df.plan, level)).then(schema => {
+        expect(schema).toContain("a: int");
+      });
+    }));
+  });
+});
+
+test("isLocal", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
+    return df.isLocal().then(isLocal => {
+      expect(isLocal).toBe(false);
+    });
+  }));
+
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(async df => {
+    const schema = await df.schema();
+    const rows = await df.collect();
+    spark.createDataFrame(rows, schema).isLocal().then(isLocal => {
+      expect(isLocal).toBe(true);
+    })
+  }));
+});
+
+test("isStreaming", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
+    return df.isStreaming().then(isStreaming => {
+      expect(isStreaming).toBe(false);
+    });
   }));
 });
 
@@ -1536,7 +1661,6 @@ test("struct", async () => {
           expect((schema.fields[0].dataType as StructType).fields[14].dataType).toBeInstanceOf(StructType);
           expect((schema.fields[0].dataType as StructType).fields[15].dataType).toBeInstanceOf(StructType);
           expect((schema.fields[0].dataType as StructType).fields[16].dataType).toBe(DataTypes.NullType);
-          console.log(rows)
           return spark.createDataFrame(rows, schema).collect().then(rows2 => {
             expect(rows2[0][0]).toStrictEqual(struct);
             expect(rows2[0].get(0)).toStrictEqual(result);
