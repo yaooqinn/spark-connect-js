@@ -20,7 +20,7 @@ import * as c from "../../../../gen/spark/connect/commands_pb";
 import { DataFrame } from "./DataFrame";
 import { SaveMode } from "./SaveMode";
 import { AnalysisException } from "./errors";
-import { ExecutePlanResponseWrapper } from "./proto/ExecutePlanResponseWrapper";
+import { ExecutePlanResponseHandler } from "./proto/ExecutePlanResponseHandler";
 import { CaseInsensitiveMap } from "./util/CaseInsensitiveMap";
 
 /**
@@ -137,7 +137,7 @@ export class DataFrameWriter {
   /**
    * Saves the content of the `DataFrame` as the specified table.
    */
-  save(path: string | undefined = undefined): Promise<ExecutePlanResponseWrapper[]> {
+  save(path: string | undefined = undefined): Promise<ExecutePlanResponseHandler[]> {
     const setPath = (write: c.WriteOperation) => {
       if (path) {
         write.saveType = { case: "path", value: path };
@@ -157,7 +157,7 @@ export class DataFrameWriter {
    *   SaveMode.ErrorIfExists and SaveMode.Ignore behave as SaveMode.Append in `insertInto` as
    *   `insertInto` is not a table creating operation.
    */
-  insertInto(tableName: string): Promise<ExecutePlanResponseWrapper[]> {
+  insertInto(tableName: string): Promise<ExecutePlanResponseHandler[]> {
     const setTable = (write: c.WriteOperation) => {
       write.saveType = {
         case: "table",
@@ -195,7 +195,7 @@ export class DataFrameWriter {
    * specific format.
    *
    */
-  saveAsTable(tableName: string): Promise<ExecutePlanResponseWrapper[]> {
+  saveAsTable(tableName: string): Promise<ExecutePlanResponseHandler[]> {
     const setTable = (write: c.WriteOperation) => {
       write.saveType = {
         case: "table",
@@ -232,7 +232,7 @@ export class DataFrameWriter {
    *   transaction isolation levels defined by JDBC's Connection object, with default of
    *   "READ_UNCOMMITTED".
    */
-  jdbc(url: string, table: string, connectionProperties: {[key: string]: string}): Promise<ExecutePlanResponseWrapper[]> {
+  jdbc(url: string, table: string, connectionProperties: {[key: string]: string}): Promise<ExecutePlanResponseHandler[]> {
     this.assertNotPartitioned("jdbc");
     this.assertNotBucketed("jdbc");
     this.assertNotClustered("jdbc");
@@ -256,7 +256,7 @@ export class DataFrameWriter {
    * Data Source Option</a> in the version you use.
    *
    */
-  json(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  json(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("json").save(path);
   }
 
@@ -273,7 +273,7 @@ export class DataFrameWriter {
    *
    * @since 1.0.0
    */
-  parquet(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  parquet(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("parquet").save(path);
   }
 
@@ -288,7 +288,7 @@ export class DataFrameWriter {
    * "https://spark.apache.org/docs/latest/sql-data-sources-orc.html#data-source-option"> Data
    * Source Option</a> in the version you use.
    */
-  orc(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  orc(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("orc").save(path);
   }
 
@@ -300,7 +300,7 @@ export class DataFrameWriter {
    * href="https://spark.apache.org/docs/latest/sql-data-sources-text.html#data-source-option">
    * Data Source Option</a> in the version you use.
    */
-  text(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  text(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("text").save(path);
   }
 
@@ -315,7 +315,7 @@ export class DataFrameWriter {
    * href="https://spark.apache.org/docs/latest/sql-data-sources-csv.html#data-source-option">
    * Data Source Option</a> in the version you use.
    */
-  csv(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  csv(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("csv").save(path);
   }
 
@@ -341,11 +341,11 @@ export class DataFrameWriter {
    * href="https://spark.apache.org/docs/latest/sql-data-sources-xml.html#data-source-option">
    * Data Source Option</a> in the version you use.
    */
-  xml(path: string): Promise<ExecutePlanResponseWrapper[]> {
+  xml(path: string): Promise<ExecutePlanResponseHandler[]> {
     return this.format("xml").save(path);
   }
 
-  private executeWriteOperation(f: (op: c.WriteOperation) => void): Promise<ExecutePlanResponseWrapper[]> {
+  private executeWriteOperation(f: (op: c.WriteOperation) => void): Promise<ExecutePlanResponseHandler[]> {
     const write = create(c.WriteOperationSchema, {})
     if (this.df.plan.opType.case === "root") {
       write.input = this.df.plan.opType.value;

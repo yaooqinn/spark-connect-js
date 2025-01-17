@@ -32,11 +32,11 @@ import { Table } from 'apache-arrow';
 import { Row } from './Row';
 import { tableFromRows } from './arrow/ArrowUtils';
 import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
-import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWrapper';
+import { AnalyzePlanResponseHandler } from './proto/AnalyzePlanResponeHandler';
 import { RelationBuilder } from './proto/RelationBuilder';
 import { PlanBuilder } from './proto/PlanBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
-import { ExecutePlanResponseWrapper } from './proto/ExecutePlanResponseWrapper';
+import { ExecutePlanResponseHandler } from './proto/ExecutePlanResponseHandler';
 
 /**
  * @since 1.0.0
@@ -53,26 +53,25 @@ export class SparkSession {
   public static builder(): SparkSessionBuilder { return new SparkSessionBuilder(); }
 
 
-  session_id(): string { return this.client.session_id_; }
+  public session_id(): string { return this.client.session_id_; }
 
-  async version(): Promise<string> {
+  public async version(): Promise<string> {
     if (!this.version_) {
-      return this.analyze(b => b.withSparkVersion()).then(resp => {
-        this.version_ = resp.version;
-        return this.version_;
-      });
+      const resp = await this.analyze(b => b.withSparkVersion());
+      this.version_ = resp.version;
+      return this.version_;
     }
     return this.version_ || "unknown";
   }
   
-  conf(): RuntimeConfig { return this.conf_; };
+  public get conf(): RuntimeConfig { return this.conf_; };
 
-  emptyDataFrame(): DataFrame {
+  public get emptyDataFrame(): DataFrame {
     return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(createLocalRelation()));
   }
 
   // TODO: support other parameters
-  async sql(sqlStr: string): Promise<DataFrame> {
+  public async sql(sqlStr: string): Promise<DataFrame> {
     const command = new CommandBuilder().withSqlCommand(sqlStr).build();
     const resps = await this.execute(command);
     const resp = resps.filter(r => r.isSqlCommandResult)[0];
@@ -86,27 +85,27 @@ export class SparkSession {
     };
   };
 
-  read(): DataFrameReader {
+  public get read(): DataFrameReader {
     return new DataFrameReader(this);
   }
 
-  createDataFrame(data: Row[], schema: StructType): DataFrame {
+  public createDataFrame(data: Row[], schema: StructType): DataFrame {
     const table = tableFromRows(data, schema);
     return this.createDataFrameFromArrowTable(table, schema);
   }
 
-  createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
+  public createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
     const local = createLocalRelationFromArrowTable(table, schema);
     return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(local));
   }
 
-  async execute(cmd: cmd.Command): Promise<ExecutePlanResponseWrapper[]> {
+  async execute(cmd: cmd.Command): Promise<ExecutePlanResponseHandler[]> {
     const plan = this.planFromCommand(cmd);
-    return this.client.execute(plan).then(resps => resps.map(resp => new ExecutePlanResponseWrapper(resp)));
+    return this.client.execute(plan).then(resps => resps.map(resp => new ExecutePlanResponseHandler(resp)));
   }
 
   table(name: string): DataFrame {
-    return this.read().table(name);
+    return this.read.table(name);
   }
 
   /**
@@ -123,8 +122,8 @@ export class SparkSession {
   }
 
   /** @ignore @private */
-  async analyze(f: (b: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseWraper> {
-    return this.client.analyze(f).then(resp => new AnalyzePlanResponseWraper(resp));
+  async analyze(f: (b: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseHandler> {
+    return this.client.analyze(f).then(resp => new AnalyzePlanResponseHandler(resp));
   }
 
   /** @ignore @private */
@@ -192,7 +191,7 @@ class SparkSessionBuilder {
       SparkSessionBuilder._cachedGrpcClient = this._builder.build();
     }
     const newSession = new SparkSession(SparkSessionBuilder._cachedGrpcClient);
-    return newSession.conf().setAll(this._options).then(() => {
+    return newSession.conf.setAll(this._options).then(() => {
       logger.info("Updated configuration for new SparkSession", this._options);
       SparkSessionBuilder._cachedSparkSession = newSession;
     }).then(() => {
@@ -207,7 +206,7 @@ class SparkSessionBuilder {
     const existing = SparkSessionBuilder._cachedSparkSession;
     if (existing) {
       logger.debug("Reusing existing SparkSession", existing);
-      await existing.conf().setAll(this._options);
+      await existing.conf.setAll(this._options);
       logger.info("Updated configuration for existing SparkSession", this._options);
       existing.version().then(v => {
         logger.info(`The verion of Spark Connect Server is ${v}`);

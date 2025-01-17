@@ -16,7 +16,6 @@
  */
 
 import { SparkSession } from "../../../../../src/org/apache/spark/sql/SparkSession";
-import { DataTypes } from "../../../../../src/org/apache/spark/sql/types/DataTypes";
 
 test("builder", () => {
   const spark = SparkSession
@@ -32,10 +31,10 @@ test("builder", () => {
       s.version().then(version => {
         expect(version).toBe("4.0.0-SNAPSHOT");
       });
-      s.conf().get("spark.sql.shuffle.partitions").then(value => {
+      s.conf.get("spark.sql.shuffle.partitions").then(value => {
         expect(value).toBe("1024");
       });
-      s.conf().getAll().then(configs => {
+      s.conf.getAll().then(configs => {
         expect(configs.get("spark.kent.yao")).toBe("awesome");
       });
     });
@@ -43,7 +42,7 @@ test("builder", () => {
 
 test("empty data frame", async () => {
   const spark = await SparkSession.builder().getOrCreate()
-  spark.emptyDataFrame().schema().then(schema => {
+  spark.emptyDataFrame.schema().then(schema => {
     expect(schema.fields.length).toBe(0);
   });
 });

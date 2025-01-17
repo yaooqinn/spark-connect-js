@@ -24,9 +24,9 @@ import { SparkSession } from './SparkSession';
 import { DataTypes } from './types/DataTypes';
 import { StructType } from './types/StructType';
 import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
-import { AnalyzePlanResponseWraper } from './proto/AnalyzePlanResponeWrapper';
-import { StorageLevel } from '../../../../gen/spark/connect/common_pb';
+import { AnalyzePlanResponseHandler } from './proto/AnalyzePlanResponeHandler';
 import { RelationBuilder } from './proto/RelationBuilder';
+import { StorageLevel } from '../storage/StorageLevel';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -116,6 +116,27 @@ export class DataFrame {
     return this.analyze(b => b.withInputFiles(this.plan)).then(r => r.inputFiles);
   }
 
+  async sameSemantics(other: DataFrame): Promise<boolean> {
+    return this.analyze(b => b.withSameSemantics(this.plan, other.plan)).then(r => r.sameSemantics);
+  }
+
+  async semanticHash(): Promise<number> {
+    return this.analyze(b => b.withSemanticHash(this.plan)).then(r => r.semanticHash);
+  }
+
+  async persist(): Promise<DataFrame>;
+  async persist(storageLevel: StorageLevel): Promise<DataFrame>;
+  async persist(storageLevel?: StorageLevel): Promise<DataFrame> {
+    return this.analyze(b => b.withPersist(this.getPlanRelation(), storageLevel)).then(() => this);
+  }
+
+  async unpersist(blocking: boolean = false): Promise<DataFrame> {
+    return this.analyze(b => b.withUnpersist(this.getPlanRelation(), blocking)).then(() => this);
+  }
+
+  async storageLevel(): Promise<StorageLevel> {
+    return this.analyze(b => b.withGetStorageLevel(this.getPlanRelation())).then(r => r.getStorageLevel);
+  }
 
   write(): DataFrameWriter {
     return new DataFrameWriter(this);
@@ -157,46 +178,6 @@ export class DataFrame {
 
   /**
    * Displays the Dataset in a tabular form. For example:
-   * {{{
-   *   year  month AVG('Adj Close) MAX('Adj Close)
-   *   1980  12    0.503218        0.595103
-   *   1981  01    0.523289        0.570307
-   *   1982  02    0.436504        0.475256
-   *   1983  03    0.410516        0.442194
-   *   1984  04    0.450090        0.483521
-   * }}}
-   *
-   * If `vertical` enabled, this command prints output rows vertically (one line per column
-   * value)?
-   *
-   * {{{
-   * -RECORD 0-------------------
-   *  year            | 1980
-   *  month           | 12
-   *  AVG('Adj Close) | 0.503218
-   *  AVG('Adj Close) | 0.595103
-   * -RECORD 1-------------------
-   *  year            | 1981
-   *  month           | 01
-   *  AVG('Adj Close) | 0.523289
-   *  AVG('Adj Close) | 0.570307
-   * -RECORD 2-------------------
-   *  year            | 1982
-   *  month           | 02
-   *  AVG('Adj Close) | 0.436504
-   *  AVG('Adj Close) | 0.475256
-   * -RECORD 3-------------------
-   *  year            | 1983
-   *  month           | 03
-   *  AVG('Adj Close) | 0.410516
-   *  AVG('Adj Close) | 0.442194
-   * -RECORD 4-------------------
-   *  year            | 1984
-   *  month           | 04
-   *  AVG('Adj Close) | 0.450090
-   *  AVG('Adj Close) | 0.483521
-   * }}}
-   *
    * @param numRows Number of rows to show
    * @param truncate If set to `true`, truncate the displayed columns to 20 characters, default is `true`
    * @param vertical If set to `true`, print output rows vertically (one line per column value)
@@ -238,7 +219,7 @@ export class DataFrame {
     return this.spark.dataFrameFromRelationBuilder(f);
   }
 
-  private async analyze(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseWraper> {
+  private async analyze(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseHandler> {
     return this.spark.analyze(f);
   }
 }

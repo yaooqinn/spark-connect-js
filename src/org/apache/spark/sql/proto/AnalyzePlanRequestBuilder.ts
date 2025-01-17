@@ -18,7 +18,8 @@
 import { create } from "@bufbuild/protobuf";
 import { AnalyzePlanRequest, AnalyzePlanRequest_DDLParseSchema, AnalyzePlanRequest_Explain_ExplainMode, AnalyzePlanRequest_ExplainSchema, AnalyzePlanRequest_GetStorageLevelSchema, AnalyzePlanRequest_InputFilesSchema, AnalyzePlanRequest_IsLocalSchema, AnalyzePlanRequest_IsStreamingSchema, AnalyzePlanRequest_PersistSchema, AnalyzePlanRequest_SameSemanticsSchema, AnalyzePlanRequest_SchemaSchema, AnalyzePlanRequest_SemanticHashSchema, AnalyzePlanRequest_SparkVersionSchema, AnalyzePlanRequest_TreeStringSchema, AnalyzePlanRequest_UnpersistSchema, AnalyzePlanRequestSchema, Plan, UserContext } from "../../../../../gen/spark/connect/base_pb";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
-import { StorageLevel } from "../../../../../gen/spark/connect/common_pb";
+import { StorageLevel } from "../../storage/StorageLevel";
+import { StorageLevel as  StorageLevelPB, StorageLevelSchema } from "../../../../../gen/spark/connect/common_pb";
 
 
 export class AnalyzePlanRequestBuilder {
@@ -114,8 +115,16 @@ export class AnalyzePlanRequestBuilder {
     this.request.analyze = { case: "semanticHash", value : semanticHash };
     return this;
   }
-  withPersist(relation: Relation, storageLevel: StorageLevel) {
-    const persist = create(AnalyzePlanRequest_PersistSchema, { relation: relation, storageLevel: storageLevel });
+  withPersist(relation: Relation, lv?: StorageLevel) {
+    const storageLevelPB = lv ? create(StorageLevelSchema,
+      {
+        useMemory: lv.useMemory,
+        useDisk: lv.useDisk,
+        useOffHeap: lv.useOffHeap,
+        deserialized: lv.deserialized,
+        replication: lv.replication
+      }) : undefined;
+    const persist = create(AnalyzePlanRequest_PersistSchema, { relation: relation, storageLevel: storageLevelPB });
     this.request.analyze = { case: "persist", value : persist };
     return this;
   }
