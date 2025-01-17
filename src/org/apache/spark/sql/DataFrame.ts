@@ -124,16 +124,40 @@ export class DataFrame {
     return this.analyze(b => b.withSemanticHash(this.plan)).then(r => r.semanticHash);
   }
 
+  /**
+   * Persist this DataFrame with the default storage level (`MEMORY_AND_DISK`).
+   */
   async persist(): Promise<DataFrame>;
-  async persist(storageLevel: StorageLevel): Promise<DataFrame>;
-  async persist(storageLevel?: StorageLevel): Promise<DataFrame> {
-    return this.analyze(b => b.withPersist(this.getPlanRelation(), storageLevel)).then(() => this);
+  /**
+   * Persist this DataFrame with the given storage level.
+   *
+   * @param newLevel a storage level. @see [[StorageLevel]]
+   */
+  async persist(newLevel: StorageLevel): Promise<DataFrame>;
+  async persist(newLevel?: StorageLevel): Promise<DataFrame> {
+    return this.analyze(b => b.withPersist(this.getPlanRelation(), newLevel)).then(() => this);
+  }
+  /**
+   * Persist this DataFrame with the default storage level (`MEMORY_AND_DISK`).
+   */
+  async cache(): Promise<DataFrame> {
+    return this.persist();
   }
 
+  /**
+   * Mark the DataFrame as non-persistent, and remove all blocks for it from memory and disk. This
+   * will not un-persist any cached data that is built upon this Dataset.
+   *
+   * @param blocking
+   *   Whether to block until all blocks are deleted.
+   */
   async unpersist(blocking: boolean = false): Promise<DataFrame> {
     return this.analyze(b => b.withUnpersist(this.getPlanRelation(), blocking)).then(() => this);
   }
 
+  /**
+   * Get the DataFrame's current storage level, or StorageLevel.NONE if not persisted.
+   */
   async storageLevel(): Promise<StorageLevel> {
     return this.analyze(b => b.withGetStorageLevel(this.getPlanRelation())).then(r => r.getStorageLevel);
   }
