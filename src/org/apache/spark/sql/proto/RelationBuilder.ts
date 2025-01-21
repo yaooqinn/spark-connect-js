@@ -20,6 +20,8 @@ import { LimitSchema, LocalRelation, OffsetSchema, RangeSchema, Read, Read_DataS
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
+import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
+import { CatalogBuilder } from "./CatalogBuilder";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -94,6 +96,14 @@ export class RelationBuilder {
     const showString = create(ShowStringSchema, { numRows: numRows, truncate: truncate, vertical: vertical, input: input });
     this.relation.relType = { case: "showString", value: showString }
     return this;
+  }
+  withCatalog(catalog: Catalog) {
+    this.relation.relType = { case: "catalog", value: catalog }
+  }
+  withCatalogBuilder(f: (builder: CatalogBuilder) => void) {
+    const catalogBuilder = new CatalogBuilder();
+    f(catalogBuilder);
+    this.withCatalog(catalogBuilder.build());
   }
   build(): Relation {
     return this.relation;

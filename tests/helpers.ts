@@ -48,12 +48,22 @@ export function timeoutOrSatisfied(promise: Promise<any>, timeout: number = 3000
   return Promise.race([promise, timeoutPromise]);
 }
 
+export async function withDatabase(
+    spark: SparkSession,
+    dbName: string,
+    fn: (dbName: string) => Promise<any>, timeout: number = 30000): Promise<void> {
+  try {
+    await timeoutOrSatisfied(fn(dbName), timeout);
+  } finally {
+    await spark.sql(`DROP DATABASE IF EXISTS ${dbName} CASCADE`);
+  }
+}
+
 export async function withTable(
     spark: SparkSession,
     tableName: string,
     fn: (tableName: string) => Promise<any>, timeout: number = 30000): Promise<void> {
   try {
-    await spark.sql(`DROP TABLE IF EXISTS ${tableName}`);
     await timeoutOrSatisfied(fn(tableName), timeout);
   } finally {
     await spark.sql(`DROP TABLE IF EXISTS ${tableName}`);

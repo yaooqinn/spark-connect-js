@@ -31,7 +31,7 @@ import { quoteIfNeeded } from "./utils";
  *   content of the column is not modified, e.g, in selection.
  *
  * @since 1.0.0
- * @author Kent Yao
+ * @author Kent Yao <yao@apache.org>
  */
 export class StructField {
 

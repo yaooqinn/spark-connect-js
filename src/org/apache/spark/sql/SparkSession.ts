@@ -37,6 +37,7 @@ import { RelationBuilder } from './proto/RelationBuilder';
 import { PlanBuilder } from './proto/PlanBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
 import { ExecutePlanResponseHandler } from './proto/ExecutePlanResponseHandler';
+import { Catalog } from './catalog/Catalog';
 
 /**
  * @since 1.0.0
@@ -45,6 +46,7 @@ export class SparkSession {
   private planIdGenerator: PlanIdGenerator = PlanIdGenerator.getInstance();
   private conf_: RuntimeConfig;
   private version_?: string;
+  public readonly catalog: Catalog = new Catalog(this);
   
   constructor(public client: Client) {
     this.conf_ = new RuntimeConfig(client);
@@ -67,7 +69,7 @@ export class SparkSession {
   public get conf(): RuntimeConfig { return this.conf_; };
 
   public get emptyDataFrame(): DataFrame {
-    return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(createLocalRelation()));
+    return this.relationBuilderToDF(b => b.withLocalRelation(createLocalRelation()));
   }
 
   // TODO: support other parameters
@@ -96,7 +98,7 @@ export class SparkSession {
 
   public createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
     const local = createLocalRelationFromArrowTable(table, schema);
-    return this.dataFrameFromRelationBuilder(b => b.withLocalRelation(local));
+    return this.relationBuilderToDF(b => b.withLocalRelation(local));
   }
 
   async execute(cmd: cmd.Command): Promise<ExecutePlanResponseHandler[]> {
@@ -150,7 +152,7 @@ export class SparkSession {
   }
   
   /** @ignore @private */
-  dataFrameFromRelationBuilder(f: (builder: RelationBuilder) => void): DataFrame {
+  relationBuilderToDF(f: (builder: RelationBuilder) => void): DataFrame {
     return new DataFrame(this, this.planFromRelationBuilder(f));
   }
 

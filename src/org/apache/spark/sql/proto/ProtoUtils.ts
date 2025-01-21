@@ -19,6 +19,8 @@ import { create } from "@bufbuild/protobuf";
 import { Table as ArrowTable, tableToIPC } from "apache-arrow";
 import { LocalRelation, LocalRelationSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { StructType } from "../types/StructType";
+import { StorageLevel } from "../../storage/StorageLevel";
+import { StorageLevelSchema, StorageLevel as StorageLevelPB } from "../../../../../gen/spark/connect/common_pb";
 
 export function createLocalRelation(
     schema: string = "",
@@ -32,4 +34,14 @@ export function createLocalRelationFromArrowTable(
     throw new Error("Arrow table schema does not match StructType schema");
   }
   return createLocalRelation(schema.toDDL(), tableToIPC(table));
+}
+
+export function createStorageLevelPB(storageLevel: StorageLevel): StorageLevelPB {
+  return create(StorageLevelSchema, {
+    useDisk: storageLevel.useDisk,
+    useMemory: storageLevel.useMemory,
+    useOffHeap: storageLevel.useOffHeap,
+    deserialized: storageLevel.deserialized,
+    replication: storageLevel.replication
+  });
 }

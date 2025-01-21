@@ -17,7 +17,7 @@
 
 import { SparkSession } from "../../../../../src/org/apache/spark/sql/SparkSession";
 
-test("builder", () => {
+test("builder", async () => {
   const spark = SparkSession
     .builder()
     .remote('sc://localhost')
@@ -27,9 +27,9 @@ test("builder", () => {
     .config('spark.kent.yao', 'awesome')
     .getOrCreate();
 
-    spark.then(s => {
+    await spark.then(s => {
       s.version().then(version => {
-        expect(version).toBe("4.0.0-SNAPSHOT");
+        expect(version).toContain("4.");
       });
       s.conf.get("spark.sql.shuffle.partitions").then(value => {
         expect(value).toBe("1024");

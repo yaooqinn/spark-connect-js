@@ -26,7 +26,7 @@ import { CaseInsensitiveMap } from "./util/CaseInsensitiveMap";
  * key-value stores, etc). Use `SparkSession.read()` to access this.
  *
  * @since 1.0.0
- * @author
+ * @author Kent Yao <yao@apache.org>
  * 
  * TODO: Some featuers are not implemented yet:
  *  - [ ] Add support of legacy char/varchar as string type for `schema` method
@@ -138,7 +138,7 @@ export class DataFrameReader {
   }
 
   table(tableName: string): DataFrame {
-    return this.spark.dataFrameFromRelationBuilder(b => b.withReadTable(tableName, this.extraOptions));
+    return this.spark.relationBuilderToDF(b => b.withReadTable(tableName, this.extraOptions));
   }
     
   /**
@@ -146,6 +146,6 @@ export class DataFrameReader {
    * 
    */
   private loadInternal(paths: string[] = [], predicates: string[] = []): DataFrame {
-    return this.spark.dataFrameFromRelationBuilder(b => b.withReadDataSource(this.source, this.userSpecifiedSchema, paths, predicates, this.extraOptions));
+    return this.spark.relationBuilderToDF(b => b.withReadDataSource(this.source, this.userSpecifiedSchema, paths, predicates, this.extraOptions));
   }
 }

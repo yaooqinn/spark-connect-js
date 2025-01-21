@@ -20,14 +20,13 @@ import { Float32, tableFromIPC, Type, vectorFromArray } from 'apache-arrow';
 import { SparkResult } from "../../../../../../src/org/apache/spark/sql/SparkResult";
 import { Encoders } from "../../../../../../src/org/apache/spark/sql/Encoders";
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
+import { Database } from "../../../../../../src/org/apache/spark/sql/catalog/Database";
 
-const spark = SparkSession
-  .builder()
-  .remote("sc://localhost")
+const spark = await SparkSession.builder()
   .appName("example")
-  .getOrCreate() 
+  .master("local")
+  .getOrCreate();
 
-spark.then(spark => {
 // spark.sql("CREATE TABLE IF NOT EXISTS spark_connect_typecript(" +
 //   "id int, name string, age int, salary double, start date)" +
 //   "using parquet").then(df => {
@@ -135,32 +134,34 @@ spark.then(spark => {
     const df2 = await spark.createDataFrame(res, schema);
     await df2.show(20, false, true);
     const res2 = await df2.collect();
-    res2.forEach(row => {
-      console.log('=======\n', row);
-      console.log('=======\n', row.toJSON());
+    // res2.forEach(row => {
+    //   console.log('=======\n', row);
+    //   console.log('=======\n', row.toJSON());
+    // });
+  });
+  spark.sql("create database if not exists test").then(() => {
+    spark.catalog.setCurrentDatabase("test").then(() => {
+      spark.catalog.currentDatabase().then(db => {
+        console.log(db);
+        spark.sql("create table if not exists test.test_table (id int, name string)").then(() => {
+          spark.catalog.getTable("test", "test_table").then(table => {
+            console.log(table);
+          });
+        });
+      });
+
+    spark.catalog.listDatabases().collect().then(dbs => {
+      dbs.forEach(db => {
+        console.log(db);
+      });
     });
 
-  df.printSchema();
-  df2.printSchema(2);
+    spark.catalog.listColumns("test").collect().then(cols => {
+      cols.forEach(col => {
+        console.log(col);
+      });
+    });
+
+    spark.sql("drop database if exists test").then(() => {});
   });
-  // ,
-  // date'2018-11-17' AS DATE,
-  
-  // timestamp'2018-11-17 13:33:33.333' AS TIMESTAMP,
-  // timestamp_ntz'2018-11-17 13:33:33.333' AS TIMESTAMP_NTZ,
-  //   array(1, 2, 3) AS ARR,
-  //   array('x', 'y', 'z') AS STR_ARR,
-  //   map(1, 'a', 2, 'b') AS MAP,
-  //   named_struct('a', array('x', 'y', 'z'), 'b', map(1, 'a', 2, 'b'), 'c', named_struct('a', 1.0)) AS NAMED_STRUCT
-
-  // const vf64 = vectorFromArray([1, 2, 3]);
-  // const vf32 = vectorFromArray([1, 2, 3], new Float32());
-  // const binary = vectorFromArray([new Uint8Array([1, 2, 3])], DataTypes.toArrowType(DataTypes.BinaryType));
-
-  // console.log(binary.type);
-
-// spark.read().format("parquet").load("example/data/users.parquet").schema().then(schema => {
-//   console.log(schema);
-// });
-  console.log("Done!")
 });

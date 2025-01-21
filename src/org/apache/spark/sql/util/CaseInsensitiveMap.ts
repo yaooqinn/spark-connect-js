@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import { mapToIndexSignature } from "./helpers";
+
 export class CaseInsensitiveMap<V> extends Map<string, V> {
   constructor(entries?: Iterable<readonly [string, V]> | null) {
     super(entries);
@@ -61,10 +63,6 @@ export class CaseInsensitiveMap<V> extends Map<string, V> {
   }
 
   toIndexSignature(): { [key: string]: V } {
-    let obj: { [key: string]: V } = {};
-    for (const [key, value] of this.entries()) {
-      obj[key] = value;
-    }
-    return obj;
+    return mapToIndexSignature(this);
   }
 }

@@ -30,7 +30,8 @@ type MetadataType = { [key: string]: any };
  *
  * @param { MetadataType } an immutable map that stores the data
  * @since 1.0.0
- * @author Kent Yao
+ * @author  Kent Yao <yao@apache.org>
+
  */
 export class Metadata {
   metadata: MetadataType;

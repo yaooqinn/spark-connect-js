@@ -36,9 +36,9 @@ abstract class SparkThrowable extends Error {
   }
 };
 
-export function fromStatus(err: grpc.StatusObject & Error): Error {
+export function fromStatus(err: grpc.StatusObject & Error | grpc.StatusObject): Error {
   const statusDetails = err.metadata.get("grpc-status-details-bin").toString();
-  let msg = err.details
+  let msg = err.details;
   const conditionMatch = msg.match(/\[([A-Z_]+)\]/);
   const condition = conditionMatch ? conditionMatch[1] : "_LEGACY_ERROR_TEMP_00000";
   const sqlStateMatch = msg.match(/SQLSTATE:\s*([0-9A-Z]+)/);
@@ -50,15 +50,23 @@ export function fromStatus(err: grpc.StatusObject & Error): Error {
     msg = msg.replace(sqlStateMatch[0], "").trim();
   }
 
+  let error: Error;
   if (statusDetails.includes("org.apache.spark.sql.AnalysisException")) {
-    return new AnalysisException(condition, msg, sqlState);
+    error = new AnalysisException(condition, msg, sqlState);
   } else if (statusDetails.includes("org.apache.spark.SparkRuntimeException")) {
-    return new SparkRuntimeException(condition, msg, sqlState);
+    error = new SparkRuntimeException(condition, msg, sqlState);
   } else if (statusDetails.includes("org.apache.spark.SparkNoSuchElementException")) {
-    return new SparkRuntimeException(condition, msg, sqlState);
-  } else {
+    error = new SparkRuntimeException(condition, msg, sqlState);
+  } else if ( err instanceof Error ) {
     return err;
+  } else {
+    error = new Error(msg);
   }
+
+  if ('stack' in err) {
+    error.stack = err.stack;
+  }
+  return error;
 };
 
 export class AnalysisException extends SparkThrowable {};

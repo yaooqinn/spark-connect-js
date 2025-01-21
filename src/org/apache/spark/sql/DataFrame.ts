@@ -240,7 +240,7 @@ export class DataFrame {
   }
 
   private toNewDataFrame(f: (builder: RelationBuilder) => void): DataFrame {
-    return this.spark.dataFrameFromRelationBuilder(f);
+    return this.spark.relationBuilderToDF(f);
   }
 
   private async analyze(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<AnalyzePlanResponseHandler> {

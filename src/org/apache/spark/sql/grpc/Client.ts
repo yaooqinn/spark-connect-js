@@ -74,7 +74,7 @@ export class Client {
         (err: grpc.ServiceError | null, resp?: RespType) => {
           if (err) {
             const handledErrr = fromStatus(err);
-            logger.error("Errored calling", method + ": ", handledErrr);
+            logger.debug("Errored calling", method + ": ", handledErrr);
             reject(handledErrr);
           } else if (resp) {
             logger.debug("Received response by", method + ": ", JSON.stringify(resp));
@@ -201,14 +201,18 @@ export class Client {
       });
       
       call.on("error", (err: any) => {
-        let handledErr = fromStatus(err);
+        const handledErr = fromStatus(err);
         logger.error("Errored calling", method + ":", handledErr);
         reject(handledErr);
       });
 
       call.on("status", (status: grpc.StatusObject) => {
         if (status.code !== grpc.status.OK) {
-          reject(status);
+          const handledErr = fromStatus(status);
+          logger.error("Status received by", method, handledErr);
+          reject(handledErr);
+        } else {
+          logger.debug("Status received by", method, status);
         }
       });
 

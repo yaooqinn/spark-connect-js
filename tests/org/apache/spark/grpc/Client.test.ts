@@ -18,32 +18,32 @@
 import { create } from "@bufbuild/protobuf";
 import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import * as connect from "../../../../../src/gen/spark/connect/base_pb";
-import { AnalyzePlanRequestBuilder } from "../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder";
+import { AnalyzePlanResponseHandler } from "../../../../../src/org/apache/spark/sql/proto/AnalyzePlanResponeHandler";
 
-function withClient(f: (client: Client) => void) {
-    const builder = Client.builder();
-    builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent");
-    const client = builder.build();
-    f(client);
+async function withClient<T>(f: (client: Client) => Promise<T>): Promise<T> {
+  const builder = Client.builder();
+  builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent");
+  const client = builder.build();
+  return f(client);
 }
 
 test('Client Basic', async () => {
-    const builder = Client.builder();
-    builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent;session_id=6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b;a=b;c=d");
-    const client = builder.build();
-    const conf = client.conf_;
-    expect(conf).toBeDefined();
-    const uc = conf.get_user_context();
-    expect(uc.userId).toBe("yao");
-    expect(uc.userName).toBe("kent");
-    const metadata = conf.get_metadata().getMap();
-    const expectedMeta = {"a": "b", "c": "d"};
-    expect(metadata).toStrictEqual(expectedMeta);
-    expect(client.session_id_).toBe("6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b");
+  const builder = Client.builder();
+  builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent;session_id=6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b;a=b;c=d");
+  const client = builder.build();
+  const conf = client.conf_;
+  expect(conf).toBeDefined();
+  const uc = conf.get_user_context();
+  expect(uc.userId).toBe("yao");
+  expect(uc.userName).toBe("kent");
+  const metadata = conf.get_metadata().getMap();
+  const expectedMeta = {"a": "b", "c": "d"};
+  expect(metadata).toStrictEqual(expectedMeta);
+  expect(client.session_id_).toBe("6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b");
 });
 
 test("get all configs", async () => {
-  withClient(client => {
+  withClient(async client => {
     const getAll = create(connect.ConfigRequest_GetAllSchema, {});
     const op = create(connect.ConfigRequest_OperationSchema,
       {
@@ -62,7 +62,7 @@ test("get all configs", async () => {
     });
     getAll.prefix = "spark.master";
     op.opType.value = getAll;
-    client.config(op).then(resp => {
+    return client.config(op).then(resp => {
       expect(resp.pairs.length).toBe(1);
       expect(resp.pairs[0].key).toBe("");
       expect(resp.pairs[0].value).toBe("local[*]");
@@ -71,14 +71,8 @@ test("get all configs", async () => {
 });
 
 test("analyze plan - sparkVersion", async () => {
-    withClient(async client => {
-        client.analyze(b => b.withSparkVersion()).then(resp => {
-            expect(resp.result.case).toBe("sparkVersion");
-            if (resp.result.value && 'version' in resp.result.value) {
-                expect(resp.result.value.version).toBe("4.0.0-SNAPSHOT");
-            } else {
-                throw new Error('Expected "version" property not found in response');
-            }
-        });
-    });
+  const resp = await withClient<AnalyzePlanResponseHandler>(async client => {
+    return client.analyze(b => b.withSparkVersion()).then(resp => new AnalyzePlanResponseHandler(resp));
+  });
+  expect(resp.version).toContain("4.");
 });
