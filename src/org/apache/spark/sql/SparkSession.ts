@@ -110,6 +110,25 @@ export class SparkSession {
     return this.read.table(name);
   }
 
+  range(end: bigint | number): DataFrame;
+  range(start: bigint | number, end: bigint | number): DataFrame;
+  range(start: bigint | number, end: bigint | number, step: bigint | number): DataFrame;
+  range(start: bigint | number, end: bigint | number, step: bigint | number, numPartitions: number): DataFrame;
+  range(start: bigint | number, end?: bigint | number, step?: bigint | number, numPartitions?: number): DataFrame {
+    if (typeof start === 'number') start = BigInt(start);
+    if (typeof end === 'number') end = BigInt(end);
+    if (typeof step === 'number') step = BigInt(step);
+
+    if (end === undefined) {
+      end = start;
+      start = 0n;
+    }
+    if (step === undefined) {
+      step = 1n;
+    }
+    return this.relationBuilderToDF(b => b.withRange(start, end, step, numPartitions));
+  }
+
   /**
    * Convenience method to create a spark.connect.RelationCommon
    * @ignore

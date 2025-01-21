@@ -149,11 +149,6 @@ export class Metadata {
   static empty(): Metadata {
     return Metadata.EMPTY;
   }
-
-  get [Symbol.toStringTag]() {
-    return this.json();
-  }
-
 }
 
 export class MetadataBuilder {

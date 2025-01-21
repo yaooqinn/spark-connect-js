@@ -19,8 +19,7 @@ import { create } from "@bufbuild/protobuf";
 import { AnalyzePlanRequest, AnalyzePlanRequest_DDLParseSchema, AnalyzePlanRequest_Explain_ExplainMode, AnalyzePlanRequest_ExplainSchema, AnalyzePlanRequest_GetStorageLevelSchema, AnalyzePlanRequest_InputFilesSchema, AnalyzePlanRequest_IsLocalSchema, AnalyzePlanRequest_IsStreamingSchema, AnalyzePlanRequest_PersistSchema, AnalyzePlanRequest_SameSemanticsSchema, AnalyzePlanRequest_SchemaSchema, AnalyzePlanRequest_SemanticHashSchema, AnalyzePlanRequest_SparkVersionSchema, AnalyzePlanRequest_TreeStringSchema, AnalyzePlanRequest_UnpersistSchema, AnalyzePlanRequestSchema, Plan, UserContext } from "../../../../../gen/spark/connect/base_pb";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 import { StorageLevel } from "../../storage/StorageLevel";
-import { StorageLevel as  StorageLevelPB, StorageLevelSchema } from "../../../../../gen/spark/connect/common_pb";
-
+import { StorageLevelSchema } from "../../../../../gen/spark/connect/common_pb";
 
 export class AnalyzePlanRequestBuilder {
   private request: AnalyzePlanRequest = create(AnalyzePlanRequestSchema, {});

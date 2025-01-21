@@ -71,7 +71,7 @@ export async function withTable(
 }
 
 export async function withTempDir(fn: (dir: string) => Promise<any>, timeout: number = 30000): Promise<void> {
-  return createTempDir().then(async (dir) => {
+  return await createTempDir().then(async (dir) => {
     try {
       await timeoutOrSatisfied(fn(dir), timeout);
     } finally {

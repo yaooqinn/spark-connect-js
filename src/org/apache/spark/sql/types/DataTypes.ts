@@ -138,7 +138,7 @@ export class DataTypes {
   }
 
   static createStructType(fields: StructField[]): StructType {
-    return new StructType(fields);
+    return new StructType(...fields);
   }
 
   static createUnparsedType(typeName: string): UnparsedDataType {

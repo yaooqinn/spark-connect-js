@@ -16,12 +16,13 @@
  */
 
 import { DataType } from "./data_types";
+import { DataTypes } from "./DataTypes";
+import { Metadata } from "./metadata";
 import { StructField } from "./StructField";
 
 export class StructType extends DataType {
   fields: StructField[];
-
-  constructor(fields: StructField[]) {
+  constructor(...fields: StructField[]) {
     super();
     this.fields = fields;
   }
@@ -63,7 +64,23 @@ export class StructType extends DataType {
     return `StructType(${this.fields.map(f => f.toString()).join(", ")})`;
   }
 
-  get [Symbol.toStringTag]() {
-    return this.toString();
+  add(field: StructField): StructType;
+  add(name: string, dataType: DataType): StructType;
+  add(name: string, dataType: DataType, nullable: boolean): StructType;
+  add(name: string, dataType: DataType, nullable: boolean, metadata: Metadata): StructType;
+  add(...args: any[]): StructType {
+    if (args.length === 1) {
+      this.fields.push(args[0]);
+    } else if (args.length === 2) {
+      const field = DataTypes.createStructField(args[0], args[1], true, Metadata.empty());
+      this.fields.push(field);
+    } else if (args.length === 3) {
+      const field = DataTypes.createStructField(args[0], args[1], args[2], Metadata.empty());
+      this.fields.push(field);
+    } else {
+      const field = DataTypes.createStructField(args[0], args[1], args[2], args[3]);
+      this.fields.push(field);
+    }
+    return this;
   }
 }
