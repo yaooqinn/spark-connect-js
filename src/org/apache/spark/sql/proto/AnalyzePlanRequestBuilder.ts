@@ -36,7 +36,7 @@ export class AnalyzePlanRequestBuilder {
     this.request.clientType = clientType;
     return this;
   }
-  setSchema(plan?: Plan) {
+  setSchema(plan: Plan) {
     this.request.analyze = { case: "schema", value : create(AnalyzePlanRequest_SchemaSchema, { plan: plan }) };
     return this;
   }
@@ -114,7 +114,7 @@ export class AnalyzePlanRequestBuilder {
     this.request.analyze = { case: "semanticHash", value : semanticHash };
     return this;
   }
-  withPersist(relation: Relation, lv?: StorageLevel) {
+  withPersist(relation?: Relation, lv?: StorageLevel) {
     const storageLevelPB = lv ? create(StorageLevelSchema,
       {
         useMemory: lv.useMemory,
@@ -127,13 +127,13 @@ export class AnalyzePlanRequestBuilder {
     this.request.analyze = { case: "persist", value : persist };
     return this;
   }
-  withUnpersist(relation: Relation, blocking: boolean) {
+  withUnpersist(relation?: Relation, blocking?: boolean) {
     const unpersist = create(AnalyzePlanRequest_UnpersistSchema, { relation: relation, blocking: blocking });
     this.request.analyze = { case: "unpersist", value : unpersist };
     return this;
   }
 
-  withGetStorageLevel(relation: Relation) {
+  withGetStorageLevel(relation?: Relation) {
     const getStorageLevel = create(AnalyzePlanRequest_GetStorageLevelSchema, { relation: relation });
     this.request.analyze = { case: "getStorageLevel", value : getStorageLevel };
     return this;

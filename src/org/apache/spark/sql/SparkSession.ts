@@ -17,7 +17,6 @@
 
 import { create } from '@bufbuild/protobuf';
 import { DataFrame } from './DataFrame';
-import * as b from '../../../../gen/spark/connect/base_pb';
 import * as cmd from '../../../../gen/spark/connect/commands_pb';
 import * as r from '../../../../gen/spark/connect/relations_pb';
 import { Client } from './grpc/Client';
@@ -38,6 +37,7 @@ import { PlanBuilder } from './proto/PlanBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
 import { ExecutePlanResponseHandler } from './proto/ExecutePlanResponseHandler';
 import { Catalog } from './catalog/Catalog';
+import { LogicalPlan } from './proto/LogicalPlan';
 
 /**
  * @since 1.0.0
@@ -103,7 +103,7 @@ export class SparkSession {
 
   async execute(cmd: cmd.Command): Promise<ExecutePlanResponseHandler[]> {
     const plan = this.planFromCommand(cmd);
-    return this.client.execute(plan).then(resps => resps.map(resp => new ExecutePlanResponseHandler(resp)));
+    return this.client.execute(plan.plan).then(resps => resps.map(resp => new ExecutePlanResponseHandler(resp)));
   }
 
   table(name: string): DataFrame {
@@ -148,7 +148,7 @@ export class SparkSession {
   }
 
   /** @ignore @private */
-  planFromRelationBuilder(f: (builder: RelationBuilder) => void): b.Plan {
+  planFromRelationBuilder(f: (builder: RelationBuilder) => void): LogicalPlan {
     const withRelationCommonFunc = (builder: RelationBuilder) => {
       builder.withRelationCommon(this.newRelationCommon());
       f(builder);
@@ -156,17 +156,17 @@ export class SparkSession {
     return new PlanBuilder().withRelationBuilder(withRelationCommonFunc).build();
   }
 
-  planFromRelation(relation: r.Relation): b.Plan {
+  planFromRelation(relation: r.Relation): LogicalPlan {
     return new PlanBuilder().withRelation(relation).build();
   }
 
   /** @ignore @private */
-  planFromCommandBuilder(f: (builder: CommandBuilder) => void): b.Plan {
+  planFromCommandBuilder(f: (builder: CommandBuilder) => void): LogicalPlan {
     return new PlanBuilder().withCommandBuilder(f).build();
   }
 
   /** @ignore @private */
-  planFromCommand(cmd: cmd.Command): b.Plan {
+  planFromCommand(cmd: cmd.Command): LogicalPlan {
     return new PlanBuilder().withCommand(cmd).build();
   }
   

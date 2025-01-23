@@ -21,6 +21,7 @@ import { RelationBuilder } from "./RelationBuilder";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 import { Command } from "../../../../../gen/spark/connect/commands_pb";
 import { CommandBuilder } from "./CommandBuilder";
+import { LogicalPlan } from "./LogicalPlan";
 
 export class PlanBuilder {
   private plan: Plan = create(PlanSchema, {});
@@ -45,7 +46,7 @@ export class PlanBuilder {
     this.plan.opType = { case: "command", value: command };
     return this;
   }
-  build(): Plan {
-    return this.plan;
+  build(): LogicalPlan {
+    return new LogicalPlan(this.plan);
   }
 }

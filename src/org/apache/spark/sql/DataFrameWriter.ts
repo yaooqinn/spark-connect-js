@@ -347,9 +347,7 @@ export class DataFrameWriter {
 
   private executeWriteOperation(f: (op: c.WriteOperation) => void): Promise<ExecutePlanResponseHandler[]> {
     const write = create(c.WriteOperationSchema, {})
-    if (this.df.plan.opType.case === "root") {
-      write.input = this.df.plan.opType.value;
-    }
+    write.input = this.df.plan.relation
     f(write);
     write.mode = this.mode_;
     if (this.source_) {

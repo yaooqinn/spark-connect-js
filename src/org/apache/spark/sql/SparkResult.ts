@@ -109,7 +109,7 @@ export class SparkResult {
               but received arrow batch starting at offset ${arrowBatch.startOffset}`);
           }
         }
-        if (table.numRows !== Number(arrowBatch.rowCount)) {
+        if (table.numRows !== Number(arrowBatch.rowCount) && table.numRows !== 0 && table.schema.fields.length > 0) {
           throw new Error(`Expected ${arrowBatch.rowCount} rows in arrow batch but got ${table.numRows}.`);
         }
 

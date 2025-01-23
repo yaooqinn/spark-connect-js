@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-import { bigintToDecimalBigNum, DecimalBigNumToNumber, getAsPlainJS } from '../../../../../src/org/apache/spark/sql/arrow/ArrowUtils';
-import { DataFrame } from '../../../../../src/org/apache/spark/sql/DataFrame';
+import { Column } from '../../../../../src/org/apache/spark/sql/Column';
 import { AnalyzePlanRequestBuilder } from '../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
-import { StructType } from '../../../../../src/org/apache/spark/sql/types/StructType';
 import { StorageLevel } from '../../../../../src/org/apache/spark/storage/StorageLevel';
 import { sharedSpark, timeoutOrSatisfied } from '../../../../helpers';
 
@@ -71,7 +69,7 @@ test("toDF api", async () => {
 test("explain api", async () => {
   const spark = await sharedSpark;
   await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-    return df.explain0(b => b.withExplain(df.plan)).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
       return df.explain().then(() => {});
@@ -79,7 +77,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, 'simple')).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, 'simple')).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
       return df.explain("simple").then(() => {});
@@ -87,7 +85,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, "extended")).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, "extended")).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain).toContain("== Analyzed Logical Plan ==");
       expect(explain).toContain("== Optimized Logical Plan ==");
@@ -97,14 +95,14 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, "codegen")).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, "codegen")).then(explain => {
       expect(explain).toContain("WholeStageCodegen");
       return df.explain("codegen").then(() => {});
     });
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, "cost")).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, "cost")).then(explain => {
       expect(explain).toContain("== Optimized Logical Plan ==");
       expect(explain).toContain("Statistics(sizeInBytes=");
       return df.explain("cost").then(() => {});
@@ -112,7 +110,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, "formatted")).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, "formatted")).then(explain => {
       expect(explain).toContain("Arguments");
       expect(explain).toContain("== Physical Plan ==");
       return df.explain("formatted").then(() => {});
@@ -120,7 +118,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, false)).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, false)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain.includes("== Analyzed Logical Plan ==")).toBe(false);
       return df.explain(false).then(() => {});
@@ -128,7 +126,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    return df.explain0(b => b.withExplain(df.plan, true)).then(explain => {
+    return df.explain0(b => b.withExplain(df.plan.plan, true)).then(explain => {
       expect(explain).toContain("== Physical Plan ==");
       expect(explain).toContain("== Analyzed Logical Plan ==");
       return df.explain(true).then(() => {});
@@ -136,7 +134,7 @@ test("explain api", async () => {
   }));
 
   await timeoutOrSatisfied(spark.sql("SHOW TABLES").then(df => {
-    expect(() => new AnalyzePlanRequestBuilder().withExplain(df.plan, 'invalid')).toThrow('invalid');
+    expect(() => new AnalyzePlanRequestBuilder().withExplain(df.plan.plan, 'invalid')).toThrow('invalid');
   }));
 });
 
@@ -144,7 +142,7 @@ test("printSchema api", async () => {
   const spark = await sharedSpark;
   [-1, 0, 1].forEach(async level => {
     await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(df => {
-      return df.printSchema0(b => b.withTreeString(df.plan, level)).then(schema => {
+      return df.printSchema0(b => b.withTreeString(df.plan.plan, level)).then(schema => {
         expect(schema).toContain("a: int");
       });
     }));
@@ -280,4 +278,31 @@ test("selectExpr", async () => {
       expect(schema.fields[0].dataType).toBe(DataTypes.IntegerType);
     });
   }));
+});
+
+test("select", async () => {
+  const spark = await sharedSpark;
+  const df = await spark.sql("SELECT 1 + 1 as a, 'spark' as b, named_struct('c', 3, 'd', 4) as c");
+  const isEmpty = await df.select().isEmpty();
+  expect(isEmpty).toBe(true);
+  const schema = await df.select().schema();
+  expect(schema.fields.length).toBe(0);
+  const row = await df.select("a").head();
+  expect(row[0]).toBe(2);
+  const row1 = await df.select(new Column("b")).head()
+  expect(row1[0]).toBe("spark");
+  const row2 = await df.select("a", "b").head();
+  expect(row2[0]).toBe(2);
+  expect(row2[1]).toBe("spark");
+  const row3 = await df.select(new Column("a"), new Column("b")).head();
+  expect(row3[0]).toBe(2);
+  expect(row3[1]).toBe("spark");
+  const row4 = await df.select("*").head();
+  expect(row4[0]).toBe(2);
+  expect(row4[1]).toBe("spark");
+  expect(row4[2].c).toBe(3);
+  expect(row4[2].d).toBe(4);
+  const row5 = await df.select("c.*").head();
+  expect(row5[0]).toBe(3);
+  expect(row5[1]).toBe(4);
 });

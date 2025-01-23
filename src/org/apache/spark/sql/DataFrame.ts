@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-import * as b from '../../../../gen/spark/connect/base_pb';
-import * as r from '../../../../gen/spark/connect/relations_pb';
 import { DataFrameWriter } from './DataFrameWriter';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
@@ -28,22 +26,24 @@ import { AnalyzePlanResponseHandler } from './proto/AnalyzePlanResponeHandler';
 import { RelationBuilder } from './proto/RelationBuilder';
 import { StorageLevel } from '../storage/StorageLevel';
 import { ExpressionBuilder } from './proto/expression/ExpressionBuilder';
+import { LogicalPlan } from './proto/LogicalPlan';
+import { Column } from './Column';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
 
-  constructor(public spark: SparkSession, public plan: b.Plan) {}
+  constructor(public readonly spark: SparkSession, public readonly plan: LogicalPlan) {}
 
   toDF(...cols: string[]): DataFrame {
     if (cols.length === 0) {
       return this;
     } else {
-      return this.toNewDataFrame(b => b.withToDf(cols, this.getPlanRelation()));
+      return this.toNewDataFrame(b => b.withToDf(cols, this.plan.relation));
     }
   }
 
   to(schema: StructType): DataFrame {
-    return this.toNewDataFrame(b => b.withToSchema(schema, this.getPlanRelation()));
+    return this.toNewDataFrame(b => b.withToSchema(schema, this.plan.relation));
   }
 
   /**
@@ -53,14 +53,14 @@ export class DataFrame {
     if (this.cachedSchema_) {
       return this.cachedSchema_;
     }
-    return this.analyze(b => b.setSchema(this.plan)).then(async resp => {
+    return this.analyze(b => b.setSchema(this.plan.plan)).then(async resp => {
       this.cachedSchema_ = DataTypes.fromProtoType(resp.schema) as StructType;
       return this.cachedSchema_;
     });
   }
 
   async printSchema(level: number = 0): Promise<void> {
-    return this.printSchema0(b => b.withTreeString(this.plan, level)).then(console.log);
+    return this.printSchema0(b => b.withTreeString(this.plan.plan, level)).then(console.log);
   }
   /** @ignore */
   async printSchema0(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<string> {
@@ -71,7 +71,7 @@ export class DataFrame {
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
-    return this.explain0(b => b.withExplain(this.plan, mode)).then(console.log);
+    return this.explain0(b => b.withExplain(this.plan.plan, mode)).then(console.log);
   }
   /** @ignore */
   async explain0(f: (builder: AnalyzePlanRequestBuilder) => void): Promise<string> {
@@ -91,11 +91,11 @@ export class DataFrame {
   }
 
   async isLocal(): Promise<boolean> {
-    return this.analyze(b => b.withIsLocal(this.plan)).then(r => r.isLocal);
+    return this.analyze(b => b.withIsLocal(this.plan.plan)).then(r => r.isLocal);
   }
 
   async isStreaming(): Promise<boolean> {
-    return this.analyze(b => b.withIsStreaming(this.plan)).then(r => r.isStreaming);
+    return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
   async checkpoint(): Promise<DataFrame>;
@@ -114,15 +114,15 @@ export class DataFrame {
   }
 
   async inputFiles(): Promise<string[]> {
-    return this.analyze(b => b.withInputFiles(this.plan)).then(r => r.inputFiles);
+    return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
   }
 
   async sameSemantics(other: DataFrame): Promise<boolean> {
-    return this.analyze(b => b.withSameSemantics(this.plan, other.plan)).then(r => r.sameSemantics);
+    return this.analyze(b => b.withSameSemantics(this.plan.plan, other.plan.plan)).then(r => r.sameSemantics);
   }
 
   async semanticHash(): Promise<number> {
-    return this.analyze(b => b.withSemanticHash(this.plan)).then(r => r.semanticHash);
+    return this.analyze(b => b.withSemanticHash(this.plan.plan)).then(r => r.semanticHash);
   }
 
   /**
@@ -136,7 +136,7 @@ export class DataFrame {
    */
   async persist(newLevel: StorageLevel): Promise<DataFrame>;
   async persist(newLevel?: StorageLevel): Promise<DataFrame> {
-    return this.analyze(b => b.withPersist(this.getPlanRelation(), newLevel)).then(() => this);
+    return this.analyze(b => b.withPersist(this.plan.relation, newLevel)).then(() => this);
   }
   /**
    * Persist this DataFrame with the default storage level (`MEMORY_AND_DISK`).
@@ -153,14 +153,14 @@ export class DataFrame {
    *   Whether to block until all blocks are deleted.
    */
   async unpersist(blocking: boolean = false): Promise<DataFrame> {
-    return this.analyze(b => b.withUnpersist(this.getPlanRelation(), blocking)).then(() => this);
+    return this.analyze(b => b.withUnpersist(this.plan.relation, blocking)).then(() => this);
   }
 
   /**
    * Get the DataFrame's current storage level, or StorageLevel.NONE if not persisted.
    */
   async storageLevel(): Promise<StorageLevel> {
-    return this.analyze(b => b.withGetStorageLevel(this.getPlanRelation())).then(r => r.getStorageLevel);
+    return this.analyze(b => b.withGetStorageLevel(this.plan.relation)).then(r => r.getStorageLevel);
   }
 
   get write(): DataFrameWriter {
@@ -174,7 +174,7 @@ export class DataFrame {
   };
 
   limit(n: number): DataFrame {
-    return this.toNewDataFrame(b => b.withLimit(n, this.getPlanRelation()));
+    return this.toNewDataFrame(b => b.withLimit(n, this.plan.relation));
   }
 
   async head(): Promise<Row>;
@@ -194,11 +194,11 @@ export class DataFrame {
   };
 
   offset(n: number): DataFrame {
-    return this.toNewDataFrame(b => b.withOffset(n, this.getPlanRelation()));
+    return this.toNewDataFrame(b => b.withOffset(n, this.plan.relation));
   }
 
   tail(n: number): Promise<Row[]> {
-    return this.toNewDataFrame(b => b.withTail(n, this.getPlanRelation())).collect();
+    return this.toNewDataFrame(b => b.withTail(n, this.plan.relation)).collect();
   }
 
   /**
@@ -214,46 +214,43 @@ export class DataFrame {
   async show(numRows: number = 20, truncate: boolean | number = true, vertical = false): Promise<void> {
     const truncateValue: number = typeof truncate === "number" ? truncate : (truncate ? 20 : 0);
     const plan = this.spark.planFromRelationBuilder(builder => {
-      builder.withShowString(numRows, truncateValue, vertical, this.getPlanRelation());
+      builder.withShowString(numRows, truncateValue, vertical, this.plan.relation);
     });
     return this.withResult(res => {
       console.log(res.toArray()[0].getString(0));
     }, plan);
   };
 
-   /**
+  select(...cols: string[]): DataFrame;
+  select(...cols: Column[]): DataFrame;
+  select(...cols: string[] | Column[]): DataFrame {
+    const exprs = cols.map(col => typeof col === "string" ? new Column(col) : col ).map(col => col.expr);
+    return this.toNewDataFrame(b => b.withProject(exprs, this.plan.relation));
+  }
+
+  /**
    * Selects a set of SQL expressions. This is a variant of `select` that accepts SQL expressions.
    *
    * {{{
    *   // The following are equivalent:
-   *   ds.selectExpr("colA", "colB as newName", "abs(colC)")
-   *   ds.select(expr("colA"), expr("colB as newName"), expr("abs(colC)"))
+   *   df.selectExpr("colA", "colB as newName", "abs(colC)")
+   *   df.select(expr("colA"), expr("colB as newName"), expr("abs(colC)"))
+   *   // TODO: support expr(..) function
    * }}}
    *
-   * @group untypedrel
-   * @since 2.0.0
    */
   selectExpr(...cols: string[]): DataFrame {
-    const exprs = cols.map(expr => new ExpressionBuilder().withExpressionString(expr).build());
-    return this.toNewDataFrame(b => b.withProject(exprs, this.getPlanRelation()));
+    return this.select(...cols);
   }
 
-  private async collectResult(plan: b.Plan = this.plan): Promise<SparkResult> {
-    return this.spark.client.execute(plan).then(resps => {
+  private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
+    return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());
     });
   }
 
-  private async withResult<E>(func: (result: SparkResult) => E, plan: b.Plan = this.plan): Promise<E> {
+  private async withResult<E>(func: (result: SparkResult) => E, plan: LogicalPlan = this.plan): Promise<E> {
     return this.collectResult(plan).then(func);
-  }
-
-  private getPlanRelation(): r.Relation {
-    if (this.plan.opType.case === "root") {
-      return this.plan.opType.value as r.Relation;
-    } else {
-      throw new Error("Plan does not contain a relation");
-    }
   }
 
   private toNewDataFrame(f: (builder: RelationBuilder) => void): DataFrame {

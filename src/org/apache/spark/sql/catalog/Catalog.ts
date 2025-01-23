@@ -60,7 +60,7 @@ export class Catalog {
    */
   async setCurrentDatabase(dbName: string): Promise<void> {
     const plan = this.spark.planFromRelationBuilder(b => b.withCatalogBuilder(c => c.withSetCurrentDatabase(dbName)));
-    return this.spark.client.execute(plan).then(() => {});
+    return this.spark.client.execute(plan.plan).then(() => {});
   }
   /**
    * Returns a list of databases (namespaces) available within the current catalog.
