@@ -25,7 +25,7 @@ import { sharedSpark, withTable, withTempDir } from "../../../../helpers";
 test("DataFrameWriter mode", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).mode_).toBe(c.WriteOperation_SaveMode.ERROR_IF_EXISTS);
   expect((writer.mode("append") as any).mode_).toBe(c.WriteOperation_SaveMode.APPEND);
   expect((writer.mode("errorifexists") as any).mode_).toBe(c.WriteOperation_SaveMode.ERROR_IF_EXISTS);
@@ -46,7 +46,7 @@ test("DataFrameWriter mode", async () => {
 test("DataFrameWriter format", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).source_).toBe(undefined);
   [ "parquet", "json", "csv", "jdbc", "unknown" ].forEach(format => {
     expect((writer.format(format) as any).source_).toBe(format);
@@ -57,7 +57,7 @@ test("DataFrameWriter format", async () => {
 test("DataFrameWriter option", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).extraOptions_.size).toBe(0);
   expect((writer.option("key", "value") as any).extraOptions_.size).toBe(1);
   expect((writer as any).extraOptions_.get("key")).toBe("value");
@@ -77,7 +77,7 @@ test("DataFrameWriter option", async () => {
 test("DataFrameWriter partitionBy", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).partitioningColumns_.length).toBe(0);
   expect((writer.partitionBy("col1") as any).partitioningColumns_).toStrictEqual(["col1"]);
   expect((writer.partitionBy("col1", "col2") as any).partitioningColumns_).toStrictEqual(["col1", "col2"]);
@@ -87,7 +87,7 @@ test("DataFrameWriter partitionBy", async () => {
 test("DataFrameWriter bucketBy", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).bucketColumnNames_.length).toBe(0);
   expect((writer as any).numBuckets_).toBe(undefined);
   expect((writer.bucketBy(10, "col1") as any).bucketColumnNames_).toStrictEqual(["col1"]);
@@ -101,7 +101,7 @@ test("DataFrameWriter bucketBy", async () => {
 test("DataFrameWriter sortBy", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  const writer = df.write()
+  const writer = df.write
   expect((writer as any).sortColumnNames_.length).toBe(0);
   expect((writer.sortBy("col1").bucketBy(2, "col1") as any).sortColumnNames_).toStrictEqual(["col1"]);
   expect((writer.sortBy("col1", "col2").bucketBy(2, "col1") as any).sortColumnNames_).toStrictEqual(["col1", "col2"]);
@@ -111,23 +111,23 @@ test("DataFrameWriter sortBy", async () => {
 test("DataFrameWriter validatePartitioning", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame
-  expect(() => df.write().clusterBy("col1").partitionBy("col2")).toThrow("[SPECIFY_CLUSTER_BY_WITH_PARTITIONED_BY_IS_NOT_ALLOWED]");
-  expect(() => df.write().partitionBy("col1").clusterBy("col2")).toThrow("[SPECIFY_CLUSTER_BY_WITH_PARTITIONED_BY_IS_NOT_ALLOWED]");
+  expect(() => df.write.clusterBy("col1").partitionBy("col2")).toThrow("[SPECIFY_CLUSTER_BY_WITH_PARTITIONED_BY_IS_NOT_ALLOWED]");
+  expect(() => df.write.partitionBy("col1").clusterBy("col2")).toThrow("[SPECIFY_CLUSTER_BY_WITH_PARTITIONED_BY_IS_NOT_ALLOWED]");
   
   // sort by is validate in later stages
   [ undefined, "dummy" ].forEach(path => {
-    df.write().sortBy("col1").save(path).catch(e => {
+    df.write.sortBy("col1").save(path).catch(e => {
       expect((e as AnalysisException).condition).toBe("SORT_BY_WITHOUT_BUCKETING");
     });
   });
-  expect(() => df.write().sortBy("col2").clusterBy("col1")).toThrow("[SORT_BY_WITHOUT_BUCKETING]");
+  expect(() => df.write.sortBy("col2").clusterBy("col1")).toThrow("[SORT_BY_WITHOUT_BUCKETING]");
 });
 
 test("DataFrameWriter save", async () => {
   const spark = await sharedSpark;
   const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200) DISTRIBUTE BY id % 100");
   return withTable(spark, "people", async () => {
-    await df.write().format("parquet").saveAsTable("people");
+    await df.write.format("parquet").saveAsTable("people");
     expect.assertions(12);
     spark.table("people").schema().then(schema => {
       expect(schema.fields.length).toBe(2)
@@ -136,7 +136,7 @@ test("DataFrameWriter save", async () => {
       expect(schema.fields[1].name).toBe("name")
       expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
     });
-    await df.write().mode("overwrite").parquet("people");
+    await df.write.mode("overwrite").parquet("people");
     return spark.table("people").schema().then(schema => {
       expect(schema.fields.length).toBe(2)
       expect(schema.fields[0].name).toBe("id")
@@ -152,7 +152,7 @@ test("DataFrameWriter insertInto", async () => {
     return withTable(spark, "people", async () => {
       return spark.sql("CREATE TABLE people (id LONG, name STRING) USING parquet").then(() => {
         return spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200)").then(df => {
-          return df.write().mode("append").insertInto("people").then(() => {
+          return df.write.mode("append").insertInto("people").then(() => {
             expect.assertions(5);
             return spark.table("people").schema().then(schema => {
               expect(schema.fields.length).toBe(2)
@@ -172,11 +172,11 @@ test("DataFrameWriter jdbc", async () => {
   expect.assertions(3);
   return sharedSpark.then(async spark => {
     const df = spark.emptyDataFrame
-    expect(() => df.write().partitionBy("col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support partitioning.");
-    expect(() => df.write().bucketBy(2, "col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support bucketBy right now.");
-    expect(() => df.write().clusterBy("col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support clustering.");
+    expect(() => df.write.partitionBy("col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support partitioning.");
+    expect(() => df.write.bucketBy(2, "col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support bucketBy right now.");
+    expect(() => df.write.clusterBy("col1").jdbc("jdbc:postgresql:dbserver", "people", {})).toThrow("does not support clustering.");
     expect.assertions(3 + 1);
-    return df.write().mode("overwrite").jdbc("jdbc:postgresql:dbserver", "people", {}).catch(e => {
+    return df.write.mode("overwrite").jdbc("jdbc:postgresql:dbserver", "people", {}).catch(e => {
       expect((e as Error).message).toMatch("No suitable driver");
     });
   })
@@ -187,7 +187,7 @@ test("DataFrameWriter parquet", async () => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
         expect.assertions(6);
-        return df.write()
+        return df.write
           .mode("overwrite")
           .parquet(dir)
           .then(async resps => {
@@ -209,7 +209,7 @@ test("DataFrameWriter orc", async () => {
   sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
-        return df.write()
+        return df.write
           .mode("overwrite")
           .orc(dir)
           .then(async resps => {
@@ -232,7 +232,7 @@ test("DataFrameWriter json", async () => {
   return sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
-        return df.write()
+        return df.write
           .mode("overwrite")
           .json(dir)
           .then(async resps => {
@@ -254,7 +254,7 @@ test("DataFrameWriter csv", async () => {
   return sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
-        return df.write()
+        return df.write
           .mode("overwrite")
           .option("header", true)
           .csv(dir)
@@ -277,7 +277,7 @@ test("DataFrameWriter xml", async () => {
   return sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
-        return df.write()
+        return df.write
           .mode("overwrite")
           .option('rootTag', 'rows')
           .option('rowTag', 'row')
@@ -305,7 +305,7 @@ test("DataFrameWriter text", async () => {
   return sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select '1' as a").then(async df => {
-        return df.write()
+        return df.write
           .mode("overwrite")
           .text(dir)
           .then(async resps => {

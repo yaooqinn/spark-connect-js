@@ -25,7 +25,7 @@ async function catalogExample() {
   const tableName2 = "example_table2";
   const tableName3 = "example_table3";
   const tableName4 = "example_table4";
-  const spark = await SparkSession.builder().appName().getOrCreate();
+  const spark = await SparkSession.builder().appName("CatalogExample").getOrCreate();
   try {
     await spark.sql(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
     // Catalog Database APIs

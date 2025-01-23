@@ -16,18 +16,24 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { LimitSchema, LocalRelation, OffsetSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { CatalogBuilder } from "./CatalogBuilder";
+import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
   constructor() {}
   withRelationCommon(common: RelationCommon) {
     this.relation.common = common;
+    return this;
+  }
+  withProject(expressions: Expression[], input?: Relation) {
+    const project = create(ProjectSchema, { input: input, expressions: expressions });
+    this.relation.relType = { case: "project", value: project }
     return this;
   }
   withLocalRelation(localRelation: LocalRelation) {

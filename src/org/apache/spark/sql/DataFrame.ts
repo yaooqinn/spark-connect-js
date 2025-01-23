@@ -27,6 +27,7 @@ import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
 import { AnalyzePlanResponseHandler } from './proto/AnalyzePlanResponeHandler';
 import { RelationBuilder } from './proto/RelationBuilder';
 import { StorageLevel } from '../storage/StorageLevel';
+import { ExpressionBuilder } from './proto/expression/ExpressionBuilder';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -162,7 +163,7 @@ export class DataFrame {
     return this.analyze(b => b.withGetStorageLevel(this.getPlanRelation())).then(r => r.getStorageLevel);
   }
 
-  write(): DataFrameWriter {
+  get write(): DataFrameWriter {
     return new DataFrameWriter(this);
   }
 
@@ -215,11 +216,27 @@ export class DataFrame {
     const plan = this.spark.planFromRelationBuilder(builder => {
       builder.withShowString(numRows, truncateValue, vertical, this.getPlanRelation());
     });
-
     return this.withResult(res => {
       console.log(res.toArray()[0].getString(0));
     }, plan);
   };
+
+   /**
+   * Selects a set of SQL expressions. This is a variant of `select` that accepts SQL expressions.
+   *
+   * {{{
+   *   // The following are equivalent:
+   *   ds.selectExpr("colA", "colB as newName", "abs(colC)")
+   *   ds.select(expr("colA"), expr("colB as newName"), expr("abs(colC)"))
+   * }}}
+   *
+   * @group untypedrel
+   * @since 2.0.0
+   */
+  selectExpr(...cols: string[]): DataFrame {
+    const exprs = cols.map(expr => new ExpressionBuilder().withExpressionString(expr).build());
+    return this.toNewDataFrame(b => b.withProject(exprs, this.getPlanRelation()));
+  }
 
   private async collectResult(plan: b.Plan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan).then(resps => {

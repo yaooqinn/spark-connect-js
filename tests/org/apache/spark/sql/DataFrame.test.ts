@@ -270,3 +270,14 @@ test("persist", async () => {
     })
   }));
 });
+
+test("selectExpr", async () => {
+  const spark = await sharedSpark;
+  await timeoutOrSatisfied(spark.sql("SELECT 1 + 1 as a").then(async df => {
+    return df.selectExpr("a").schema().then(schema => {
+      expect(schema.fields.length).toBe(1);
+      expect(schema.fields[0].name).toBe("a");
+      expect(schema.fields[0].dataType).toBe(DataTypes.IntegerType);
+    });
+  }));
+});
