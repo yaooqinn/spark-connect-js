@@ -306,3 +306,36 @@ test("select", async () => {
   expect(row5[0]).toBe(3);
   expect(row5[1]).toBe(4);
 });
+
+test("col", async () => {
+  const spark = await sharedSpark;
+  const df = await spark.sql("SELECT 1 + 1 as a, 'spark' as b, named_struct('c', 3, 'd', 4) as c");
+  const row = await df.select(df.col("a")).head();
+  expect(row[0]).toBe(2);
+  const row1 = await df.select(df.col("b")).head()
+  expect(row1[0]).toBe("spark");
+  const row2 = await df.select(df.col("a"), df.col("b")).head();
+  expect(row2[0]).toBe(2);
+  expect(row2[1]).toBe("spark");
+  const row3 = await df.select(df.col("a"), df.col("b")).head();
+  expect(row3[0]).toBe(2);
+  expect(row3[1]).toBe("spark");
+  const row4 = await df.select(df.col("*")).head();
+  expect(row4[0]).toBe(2);
+  expect(row4[1]).toBe("spark");
+  expect(row4[2].c).toBe(3);
+  expect(row4[2].d).toBe(4);
+  const row5 = await df.select(df.col("c.d")).head();
+  expect(row5[0]).toBe(4);
+});
+
+test("colRegex", async () => {
+  const spark = await sharedSpark;
+  const df = await spark.sql("SELECT 1 + 1 as aba, 'spark' as abb, named_struct('c', 3, 'd', 4) as abc");
+  const row = await df.select(df.colRegex("`a.*`")).head();
+  expect(row[0]).toBe(2);
+  expect(row[1]).toBe("spark");
+  expect(row[2].c).toBe(3);
+  expect(row[2].d).toBe(4);
+});
+

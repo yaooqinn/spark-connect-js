@@ -106,7 +106,7 @@ export class ExpressionBuilder {
     return this;
   }
 
-  withExpression_UnresolvedRegex(colName: string, planId?: bigint) {
+  withUnresolvedRegex(colName: string, planId?: bigint) {
     const unresolvedRegex = create(Expression_UnresolvedRegexSchema, { colName: colName, planId: planId});
     this.expression.exprType = { case: "unresolvedRegex", value: unresolvedRegex };
     return this;

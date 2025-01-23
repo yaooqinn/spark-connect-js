@@ -25,7 +25,6 @@ import { AnalyzePlanRequestBuilder } from './proto/AnalyzePlanRequestBuilder';
 import { AnalyzePlanResponseHandler } from './proto/AnalyzePlanResponeHandler';
 import { RelationBuilder } from './proto/RelationBuilder';
 import { StorageLevel } from '../storage/StorageLevel';
-import { ExpressionBuilder } from './proto/expression/ExpressionBuilder';
 import { LogicalPlan } from './proto/LogicalPlan';
 import { Column } from './Column';
 
@@ -241,6 +240,42 @@ export class DataFrame {
    */
   selectExpr(...cols: string[]): DataFrame {
     return this.select(...cols);
+  }
+
+  /**
+   * Selects column based on the column name and returns it as a [[org.apache.spark.sql.Column]].
+   *
+   * @note
+   *   The column name can also reference to a nested column like `a.b`.
+   * @param colName string column name
+   * @return {Column} Column
+   */
+  col(colName: string): Column {
+    return new Column(colName, this.plan.planId);
+  }
+
+  /**
+   * Selects column based on the column name specified as a regex and returns it as
+   * [[org.apache.spark.sql.Column]].
+   * @param {string} colName string column name specified as a regex
+   * @return {Column} Column
+   */
+  colRegex(colName: string): Column {
+    return new Column(b => b.withUnresolvedRegex(colName, this.plan.planId));
+  }
+
+  /**
+   * Selects a metadata column based on its logical column name, and returns it as a
+   * [[org.apache.spark.sql.Column]].
+   *
+   * A metadata column can be accessed this way even if the underlying data source defines a data
+   * column with a conflicting name.
+   *
+   * @param colName string column name
+   * @return {Column} Column
+   */
+  metadataColumn(colName: string): Column {
+    return new Column(b => b.withUnresolvedAttribute(colName, this.plan.planId, true));
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
