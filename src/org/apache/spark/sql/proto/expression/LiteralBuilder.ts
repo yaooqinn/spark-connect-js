@@ -50,8 +50,8 @@ export class LiteralBuilder {
     return this;
   }
 
-  withLong(value: bigint): LiteralBuilder {
-    this.literal.literalType = { case: 'long', value: value };
+  withLong(value: number | bigint): LiteralBuilder {
+    this.literal.literalType = { case: 'long', value: typeof value === 'number' ? BigInt(value) : value };
     return this;
   }
 
@@ -86,7 +86,10 @@ export class LiteralBuilder {
     return this;
   }
 
-  withTimestamp(value: bigint): LiteralBuilder {
+  withTimestamp(value: bigint | number): LiteralBuilder {
+    if (typeof value === 'number') {
+      value = BigInt(value);
+    }
     this.literal.literalType = { case: 'timestamp', value: value };
     return this;
   }
@@ -136,7 +139,7 @@ export class LiteralBuilder {
     return this;
   }
 
-  withStuct(fields: Expression_Literal[], dataType?: DataType): LiteralBuilder {
+  withStruct(fields: Expression_Literal[], dataType?: DataType): LiteralBuilder {
     const dt = dataType ? DataTypes.toProtoType(dataType) : undefined;
     const struct = create(Expression_Literal_StructSchema, { elements: fields, structType: dt });
     this.literal.literalType = { case: 'struct', value: struct };

@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { FilterSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
@@ -34,6 +34,11 @@ export class RelationBuilder {
   withProject(expressions: Expression[], input?: Relation) {
     const project = create(ProjectSchema, { input: input, expressions: expressions });
     this.relation.relType = { case: "project", value: project }
+    return this;
+  }
+  withFilter(condition: Expression, input?: Relation) {
+    const filter = create(FilterSchema, { input: input, condition: condition });
+    this.relation.relType = { case: "filter", value: filter }
     return this;
   }
   withLocalRelation(localRelation: LocalRelation) {

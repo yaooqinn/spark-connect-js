@@ -39,7 +39,60 @@ export class Column {
     }
   }
 
+  asFunction(name: string, ...inputs: Column[]): Column {
+    return Column.fn(name, this, false, ...inputs);
+  }
+
+  static fn(name: string, column: string | Column, isDistinct: boolean, ...inputs: Column[]): Column {
+    const args: Column[] = [];
+    if (typeof column === "string") {
+      args.push(new Column(column));
+    } else {
+      args.push(column);
+    }
+    args.push(...inputs);
+    return new Column(b => b.withUnresolvedFunction(name, args.map(i => i.expr), isDistinct, false));
+  }
+
   get expr(): Expression {
     return this.expr_;
+  }
+
+  /**
+   * True if the current expression is NaN.
+   *
+   * @group expr_ops
+   * @since 1.5.0
+   */
+  get isNaN(): Column {
+    return Column.fn("isNaN", this, false);
+  }
+
+  get isNull(): Column {
+    return Column.fn("isNull", this, false);
+  }
+
+  get asc(): Column {
+    return this.asc_nulls_first;
+  }
+
+  get asc_nulls_first(): Column {
+    return new Column(b => b.withSortOrder(this.expr, true, true));
+  }
+
+  get asc_nulls_last(): Column {
+    return new Column(b => b.withSortOrder(this.expr, true, false));
+  }
+
+  get desc(): Column {
+    return this.desc_nulls_first;
+  }
+
+  get desc_nulls_first(): Column {
+    return new Column(b => b.withSortOrder(this.expr, false, true));
+  }
+
+  get desc_nulls_last(): Column {
+    return new Column(b => b.withSortOrder(this.expr, false, false));
   }
 }

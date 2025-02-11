@@ -21,4 +21,9 @@ export function mapToIndexSignature<V>(map: Map<string, V>): { [key: string]: V 
     obj[key] = value;
   }
   return obj;
-}
+};
+
+export function randomInt(): number {
+  const rand = Math.random();
+  return Math.floor(rand * Number.MAX_SAFE_INTEGER + Number.MIN_SAFE_INTEGER - rand * Number.MIN_SAFE_INTEGER + rand);
+};

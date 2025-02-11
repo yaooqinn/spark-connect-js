@@ -27,6 +27,7 @@ import { RelationBuilder } from './proto/RelationBuilder';
 import { StorageLevel } from '../storage/StorageLevel';
 import { LogicalPlan } from './proto/LogicalPlan';
 import { Column } from './Column';
+import { expr } from './functions';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -278,6 +279,22 @@ export class DataFrame {
     return new Column(b => b.withUnresolvedAttribute(colName, this.plan.planId, true));
   }
 
+  filter(condition: Column): DataFrame;
+  filter(conditionExpr: string): DataFrame;
+  filter(condition: Column | string): DataFrame {
+    const cond = typeof condition === "string" ? expr(condition) : condition;
+    return this.toNewDataFrame(b => b.withFilter(cond.expr, this.plan.relation));
+  }
+
+  where(condition: Column): DataFrame;
+  where(conditionExpr: string): DataFrame;
+  where(condition: Column | string): DataFrame {
+    if (typeof condition === "string") {
+      return this.filter(condition);
+    } else {
+      return this.filter(condition);
+    }
+  }
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());
