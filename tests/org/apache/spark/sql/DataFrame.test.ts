@@ -339,3 +339,13 @@ test("colRegex", async () => {
   expect(row[2].d).toBe(4);
 });
 
+test("hint", async () => {
+  const spark = await sharedSpark;
+  const df = await spark.sql("SELECT * FROM range(1, 100, 1)");
+  await df.hint("rebalance", 2).schema().then(schema => {
+    expect(schema.fields.length).toBe(1);
+    expect(schema.fields[0].name).toBe("id");
+    expect(schema.fields[0].dataType).toBe(DataTypes.LongType);
+  });
+});
+

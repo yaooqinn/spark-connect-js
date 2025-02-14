@@ -295,6 +295,33 @@ export class DataFrame {
       return this.filter(condition);
     }
   }
+
+  /**
+   * Specifies some hint on the current DataFrame. As an example, the following code specifies that
+   * one of the plan can be broadcasted:
+   *
+   * {{{
+   *   df1.join(df2.hint("broadcast"))
+   * }}}
+   *
+   * the following code specifies that this dataset could be rebalanced with given number of
+   * partitions:
+   *
+   * {{{
+   *    df1.hint("rebalance", 10)
+   * }}}
+   *
+   * @param name
+   *   the name of the hint
+   * @param parameters
+   *   the parameters of the hint, all the parameters should be a `Column` or `Expression` or
+   *   could be converted into a `Literal`
+   * @group basic
+   */
+  hint(name: string, ...parameters: any[]): DataFrame {
+    return this.toNewDataFrame(b => b.withHint(name, parameters, this.plan.relation));
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());

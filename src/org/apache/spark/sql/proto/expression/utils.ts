@@ -71,14 +71,24 @@ export function pythonUDF(
   });
 }
 
-
 export function toLiteralBuilder(value: any): { builder: LiteralBuilder, dataType: DataType } {
   const builder = new LiteralBuilder();
   switch (typeof value) {
     case "string":
       return { builder: builder.withString(value), dataType: DataTypes.StringType };
     case "number":
-      return { builder: builder.withDouble(value), dataType: DataTypes.DoubleType };
+      // if (DataType.isByte(value)) {
+      //   return { builder: builder.withByte(value), dataType: DataTypes.ByteType };
+      // } else if (DataType.isShort(value)) {
+      //   return { builder: builder.withShort(value), dataType: DataTypes.ShortType };
+      // } else 
+      if (DataType.isInt32(value)) {
+        return { builder: builder.withInt(value), dataType: DataTypes.IntegerType };
+      } else if (DataType.isInt64(value)) {
+        return { builder: builder.withLong(value), dataType: DataTypes.LongType };
+      } else {
+        return { builder: builder.withDouble(value), dataType: DataTypes.DoubleType };
+      }
     case "boolean":
       return { builder: builder.withBoolean(value), dataType: DataTypes.BooleanType };
     case "bigint":

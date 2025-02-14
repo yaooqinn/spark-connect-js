@@ -41,6 +41,27 @@ export abstract class DataType {
   existsRecursively(f: (dt: DataType) => boolean): boolean {
     return f(this);
   }
+
+  static isByte(v: number): boolean {
+    return Number.isInteger(v) && v >= -128 && v <= 127;
+  }
+
+  static isShort(v: number): boolean {
+    return Number.isInteger(v) && v >= -32768 && v <= 32767;
+  }
+
+  static isInt32(v: number): boolean {
+    return Number.isInteger(v) && v >= -2147483648 && v <= 2147483647;
+  }
+
+  static isInt64(v: number): boolean {
+    return Number.isInteger(v);
+  }
+
+  static isFloat(v: number): boolean {
+    return Number.isFinite(v);
+  }
+
 }
 
 export abstract class AtomicType extends DataType {}

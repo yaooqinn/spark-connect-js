@@ -5,7 +5,6 @@ import { randomInt } from "./util/helpers";
 // TODOs:
 // 1. broadcast
 
-
 /**
  * Returns a [[Column]] based on the given column name.
  *

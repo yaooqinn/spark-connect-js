@@ -16,13 +16,14 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { FilterSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
+import { lit } from "../functions";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -116,6 +117,12 @@ export class RelationBuilder {
     f(catalogBuilder);
     this.withCatalog(catalogBuilder.build());
   }
+  withHint(name: string, parameters: any[], input?: Relation) {
+    const hint = create(HintSchema, { name: name, parameters: parameters.map(p => lit(p).expr), input: input });
+    this.relation.relType = { case: "hint", value: hint}
+    return this;
+  }
+
   build(): Relation {
     return this.relation;
   }
