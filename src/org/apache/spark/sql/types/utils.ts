@@ -21,22 +21,20 @@ import { VarcharType } from "./VarcharType";
 
 export function hasCharVarchar(dataType: DataType): boolean {
   return dataType.existsRecursively(dt => dt instanceof VarcharType || dt instanceof CharType);
-};
+}
 
 export function failIfHasCharVarchar(dataType: DataType): void {
   if (hasCharVarchar(dataType)) {
     throw new Error("Cannot have char/varchar type in nested data type");
   }
-};
+}
 
 export function quoteIdentifier(name: string): string {
   return "`" + name.replace("`", "``") + "`";
-};
+}
 
 const validIdentPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 export function quoteIfNeeded(part: string): string {
   return validIdentPattern.test(part) ? part : quoteIdentifier(part);
-};
-
-const TIMEZONE_OFFSET_MILLIS = new Date().getTimezoneOffset() * 60 * 1000; 
+}

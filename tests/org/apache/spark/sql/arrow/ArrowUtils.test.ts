@@ -63,6 +63,7 @@ test("decimal big num to number", () => {
   expect(() => bigNumToNumber(n)).toThrow("1".repeat(38));
   expect(() => bigNumToNumber(n, 10)).toThrow("1".repeat(28));
   expect(() => bigNumToNumber(n, 20)).toThrow("1".repeat(18));
+  /*eslint no-loss-of-precision: "off"*/
   expect(bigNumToNumber(n, 30)).toBeCloseTo(11111111.111111112);
   expect(bigNumToNumber(n, 35)).toBeCloseTo(111.11111111111112);
   expect(bigNumToNumber(n, 40)).toBeCloseTo(0.0011111111111111111);

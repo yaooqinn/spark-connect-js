@@ -31,7 +31,6 @@ type MetadataType = { [key: string]: any };
  * @param { MetadataType } an immutable map that stores the data
  * @since 1.0.0
  * @author  Kent Yao <yao@apache.org>
-
  */
 export class Metadata {
   metadata: MetadataType;
@@ -217,7 +216,7 @@ export class MetadataBuilder {
   }
 
   build(): Metadata {
-    let meta: { [key: string]: any } = {};
+    const meta: { [key: string]: any } = {};
     this.metadata.forEach((value: any, key: string) => {
       meta[key] = value;
     });

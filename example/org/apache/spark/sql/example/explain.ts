@@ -18,13 +18,11 @@
 import { SparkSession } from "../../../../../../src/org/apache/spark/sql/SparkSession"
 import { Float32, tableFromIPC, Type, vectorFromArray } from 'apache-arrow';
 import { SparkResult } from "../../../../../../src/org/apache/spark/sql/SparkResult";
-import { Encoders } from "../../../../../../src/org/apache/spark/sql/Encoders";
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 import { Database } from "../../../../../../src/org/apache/spark/sql/catalog/Database";
 
 const spark = await SparkSession.builder()
   .appName("example")
-  .master("local")
   .getOrCreate();
 
 // spark.sql("CREATE TABLE IF NOT EXISTS spark_connect_typecript(" +

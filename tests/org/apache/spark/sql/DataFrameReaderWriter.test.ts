@@ -22,6 +22,7 @@ import { AnalysisException } from "../../../../../src/org/apache/spark/sql/error
 import { DataTypes } from "../../../../../src/org/apache/spark/sql/types/DataTypes";
 import { sharedSpark, withTable, withTempDir } from "../../../../helpers";
 
+/*eslint @typescript-eslint/no-explicit-any : "off"*/
 test("DataFrameWriter mode", async () => {
   const spark = await sharedSpark;
   const df = spark.emptyDataFrame

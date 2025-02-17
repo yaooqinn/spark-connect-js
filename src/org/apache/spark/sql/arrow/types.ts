@@ -17,17 +17,17 @@
 
 import { Bool, DateDay, Decimal, Duration, Float32, Float64, Int16, Int32, Int64, Int8, Interval, IntervalUnit, LargeBinary, LargeUtf8, Null, TimestampMicrosecond, TimeUnit } from "apache-arrow";
 
-export const ARROW_NULL = new Null();
-export const ARROW_BOOL = new Bool();
-export const ARROW_INT8 = new Int8();
-export const ARROW_INT16 = new Int16();
-export const ARROW_INT32 = new Int32();
-export const ARROW_INT64 = new Int64();
-export const ARROW_FLOAT32 = new Float32();
-export const ARROW_FLOAT64 = new Float64();
-export const ARROW_UTF8 = new LargeUtf8();
-export const ARROW_BINARY = new LargeBinary();
-export const ARROW_DATE = new DateDay();
+export const ARROW_NULL = new Null()
+export const ARROW_BOOL = new Bool()
+export const ARROW_INT8 = new Int8()
+export const ARROW_INT16 = new Int16()
+export const ARROW_INT32 = new Int32()
+export const ARROW_INT64 = new Int64()
+export const ARROW_FLOAT32 = new Float32()
+export const ARROW_FLOAT64 = new Float64()
+export const ARROW_UTF8 = new LargeUtf8()
+export const ARROW_BINARY = new LargeBinary()
+export const ARROW_DATE = new DateDay()
 // Make TZ settable?
 export const ARROW_TIMESTAMP = new TimestampMicrosecond(new Intl.DateTimeFormat().resolvedOptions().timeZone)
 export const ARROW_TIMESTAMP_NTZ = new TimestampMicrosecond();

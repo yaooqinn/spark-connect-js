@@ -17,7 +17,7 @@
 
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 import { StorageLevel } from "../../../../../../src/org/apache/spark/storage/StorageLevel";
-import { sharedSpark, timeoutOrSatisfied, withDatabase, withTable } from "../../../../../helpers"
+import { sharedSpark, timeoutOrSatisfied, withDatabase } from "../../../../../helpers"
 
 test("current database", async () => {
   const catalog = await sharedSpark.then(spark => spark.catalog);
@@ -38,7 +38,7 @@ test("set current database", async () => {
   );
 
   await withDatabase(spark, "test_db", async () => {
-    const create = await spark.sql('CREATE DATABASE IF NOT EXISTS test_db')
+    await spark.sql('CREATE DATABASE IF NOT EXISTS test_db')
     return spark.catalog.currentDatabase().then((currentDatabase) => {
       expect(currentDatabase).toBe("default");
       return spark.catalog.setCurrentDatabase("test_db").then(async () => {

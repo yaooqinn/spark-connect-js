@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "npx jest"
+    "test": "npx jest",
+    "lint": "eslint src tests"
   },
   "keywords": [],
   "author": "",
@@ -12,12 +13,17 @@
   "devDependencies": {
     "@bufbuild/buf": "^1.47.2",
     "@bufbuild/protoc-gen-es": "^2.2.3",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.20.0",
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.14",
     "@types/tmp": "^0.2.6",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "eslint": "^9.20.1",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.3",

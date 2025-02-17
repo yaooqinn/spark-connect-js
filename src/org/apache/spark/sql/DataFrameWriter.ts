@@ -140,7 +140,7 @@ export class DataFrameWriter {
   save(path: string | undefined = undefined): Promise<ExecutePlanResponseHandler[]> {
     const setPath = (write: c.WriteOperation) => {
       if (path) {
-        write.saveType = { case: "path", value: path };
+        write.saveType = { case: "path", value: path }
       }
     }
     return this.executeWriteOperation(setPath);
@@ -165,7 +165,7 @@ export class DataFrameWriter {
           tableName: tableName,
           saveMethod: c.WriteOperation_SaveTable_TableSaveMethod.INSERT_INTO
         })
-      };
+      }
     }
     return this.executeWriteOperation(setTable);
   }
@@ -203,7 +203,7 @@ export class DataFrameWriter {
           tableName: tableName,
           saveMethod: c.WriteOperation_SaveTable_TableSaveMethod.SAVE_AS_TABLE
         })
-      };
+      }
     }
     return this.executeWriteOperation(setTable);
   }
@@ -358,13 +358,13 @@ export class DataFrameWriter {
     write.clusteringColumns = this.clusteringColumns_;
     if (this.numBuckets_) {
       write.bucketBy = create(c.WriteOperation_BucketBySchema, {
-        bucketColumnNames: this.bucketColumnNames_, numBuckets: this.numBuckets_ });;
+        bucketColumnNames: this.bucketColumnNames_, numBuckets: this.numBuckets_ });
     }
     write.options = this.extraOptions_.toIndexSignature();
 
     const writeCmd = create(c.CommandSchema, { commandType: { case: "writeOperation", value: write }});
     return this.df.spark.execute(writeCmd);
-  };
+  }
 
   private validatePartitioning(): void {
     if (this.clusteringColumns_.length > 0) {

@@ -20,11 +20,9 @@ import { DecimalType } from "./types/DecimalType";
 import { StructType } from "./types/StructType";
 import { TimestampType } from "./types/TimestampType";
 
-export type NamedRow = { [name: string]: any };
+export type NamedRow = { [name: string]: any }
 
-export interface Row {
-  [index: number]: any;
-  
+export interface IRow {
   size(): number;
   schema(): StructType;
   isNullAt(i: number): boolean;
@@ -45,7 +43,9 @@ export interface Row {
 }
 
 
-export class Row implements Row {
+export class Row implements IRow {
+  [index: number]: any;
+
   constructor(private schema_: StructType, data: NamedRow = {}) {
     schema_.fields.forEach((field, i) => {
       this[i] = data[field.name];

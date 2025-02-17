@@ -66,7 +66,7 @@ export class SparkSession {
     return this.version_ || "unknown";
   }
   
-  public get conf(): RuntimeConfig { return this.conf_; };
+  public get conf(): RuntimeConfig { return this.conf_; }
 
   public get emptyDataFrame(): DataFrame {
     return this.relationBuilderToDF(b => b.withLocalRelation(createLocalRelation()));
@@ -84,8 +84,8 @@ export class SparkSession {
     } else {
       // TODO: not quite sure what to do here
       return new DataFrame(this, this.planFromCommand(command));
-    };
-  };
+    }
+  }
 
   public get read(): DataFrameReader {
     return new DataFrameReader(this);
@@ -187,7 +187,7 @@ class SparkSessionBuilder {
   private _builder: ClientBuilder = new ClientBuilder();
   private _options: Map<string, string> = new Map();
   
-  constructor() {};
+  constructor() {}
 
   config(key: string, value: string): SparkSessionBuilder {
     this._options.set(key, value);
@@ -197,10 +197,6 @@ class SparkSessionBuilder {
   remote(connectionString: string = "sc://localhost"): SparkSessionBuilder {
     this._builder.connectionString(connectionString);
     return this;
-  }
-
-  master(master: string = "local[*]"): SparkSessionBuilder {
-    return this
   }
 
   appName(name: string = "Spark Connect TypeScript"): SparkSessionBuilder {

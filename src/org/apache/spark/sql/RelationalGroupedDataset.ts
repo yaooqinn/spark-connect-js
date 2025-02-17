@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-import { Aggregate_GroupingSets, Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
-import * as f  from "./functions";
+import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
 import { toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";

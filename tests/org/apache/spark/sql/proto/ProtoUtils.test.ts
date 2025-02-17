@@ -19,7 +19,6 @@ import { tableFromArrays, tableToIPC } from "apache-arrow";
 import { createLocalRelation, createLocalRelationFromArrowTable } from "../../../../../../src/org/apache/spark/sql/proto/ProtoUtils";
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 import { StructType } from "../../../../../../src/org/apache/spark/sql/types/StructType";
-import { tableToRows } from "../../../../../../src/org/apache/spark/sql/arrow/ArrowUtils";
 
 test("createLocalRelation from empty object", () => {
   const schema = DataTypes.createStructType([]);

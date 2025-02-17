@@ -24,15 +24,15 @@ export abstract class DataType {
   typeName(): string {
     // NOTE: do not call toString() here, as it may be overridden by subclasses
     return this.constructor.name.replace(/Type$/, "").replace(/UDT$/, "").toLowerCase();
-  };
+  }
 
-  simpleString(): string { return this.typeName(); };
+  simpleString(): string { return this.typeName(); }
 
-  catalogString(): string { return this.simpleString(); };
+  catalogString(): string { return this.simpleString(); }
 
   sql(): string {
     return this.simpleString().toUpperCase();
-  };
+  }
 
   toString(): string {
     return this.constructor.name;

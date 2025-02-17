@@ -164,7 +164,7 @@ export class Configuration {
   }
 
   get_user_context(): UserContext {
-    let uc = create(UserContextSchema, {
+    const uc = create(UserContextSchema, {
         userId: this._user_id,
         userName: this._user_name
     });
@@ -189,4 +189,4 @@ export class Configuration {
     // console.log("Client created: ", client);
     return client;
   }
-};
+}

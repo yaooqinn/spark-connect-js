@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { CommonInlineUserDefinedFunction, CommonInlineUserDefinedFunctionSchema, Expression, JavaUDFSchema, PythonUDFSchema, ScalarScalaUDFSchema } from "../../../../../../../gen/spark/connect/expressions_pb";
+import { CommonInlineUserDefinedFunction, CommonInlineUserDefinedFunctionSchema, Expression, PythonUDFSchema } from "../../../../../../../gen/spark/connect/expressions_pb";
 import { DataType, DataTypes } from "../../../types";
 import { javaUDF, scalarScalaUdf } from "../utils";
 

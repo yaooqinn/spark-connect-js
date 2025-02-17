@@ -18,7 +18,7 @@
 import { AtomicType } from "./data_types";
 
 export class BinaryType extends AtomicType {
-  private constructor() { super(); }
+  private constructor() { super() }
 
   override defaultSize(): number {
     return 100;
@@ -28,5 +28,5 @@ export class BinaryType extends AtomicType {
     return "binary";
   }
 
-  static readonly INSTANCE: BinaryType = new BinaryType();
+  static readonly INSTANCE: BinaryType = new BinaryType()
 }

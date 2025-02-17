@@ -100,20 +100,20 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
-  async checkpoint(): Promise<DataFrame>;
-  async checkpoint(eager: boolean): Promise<DataFrame>;
-  async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-    throw new Error("Not implemented"); // TODO
-  }
-  async localCheckpoint(): Promise<DataFrame>;
-  async localCheckpoint(eager: boolean): Promise<DataFrame>;
-  async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-    throw new Error("Not implemented"); // TODO
-  }
+  // async checkpoint(): Promise<DataFrame>;
+  // async checkpoint(eager: boolean): Promise<DataFrame>;
+  // async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
+  //   throw new Error("Not implemented"); // TODO
+  // }
+  // async localCheckpoint(): Promise<DataFrame>;
+  // async localCheckpoint(eager: boolean): Promise<DataFrame>;
+  // async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
+  //   throw new Error("Not implemented"); // TODO
+  // }
 
-  async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
-    throw new Error("Not implemented"); // TODO
-  }
+  // async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
+  //   throw new Error("Not implemented"); // TODO
+  // }
 
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
@@ -173,7 +173,7 @@ export class DataFrame {
     return this.withResult(res => {
       return res.toArray();
     });
-  };
+  }
 
   limit(n: number): DataFrame {
     return this.toNewDataFrame(b => b.withLimit(n, this.plan.relation));
@@ -187,13 +187,13 @@ export class DataFrame {
     } else {
       return this.limit(1).collect().then(rows => rows[0]);
     }
-  };
+  }
   async first(): Promise<Row> {
     return this.head();
-  };
+  }
   async take(n: number): Promise<Row[]> {
     return this.head(n);
-  };
+  }
 
   offset(n: number): DataFrame {
     return this.toNewDataFrame(b => b.withOffset(n, this.plan.relation));
@@ -221,7 +221,7 @@ export class DataFrame {
     return this.withResult(res => {
       console.log(res.toArray()[0].getString(0));
     }, plan);
-  };
+  }
 
   select(...cols: string[]): DataFrame;
   select(...cols: Column[]): DataFrame;
@@ -437,9 +437,9 @@ export class DataFrame {
   unpivot(ids: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
   unpivot(ids: Column[], values: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
   unpivot(ids: Column[], ...args: any[]): DataFrame {
-    var values: Column[] | undefined = undefined;
-    var variableColumnName: string;
-    var valueColumnName: string;
+    let values: Column[] | undefined = undefined;
+    let variableColumnName: string;
+    let valueColumnName: string;
     if (args.length === 2) {
       variableColumnName = args[0];
       valueColumnName = args[1];
@@ -472,9 +472,9 @@ export class DataFrame {
   melt(ids: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
   melt(ids: Column[], values: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
   melt(ids: Column[], ...args: any[]): DataFrame {
-    var values: Column[] | undefined = undefined;
-    var variableColumnName: string;
-    var valueColumnName: string;
+    let values: Column[] | undefined = undefined;
+    let variableColumnName: string;
+    let valueColumnName: string;
     if (args.length === 2) {
       variableColumnName = args[0];
       valueColumnName = args[1];

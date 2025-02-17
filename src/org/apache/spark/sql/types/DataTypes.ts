@@ -196,13 +196,12 @@ export class DataTypes {
           return DataTypes.createArrayType(et, containsNull);
         }
       case "map":
-        const kt = proto.kind.value.keyType ? this.fromProtoType(proto.kind.value.keyType) : DataTypes.NullType;
-        const vt = proto.kind.value.valueType ? this.fromProtoType(proto.kind.value.valueType) : DataTypes.NullType;
-        const containsNull = proto.kind.value.valueContainsNull
-        return DataTypes.createMapType(kt, vt, containsNull);
+        return DataTypes.createMapType(
+          proto.kind.value.keyType ? this.fromProtoType(proto.kind.value.keyType) : DataTypes.NullType,
+          proto.kind.value.valueType ? this.fromProtoType(proto.kind.value.valueType) : DataTypes.NullType,
+          proto.kind.value.valueContainsNull);
       case "struct":
-        const fields = proto.kind.value.fields.map(f => StructField.fromProto(f));
-        return DataTypes.createStructType(fields);
+        return DataTypes.createStructType(proto.kind.value.fields.map(f => StructField.fromProto(f)));
       case "unparsed":
         return DataTypes.createUnparsedType(proto.kind.value.dataTypeString);
       case "udt":
@@ -212,7 +211,7 @@ export class DataTypes {
           `Unsupported data type:  ${proto.kind.case}}`,
           "0A000");
     }
-  };
+  }
 
   static toProtoType(dt: DataType): t.DataType {
     if (dt instanceof NullType) {
@@ -270,7 +269,7 @@ export class DataTypes {
         `Unsupported data type: ${dt}`,
         "0A000");
     }
-  };
+  }
 
   static fromArrowType(dt: Type): DataType {
     if (ArrowDataType.isBool(dt)) {
@@ -313,7 +312,7 @@ export class DataTypes {
         `Unsupported arrow type: ${dt}`,
         "0A000");
     }
-  };
+  }
 
   private static isVariant(field: Field): boolean {
     if (ArrowDataType.isStruct(field.type)) {
@@ -356,7 +355,7 @@ export class DataTypes {
     } else {
       return DataTypes.fromArrowType(field.type);
     }
-  };
+  }
 
   /**
    * Convert an Arrow Schema to Spark Schema
@@ -370,7 +369,7 @@ export class DataTypes {
       return DataTypes.createStructField(f.name, DataTypes.fromArrowField(f), f.nullable, metadata);
     });
     return DataTypes.createStructType(fields);
-  };
+  }
 
   /**
    * Convert a Spark DataType to Arrow DataType
@@ -441,7 +440,7 @@ export class DataTypes {
         `Unsupported data type: ${dt}`,
         "0A000");
     }
-  };
+  }
 
   /**
    * Convert a Spark Schema to Arrow Schema
@@ -455,4 +454,4 @@ export class DataTypes {
     });
     return new Schema<T>(fields);
   }
-};
+}

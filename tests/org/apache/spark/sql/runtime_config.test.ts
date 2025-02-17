@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import { RuntimeConfig } from "../../../../../src/org/apache/spark/sql/RuntimeConfig";
 
@@ -8,66 +25,37 @@ function withClient(f: (client: Client) => void) {
   f(client);
 }
 
-function waitOptionUnsetWithTimeout(config: RuntimeConfig, key: string, timeout: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let interval = setInterval(() => {
-      config.getOption(key).then(v => {
-        if (v === undefined) {
-          clearInterval(interval);
-          resolve();
-        }
-      });
-    }, 1000);
-    setTimeout(() => {
-      clearInterval(interval);
-      reject("timeout");
-    }, timeout);
-  });
-}
-
 test('runtime config - set, unset, get', async () => {
-  withClient(client => {
+  withClient(async client => {
     const config = new RuntimeConfig(client);
-    config.get("spark.executor.id").then(v => {
+    await config.get("spark.executor.id").then(v => {
       expect(v).toBe("driver");
     });
 
-    config.get("spark.master").then(v => {
+    await config.get("spark.master").then(v => {
       expect(v).toBe("local[*]");
     });
 
-    config.set("spark.kent", "yao").then(() => {
+    await config.set("spark.kent", "yao").then(() => {
       config.get("spark.kent").then(v => {
         expect(v).toBe("yao");
       });
     });
-    config.unset("spark.kent.not.exist").then(() => {
-      config.getOption("spark.kent.not.exist").then(v => {
+    await config.unset("spark.kent.not.exist").then(async () => {
+      await config.getOption("spark.kent.not.exist").then(v => {
         expect(v).toBeUndefined();
       });
-      config.get("spark.kent.not.exist", "yao").then(v => {
+      await config.get("spark.kent.not.exist", "yao").then(async v => {
         expect(v).toBe("yao");
       });
     });
-    config.unset("spark.kent").then(() => {
-      waitOptionUnsetWithTimeout(config, "spark.kent", 10000).then(() => {
-        config.getOption("spark.kent").then(v => {
-          expect(v).toBeUndefined();
-        });
-        config.get("spark.kent").catch(e => {
-          expect(e).toBeDefined();
-          expect(e.message).toMatch("SQL_CONF_NOT_FOUND");
-        });
-      });
-    }).catch(e => {
-      console.error("Failed to unset config", e);
-      config.getOption("spark.kent").then(v => {
-        expect(v).toBeUndefined();
-      });
-      config.get("spark.kent").catch(e => {
-        expect(e).toBeDefined();
-        expect(e.message).toMatch("SQL_CONF_NOT_FOUND");
-      });
+    await config.unset("spark.kent")
+    await config.getOption("spark.kent").then(v => {
+      expect(v).toBeUndefined();
+    });
+    await config.get("spark.kent").catch(e => {
+      expect(e).toBeDefined();
+      expect(e.message).toMatch("SQL_CONF_NOT_FOUND");
     });
   });
 });

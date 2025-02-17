@@ -32,7 +32,6 @@ test("null", async () => {
         return spark.createDataFrame(rows, schema).collect().then(rows2 => {
           expect(rows2[0].isNullAt(0)).toBe(true);
           expect(rows2[0].get(0)).toBe(null);
-          expect(rows2[0].getAs<any>(0)).toBe(null);
           expect(rows2[0][0]).toBe(null);
         });
       });

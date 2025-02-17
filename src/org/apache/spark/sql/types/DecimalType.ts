@@ -34,7 +34,7 @@ export class DecimalType extends FractionalType {
 
   override typeName(): string { 
     return `decimal(${this.precision},${this.scale})`
-  };
+  }
 
   static readonly MAX_PRECISION: number = 38;
   static readonly MAX_SCALE: number = 38;

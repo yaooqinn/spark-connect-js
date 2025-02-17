@@ -32,7 +32,7 @@ export class RuntimeConfig {
     return this.execute(op => {
       op.opType = { value: setConf, case: "set" }
     });
-  };
+  }
 
   async setAll(m: Map<string, string>): Promise<b.ConfigResponse> {
     const pairs = Array.from(m.entries()).map(([k, v]) => {

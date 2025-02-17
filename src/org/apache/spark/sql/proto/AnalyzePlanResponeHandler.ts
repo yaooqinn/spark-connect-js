@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { AnalyzePlanResponse, AnalyzePlanResponse_Explain, AnalyzePlanResponse_GetStorageLevel, AnalyzePlanResponse_InputFiles, AnalyzePlanResponse_IsLocal, AnalyzePlanResponse_IsStreaming, AnalyzePlanResponse_Persist, AnalyzePlanResponse_SameSemantics, AnalyzePlanResponse_Schema, AnalyzePlanResponse_SemanticHash, AnalyzePlanResponse_SparkVersion, AnalyzePlanResponse_TreeString } from "../../../../../gen/spark/connect/base_pb";
+import { AnalyzePlanResponse, AnalyzePlanResponse_Explain, AnalyzePlanResponse_GetStorageLevel, AnalyzePlanResponse_InputFiles, AnalyzePlanResponse_IsLocal, AnalyzePlanResponse_IsStreaming, AnalyzePlanResponse_SameSemantics, AnalyzePlanResponse_Schema, AnalyzePlanResponse_SemanticHash, AnalyzePlanResponse_SparkVersion, AnalyzePlanResponse_TreeString } from "../../../../../gen/spark/connect/base_pb";
 import { DataType } from "../../../../../gen/spark/connect/types_pb";
 import { StorageLevel } from "../../storage/StorageLevel";
 

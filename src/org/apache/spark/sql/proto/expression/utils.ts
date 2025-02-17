@@ -17,10 +17,10 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Expression, Expression_Literal, Expression_SortOrder, Expression_SortOrder_NullOrdering, Expression_SortOrder_SortDirection, Expression_SortOrderSchema, JavaUDF, JavaUDFSchema, PythonUDF, PythonUDFSchema, ScalarScalaUDF, ScalarScalaUDFSchema } from "../../../../../../gen/spark/connect/expressions_pb";
+import { Aggregate_GroupingSets, Aggregate_GroupingSetsSchema } from "../../../../../../gen/spark/connect/relations_pb";
+import { Column } from "../../Column";
 import { DataType, DataTypes } from "../../types";
 import { LiteralBuilder } from "./LiteralBuilder";
-import { Column } from "../../Column";
-import { Aggregate_GroupingSets, Aggregate_GroupingSetsSchema, Aggregate_GroupType } from "../../../../../../gen/spark/connect/relations_pb";
 
 export const sortOrder = (child: Expression, asc = true, nullsFirst = true): Expression_SortOrder => {
   return create(Expression_SortOrderSchema,

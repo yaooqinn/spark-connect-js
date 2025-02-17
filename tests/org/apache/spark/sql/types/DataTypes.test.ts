@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-
-import { DataType as ArrowDataType } from "apache-arrow";
 import { createProtoArray, createProtoChar, createProtoDayTimeInterval, createProtoDecimal, createProtoMap, createProtoString, createProtoStruct, createProtoStructField, createProtoUdt, createProtoUnparsed, createProtoVarchar, createProtoYearMonthInterval, PROTO_BINARY, PROTO_BOOLEAN, PROTO_BYTE, PROTO_CALANDAR_INTERVAL, PROTO_DATE, PROTO_DOUBLE, PROTO_FLOAT, PROTO_INT, PROTO_LONG, PROTO_NULL, PROTO_SHORT, PROTO_STRING, PROTO_TIMESTAMP, PROTO_TIMESTAMP_NTZ, PROTO_VARIANT } from "../../../../../../src/org/apache/spark/sql/proto/types";
 import { BinaryType } from "../../../../../../src/org/apache/spark/sql/types/BinaryType";
 import { BooleanType } from "../../../../../../src/org/apache/spark/sql/types/BooleanType";

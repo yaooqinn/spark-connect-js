@@ -28,7 +28,7 @@ import { bigIntToNumber } from "../../../../../utils";
 const { isArrowBigNumSymbol, BN } = AU;
 
 function visitRowObject(schema: StructType, data: NamedRow): NamedRow {
-  const row: NamedRow = {};
+  const row: NamedRow = {}
   Object.keys(data).forEach((key, i) => {
     row[key] = getAsPlainJS(schema.fields[i].dataType, data[key]);
   });
@@ -49,7 +49,6 @@ export function getAsPlainJS(dataType: DataType, data: any): any {
   }
 
   if (dataType instanceof MapType && data instanceof Map) {
-    const kt = dataType.keyType;
     const map = new Map();
     for (const [key, value] of data) {
       map.set(
@@ -122,7 +121,7 @@ export function bigNumToNumber(bn: any, scale?: number) {
       return Number(`${sign}${integerPart}.${fractionPart}`);
   }
   return bigIntToNumber(number);
-};
+}
 
 /**
  * 
@@ -135,7 +134,7 @@ function handleArrowData(data: any, dataType: DataType): any {
     return data;
   }
   if (dataType instanceof StructType && data instanceof StructRow) {
-    const row: NamedRow = {};
+    const row: NamedRow = {}
     const dataJson = data.toJSON();
     for (let i = 0; i < dataType.fields.length; i++) {
       const field = dataType.fields[i];
@@ -162,7 +161,7 @@ function handleArrowData(data: any, dataType: DataType): any {
     return arr;
   }
   return data;
-};
+}
 
 /**
  * Converts an Arrow table to an array of rows.
@@ -177,15 +176,15 @@ export function tableToRows(table: ArrowTable, schema: StructType): Row[] {
     }
   }
   return rows;
-};
+}
 
 
 export function tableFromRows(rows: Row[], schema: StructType): ArrowTable {
-  const vecs = {} as {[key: string]: Vector<any>};
+  const vecs = {} as {[key: string]: Vector<any>}
   const arrowSchema = DataTypes.toArrowSchema(schema);
   arrowSchema.fields.forEach((f, i) => {
     const col = rows.map(row => row[i]);
     vecs[f.name] = vectorFromArray(col, f.type)
   });
   return new ArrowTable(arrowSchema, vecs);
-};
+}

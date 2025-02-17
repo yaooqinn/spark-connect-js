@@ -34,7 +34,7 @@ abstract class SparkThrowable extends Error {
   override toString(): string {
     return this.message;
   }
-};
+}
 
 export function fromStatus(err: grpc.StatusObject & Error | grpc.StatusObject): Error {
   const statusDetails = err.metadata.get("grpc-status-details-bin").toString();
@@ -67,11 +67,11 @@ export function fromStatus(err: grpc.StatusObject & Error | grpc.StatusObject): 
     error.stack = err.stack;
   }
   return error;
-};
+}
 
-export class AnalysisException extends SparkThrowable {};
+export class AnalysisException extends SparkThrowable {}
 
-export class SparkRuntimeException extends SparkThrowable {};
+export class SparkRuntimeException extends SparkThrowable {}
 
 export class SparkNoSuchElementException extends SparkThrowable {}
 

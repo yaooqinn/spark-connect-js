@@ -157,7 +157,7 @@ export function createProtoString(collation?: string): DataType {
   } else  {
     return createProtoString0(collation);
   }
-};
+}
 
 function createProtoString0(collation: string): DataType {
   return create(DataTypeSchema,
@@ -181,7 +181,7 @@ export function createProtoChar(length?: number): DataType {
         }
     }
   )
-};
+}
 
 export function createProtoVarchar(length?: number): DataType {
   return create(DataTypeSchema,
@@ -193,7 +193,7 @@ export function createProtoVarchar(length?: number): DataType {
         }
     }
   )
-};
+}
 
 export function createProtoDecimal(precision?: number, scale?: number): DataType {
   return create(DataTypeSchema,
@@ -205,7 +205,7 @@ export function createProtoDecimal(precision?: number, scale?: number): DataType
         }
     }
   )
-};
+}
 
 export function createProtoDayTimeInterval(start: number, end: number): DataType {
   return create(DataTypeSchema,
@@ -217,7 +217,7 @@ export function createProtoDayTimeInterval(start: number, end: number): DataType
         }
     }
   )
-};
+}
 
 export function createProtoYearMonthInterval(start: number, end: number): DataType {
   return create(DataTypeSchema,
@@ -229,7 +229,7 @@ export function createProtoYearMonthInterval(start: number, end: number): DataTy
         }
     }
   )
-};
+}
 
 export function createProtoArray(elementType: DataType | undefined, containsNull: boolean = true): DataType {
   return create(DataTypeSchema,
@@ -241,7 +241,7 @@ export function createProtoArray(elementType: DataType | undefined, containsNull
         }
     }
   )
-};
+}
 
 export function createProtoMap(keyType: DataType, valueType: DataType, valueContainsNull: boolean): DataType {
   return create(DataTypeSchema,
@@ -253,7 +253,7 @@ export function createProtoMap(keyType: DataType, valueType: DataType, valueCont
         }
     }
   )
-};
+}
 
 export function createProtoStructField(
     fieldName: string,
@@ -261,7 +261,7 @@ export function createProtoStructField(
     nullable: boolean,
     metadata?: string): DataType_StructField {
   return create(DataType_StructFieldSchema, { name: fieldName, dataType: dataType, nullable: nullable, metadata: metadata });
-};
+}
 
 export function createProtoStruct(fields: DataType_StructField[]): DataType {
   return create(DataTypeSchema,
@@ -273,7 +273,7 @@ export function createProtoStruct(fields: DataType_StructField[]): DataType {
         }
     }
   )
-};
+}
 
 export const PROTO_VARIANT: DataType = create(DataTypeSchema,
   {
@@ -295,7 +295,7 @@ export function createProtoUnparsed(typeStr: string): DataType {
         }
     }
   );
-};
+}
 
 export function createProtoUdt(
     type: string,
@@ -316,4 +316,4 @@ export function createProtoUdt(
         })
       }
     });
-};
+}

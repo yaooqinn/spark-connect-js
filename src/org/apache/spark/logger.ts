@@ -48,10 +48,10 @@ const defaultConfig = {
   }
 };
 
-const configureLogger = () => {
+const configureLogger = async () => {
   if (fs.existsSync(configFilePath)) {
     try {
-      const customConfig = require(configFilePath);
+      const customConfig = await import(configFilePath);
       log4js.configure(customConfig);
       console.info('Log4js configured using the provided configuration file.');
     } catch (error) {

@@ -87,7 +87,7 @@ export class Client {
         }
       )
     });
-  };
+  }
 
   private runServerStreamCall<ReqType, RespType>(
       method: string,
@@ -117,7 +117,7 @@ export class Client {
         }
       );
     });
-  };
+  }
 
   private serializer<Desc extends DescMessage>(desc: Desc) {
     return (msg: MessageShape<Desc>) => {
@@ -144,7 +144,7 @@ export class Client {
       this.serializer(b.AnalyzePlanRequestSchema),
       this.deserializer(b.AnalyzePlanResponseSchema),
     );
-  };
+  }
 
   async config(operation: b.ConfigRequest_Operation): Promise<b.ConfigResponse> {
     const req = create(b.ConfigRequestSchema, {
@@ -159,7 +159,7 @@ export class Client {
       this.serializer(b.ConfigRequestSchema),
       this.deserializer(b.ConfigResponseSchema),
     );
-  };
+  }
 
   async execute(plan: b.Plan): Promise<b.ExecutePlanResponse[]> {
     const req = create(b.ExecutePlanRequestSchema, {
@@ -184,20 +184,7 @@ export class Client {
       )
       const results: b.ExecutePlanResponse[] = [];
       call.on("data", (data: b.ExecutePlanResponse) => {
-        const responseType = data.responseType
-        switch (responseType.case) {
-          case "executionProgress":
-            const stageInfo = this.stringifyStageInfo(data.operationId, responseType.value);
-            if (stageInfo.length > 0) {
-              logger.debug(stageInfo);
-            }
-            break;
-          default:
-            if (data.metrics) {
-              logger.debug(`Metrics: ${this.stringifyMetrics(data.metrics)}`);
-            }
-            results.push(data);
-        }
+        results.push(data);
       });
       
       call.on("error", (err: any) => {
@@ -221,29 +208,5 @@ export class Client {
         resolve(results)
       });
     });
-  };
-
-  private stringifyStageInfo(id: string, progress: b.ExecutePlanResponse_ExecutionProgress): string {
-    let ret = "";
-    if (progress.stages.length > 0) {
-      ret += "Execution Progress: id " + id;
-      ret += ("\n\tStages:\n" + progress.stages.map(info => {
-          const state = info.done ? "[DONE]" : "[RUNNING]";
-          return `\t\tStage ${info.stageId}${state}: ${info.numCompletedTasks}/${info.numTasks} tasks completed, reading ${info.inputBytesRead} bytes`
-        }).join("\n"))
-      if (progress.numInflightTasks > 0) {
-        ret += `\n\tRunning tasks: ${progress.numInflightTasks}`;
-      }
-    }
-    return ret;
-  }
-
-  private stringifyMetrics(metrics: b.ExecutePlanResponse_Metrics): string {
-    return metrics.metrics.map(metric => {
-      return (`${metric.name}[${metric.planId}|${metric.parent}]: ` + 
-        Object.entries(metric.executionMetrics).map(([key, value]) => {
-          return `${value.name}(${key}): ${value.value}`;
-      }).join(", "));
-    }).join("\n");
   }
 }

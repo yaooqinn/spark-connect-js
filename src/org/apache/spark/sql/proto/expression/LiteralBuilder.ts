@@ -65,7 +65,7 @@ export class LiteralBuilder {
     return this;
   }
 
-  withDeical(value: string, precision?: number, scale?: number): LiteralBuilder {
+  withDecimal(value: string, precision?: number, scale?: number): LiteralBuilder {
     const decimal = create(Expression_Literal_DecimalSchema, { value: value, precision: precision, scale: scale });
     this.literal.literalType = { case: 'decimal', value: decimal };
     return this;
