@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
@@ -148,6 +148,11 @@ export class RelationBuilder {
       valueColumnName: valueColumnName
     });
     this.relation.relType = { case: "unpivot", value: unpivot }
+    return this;
+  }
+  withTranspose(indexColumn?: Column, input?: Relation) {
+    const transpose = create(TransposeSchema, { input: input, indexColumns: indexColumn ? [indexColumn.expr] : [] });
+    this.relation.relType = { case: "transpose", value: transpose }
     return this;
   }
 

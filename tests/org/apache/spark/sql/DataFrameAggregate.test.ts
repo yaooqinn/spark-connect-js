@@ -88,3 +88,16 @@ test("unpivot", async () => {
     expect(row[2]).toBe(1);
   });
 });
+
+test("tanspose", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const transpose = df.groupBy("name").sum("goals").transpose();
+  await transpose.show()
+  await transpose.head().then((row) => {
+    expect(row[0]).toBe("sum(goals)");
+    expect(row[1]).toBe(4n);
+    expect(row[2]).toBe(5n);
+  });
+});
+

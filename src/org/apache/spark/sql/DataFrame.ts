@@ -341,7 +341,9 @@ export class DataFrame {
    *
    * @group untypedrel
    */
-  groupBy(...cols: Column[]): RelationalGroupedDataset {
+  groupBy(...cols: string[]): RelationalGroupedDataset;
+  groupBy(...cols: Column[]): RelationalGroupedDataset;
+  groupBy(...cols: string[] | Column[]): RelationalGroupedDataset {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_GROUPBY);
   }
 
@@ -483,6 +485,12 @@ export class DataFrame {
       valueColumnName = args[2];
     }
     return this.toNewDataFrame(b => b.withUnpivot(ids, variableColumnName, valueColumnName, values, this.plan.relation));
+  }
+
+  transpose(): DataFrame;
+  transpose(indexColumn: Column): DataFrame;
+  transpose(indexColumn?: Column): DataFrame {
+    return this.toNewDataFrame(b => b.withTranspose(indexColumn, this.plan.relation));
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
