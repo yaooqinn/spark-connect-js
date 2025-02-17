@@ -1,8 +1,6 @@
+# Apache Spark Connect Client for JavaScript
 
-
-# Some dev instructions
-
-https://github.com/bufbuild/protobuf-es/blob/main/MANUAL.md
+An <b><red>experimental</red></b> client for [Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html) for [Apache Spark](https://spark.apache.org/) written in [TypeScript](https://www.typescriptlang.org/).
 
 
 # Roadmaps
@@ -10,6 +8,7 @@ https://github.com/bufbuild/protobuf-es/blob/main/MANUAL.md
 - [ ] Support Retry / Reattachable execution
 - [ ] Support Checkpoint for DataFrame
 - [ ] Support DataFrameNaFunctions
+- [ ] Support DataFrame Join 
 - [ ] Support UserDefinedType
   - [ ] UserDefinedType declaration
   - [ ] UserDefinedType & Proto bidi-converions

@@ -1,14 +1,12 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
-module.exports = {
-  testEnvironment: "node",
-  transform: {
-    "^.+.tsx?$": ["ts-jest",{}],
-  },
-  collectCoverage: true,
-  logHeapUsage: true,
-  displayName: {
-    name: "TEST",
-    color: "blue",
-  },
-  verbose: true
+export const testEnvironment = "node";
+export const transform = {
+  "^.+.tsx?$": ["ts-jest", {}],
 };
+export const collectCoverage = true;
+export const logHeapUsage = true;
+export const displayName = {
+  name: "TEST",
+  color: "blue",
+};
+export const verbose = true;
