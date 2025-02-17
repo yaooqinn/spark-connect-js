@@ -20,6 +20,7 @@ import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f  from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
+import { toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
 /**
@@ -32,7 +33,7 @@ export class RelationalGroupedDataset {
     public readonly groupingExprs: string[] | Column[],
     public readonly groupType: GroupType,
     public readonly pivot: Aggregate_Pivot | undefined = undefined,
-    public readonly groupingSets: Aggregate_GroupingSets[] = []
+    public readonly groupingSets: Column[][] = []
   ) {}
 
   toDF(...aggExprs: Column[]): DataFrame {
@@ -43,10 +44,12 @@ export class RelationalGroupedDataset {
         } else {
           ab.withGroupingExpressions(this.groupingExprs.map((c) => (c as Column).expr))
         }
+        if (this.groupingSets.length > 0) {
+          ab.withGroupingSets(this.groupingSets.map((gs) => toGroupingSetsPB(gs)))
+        }
         return ab.withInput(this.df.plan.relation)
           .withAggregateExpressions(aggExprs.map((c) => c.expr))
           .withPivot(this.pivot)
-          .withGroupingSets(this.groupingSets)
           .withGroupType(toGroupTypePB(this.groupType))
       });
     });

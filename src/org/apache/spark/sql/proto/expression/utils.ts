@@ -19,6 +19,8 @@ import { create } from "@bufbuild/protobuf";
 import { Expression, Expression_Literal, Expression_SortOrder, Expression_SortOrder_NullOrdering, Expression_SortOrder_SortDirection, Expression_SortOrderSchema, JavaUDF, JavaUDFSchema, PythonUDF, PythonUDFSchema, ScalarScalaUDF, ScalarScalaUDFSchema } from "../../../../../../gen/spark/connect/expressions_pb";
 import { DataType, DataTypes } from "../../types";
 import { LiteralBuilder } from "./LiteralBuilder";
+import { Column } from "../../Column";
+import { Aggregate_GroupingSets, Aggregate_GroupingSetsSchema, Aggregate_GroupType } from "../../../../../../gen/spark/connect/relations_pb";
 
 export const sortOrder = (child: Expression, asc = true, nullsFirst = true): Expression_SortOrder => {
   return create(Expression_SortOrderSchema,
@@ -134,4 +136,10 @@ export function toLiteralBuilder(value: any): { builder: LiteralBuilder, dataTyp
         return { builder: builder.withStruct(fields, dt), dataType: dt };
       }
   }
+}
+
+export function toGroupingSetsPB(cols: Column[]): Aggregate_GroupingSets {
+  return create(Aggregate_GroupingSetsSchema, {
+    groupingSet: cols.map(c => c.expr)
+  })
 }

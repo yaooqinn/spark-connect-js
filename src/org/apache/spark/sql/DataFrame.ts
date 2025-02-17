@@ -399,6 +399,10 @@ export class DataFrame {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_CUBE);
   }
 
+  groupingSets(groupingSets: Column[][], ...cols: Column[]): RelationalGroupedDataset {
+    return new RelationalGroupedDataset(this, cols, GroupType.GROUPING_SETS, undefined, groupingSets);
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());

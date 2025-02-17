@@ -60,11 +60,20 @@ test("rollup", async () => {
 test("cube", async () => {
   const spark = await sharedSpark;
   const df = spark.createDataFrame(testRows, testSchema);
-  const cube = df.cube(col("name"), col("game"));
+  const cube = df.cube("name", "game");
   await cube.count().where("name is null").head().then((row) => {
     expect(row[2]).toBe(8n);
   });
   await cube.sum("goals").where("name is null").head().then((row) => {
     expect(row[2]).toBe(9n);
+  });
+});
+
+test("groupingSets", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const groupingSets = df.groupingSets([[col("game")]]);
+  await groupingSets.sum("goals").head().then((row) => {
+    expect(row[0]).toBe(2n);
   });
 });
