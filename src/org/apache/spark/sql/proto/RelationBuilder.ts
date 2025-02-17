@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperation_SetOpType, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
@@ -26,6 +26,7 @@ import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 import { lit } from "../functions";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { Column } from "../Column";
+import { toSetOpTypePB } from "./ProtoUtils";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -153,6 +154,26 @@ export class RelationBuilder {
   withTranspose(indexColumn?: Column, input?: Relation) {
     const transpose = create(TransposeSchema, { input: input, indexColumns: indexColumn ? [indexColumn.expr] : [] });
     this.relation.relType = { case: "transpose", value: transpose }
+    return this;
+  }
+
+  withSetOperation(
+      left?: Relation,
+      right?: Relation,
+      operation?: string,
+      isAll?: boolean,
+      byName?: boolean,
+      allowMissingColumns?: boolean) {
+    const setOp = create(SetOperationSchema,
+      {
+        leftInput: left,
+        rightInput: right,
+        setOpType: toSetOpTypePB(operation),
+        isAll: isAll,
+        byName: byName,
+        allowMissingColumns: allowMissingColumns
+      });
+    this.relation.relType = { case: "setOp", value: setOp }
     return this;
   }
 

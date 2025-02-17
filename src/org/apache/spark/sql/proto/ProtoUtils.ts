@@ -17,7 +17,7 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Table as ArrowTable, tableToIPC } from "apache-arrow";
-import { Aggregate_GroupType, LocalRelation, LocalRelationSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate_GroupType, LocalRelation, LocalRelationSchema, SetOperation_SetOpType } from "../../../../../gen/spark/connect/relations_pb";
 import { StructType } from "../types/StructType";
 import { StorageLevel } from "../../storage/StorageLevel";
 import { StorageLevelSchema, StorageLevel as StorageLevelPB } from "../../../../../gen/spark/connect/common_pb";
@@ -59,5 +59,18 @@ export function toGroupTypePB(groupType: GroupType): Aggregate_GroupType {
       return Aggregate_GroupType.PIVOT;
     case GroupType.GROUPING_SETS:
       return Aggregate_GroupType.GROUPING_SETS;
+  }
+}
+
+export function toSetOpTypePB(setOpType?: string): SetOperation_SetOpType {
+  switch (setOpType) {
+    case "union":
+      return SetOperation_SetOpType.UNION;
+    case "intersect":
+      return SetOperation_SetOpType.INTERSECT;
+    case "except":
+      return SetOperation_SetOpType.EXCEPT;
+    default:
+      throw new Error(`Unsupported set operation type: ${setOpType}`);
   }
 }

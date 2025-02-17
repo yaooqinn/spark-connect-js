@@ -468,7 +468,6 @@ export class DataFrame {
    * @param valueColumnName
    *   Name of the value column
    * @group untypedrel
-   * @since 3.4.0
    */
   melt(ids: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
   melt(ids: Column[], values: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
@@ -487,10 +486,174 @@ export class DataFrame {
     return this.toNewDataFrame(b => b.withUnpivot(ids, variableColumnName, valueColumnName, values, this.plan.relation));
   }
 
+  /**
+   * Transposes a DataFrame such that the values in the specified index column become the new
+   * columns of the DataFrame.
+   *
+   * Please note:
+   *   - All columns except the index column must share a least common data type. Unless they are
+   *     the same data type, all columns are cast to the nearest common data type.
+   *   - The name of the column into which the original column names are transposed defaults to
+   *     "key".
+   *   - null values in the index column are excluded from the column names for the transposed
+   *     table, which are ordered in ascending order.
+   *
+   * {{{
+   *   val df = Seq(("A", 1, 2), ("B", 3, 4)).toDF("id", "val1", "val2")
+   *   df.show()
+   *   // output:
+   *   // +---+----+----+
+   *   // | id|val1|val2|
+   *   // +---+----+----+
+   *   // |  A|   1|   2|
+   *   // |  B|   3|   4|
+   *   // +---+----+----+
+   *
+   *   df.transpose($"id").show()
+   *   // output:
+   *   // +----+---+---+
+   *   // | key|  A|  B|
+   *   // +----+---+---+
+   *   // |val1|  1|  3|
+   *   // |val2|  2|  4|
+   *   // +----+---+---+
+   *   // schema:
+   *   // root
+   *   //  |-- key: string (nullable = false)
+   *   //  |-- A: integer (nullable = true)
+   *   //  |-- B: integer (nullable = true)
+   *
+   *   df.transpose().show()
+   *   // output:
+   *   // +----+---+---+
+   *   // | key|  A|  B|
+   *   // +----+---+---+
+   *   // |val1|  1|  3|
+   *   // |val2|  2|  4|
+   *   // +----+---+---+
+   *   // schema:
+   *   // root
+   *   //  |-- key: string (nullable = false)
+   *   //  |-- A: integer (nullable = true)
+   *   //  |-- B: integer (nullable = true)
+   * }}}
+   *
+   * @param indexColumn
+   *   The single column that will be treated as the index for the transpose operation. This
+   *   column will be used to pivot the data, transforming the DataFrame such that the values of
+   *   the indexColumn become the new columns in the transposed DataFrame.
+   *
+   * @group untypedrel
+   */
   transpose(): DataFrame;
   transpose(indexColumn: Column): DataFrame;
   transpose(indexColumn?: Column): DataFrame {
     return this.toNewDataFrame(b => b.withTranspose(indexColumn, this.plan.relation));
+  }
+
+  // TODO: scalar()
+  // TODO: exists()
+
+  /**
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   *
+   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
+   * deduplication of elements), use this function followed by a [[distinct]].
+   *
+   * Also as standard in SQL, this function resolves columns by position (not by name):
+   *
+   * {{{
+   *   val df1 = Seq((1, 2, 3)).toDF("col0", "col1", "col2")
+   *   val df2 = Seq((4, 5, 6)).toDF("col1", "col2", "col0")
+   *   df1.union(df2).show
+   *
+   *   // output:
+   *   // +----+----+----+
+   *   // |col0|col1|col2|
+   *   // +----+----+----+
+   *   // |   1|   2|   3|
+   *   // |   4|   5|   6|
+   *   // +----+----+----+
+   * }}}
+   *
+   * Notice that the column positions in the schema aren't necessarily matched with the fields in
+   * the strongly typed objects in a Dataset. This function resolves columns by their positions in
+   * the schema, not the fields in the strongly typed objects. Use [[unionByName]] to resolve
+   * columns by field name in the typed objects.
+   *
+   * @group typedrel
+   * @since 2.0.0
+   */
+  union(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true));
+  }
+
+  /**
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset. This is
+   * an alias for `union`.
+   *
+   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
+   * deduplication of elements), use this function followed by a [[distinct]].
+   *
+   * Also as standard in SQL, this function resolves columns by position (not by name).
+   *
+   * @group typedrel
+   */
+  unionByName(other: DataFrame): DataFrame;
+  unionByName(other: DataFrame, allowMissingColumns: boolean): DataFrame;
+  unionByName(other: DataFrame, allowMissingColumns?: boolean): DataFrame {
+    allowMissingColumns = allowMissingColumns || false;
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true, true, allowMissingColumns));
+  }
+  /**
+   * Returns a new Dataset containing rows only in both this Dataset and another Dataset. This is
+   * equivalent to `INTERSECT` in SQL.
+   *
+   * @note
+   *   Equality checking is performed directly on the encoded representation of the data and thus
+   *   is not affected by a custom `equals` function defined on `T`.
+   * @group typedrel
+   */
+  intersect(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "intersect", false));
+  }
+  /**
+   * Returns a new Dataset containing rows only in both this Dataset and another Dataset while
+   * preserving the duplicates. This is equivalent to `INTERSECT ALL` in SQL.
+   *
+   * @note
+   *   Equality checking is performed directly on the encoded representation of the data and thus
+   *   is not affected by a custom `equals` function defined on `T`. Also as standard in SQL, this
+   *   function resolves columns by position (not by name).
+   * @group typedrel
+   */
+  intersectAll(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "intersect", true));
+  }
+  /**
+   * Returns a new Dataset containing rows in this Dataset but not in another Dataset. This is
+   * equivalent to `EXCEPT DISTINCT` in SQL.
+   *
+   * @note
+   *   Equality checking is performed directly on the encoded representation of the data and thus
+   *   is not affected by a custom `equals` function defined on `T`.
+   * @group typedrel
+   */
+  except(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", false));
+  }
+  /**
+   * Returns a new Dataset containing rows in this Dataset but not in another Dataset while
+   * preserving the duplicates. This is equivalent to `EXCEPT ALL` in SQL.
+   *
+   * @note
+   *   Equality checking is performed directly on the encoded representation of the data and thus
+   *   is not affected by a custom `equals` function defined on `T`. Also as standard in SQL, this
+   *   function resolves columns by position (not by name).
+   * @group typedrel
+   */
+  exceptAll(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", true));
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
