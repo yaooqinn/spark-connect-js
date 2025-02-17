@@ -35,7 +35,7 @@ export class RelationalGroupedDataset {
     public readonly groupingSets: Aggregate_GroupingSets[] = []
   ) {}
 
-  toDF(aggExprs: Column[]): DataFrame {
+  toDF(...aggExprs: Column[]): DataFrame {
     return this.df.spark.relationBuilderToDF((rb) => {
       return rb.withAggregateBuilder((ab) => {
         return ab.withInput(this.df.plan.relation)
@@ -49,6 +49,10 @@ export class RelationalGroupedDataset {
   }
 
   count(): DataFrame {
-    return this.toDF([ f.count(f.lit(1)).as("count") ])
+    return this.toDF(f.count(f.lit(1)).as("count"))
+  }
+
+  sum(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.sum(this.df.col(c))))
   }
 }

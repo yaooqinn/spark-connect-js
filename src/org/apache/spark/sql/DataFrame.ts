@@ -354,6 +354,27 @@ export class DataFrame {
     return this.groupBy().count().head().then(row => row.getLong(0));
   }
 
+  // TODO: reduce()
+  // TODO: groupByKey()
+
+  /**
+   * Create a multi-dimensional rollup for the current Dataset using the specified columns, so we
+   * can run aggregation on them. See [[RelationalGroupedDataset]] for all the available aggregate
+   * functions.
+   *
+   * {{{
+   *   // Compute the average for all numeric columns rolled up by department and group.
+   *   ds.rollup(col("department"), col("group")).avg()
+   * }}}
+   *
+   * @group untypedrel
+   */
+  rollup(...cols: Column[]): RelationalGroupedDataset {
+    return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_ROLLUP);
+  }
+
+  
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());

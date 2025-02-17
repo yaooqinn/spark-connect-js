@@ -15,7 +15,28 @@
  * limitations under the License.
  */
 
+import { StructType } from '../../../../../src/org/apache/spark/sql/types/StructType';
 import { sharedSpark } from '../../../../helpers';
+import { DataTypes } from '../../../../../src/org/apache/spark/sql/types';
+import { Row } from '../../../../../src/org/apache/spark/sql/Row';
+import { col } from '../../../../../src/org/apache/spark/sql/functions';
+
+
+const testSchema = new StructType()
+  .add("name", DataTypes.StringType)
+  .add("game", DataTypes.IntegerType)
+  .add("goals", DataTypes.IntegerType);
+
+const testRows = [
+  new Row(testSchema, { name: "Messi", game: 1, goals: 1 }),
+  new Row(testSchema, { name: "Messi", game: 2, goals: 2 }),
+  new Row(testSchema, { name: "Messi", game: 3, goals: 0 }),
+  new Row(testSchema, { name: "Messi", game: 4, goals: 1 }),
+  new Row(testSchema, { name: "Ronaldo", game: 1, goals: 1 }),
+  new Row(testSchema, { name: "Ronaldo", game: 2, goals: 2 }),
+  new Row(testSchema, { name: "Ronaldo", game: 3, goals: 1 }),
+  new Row(testSchema, { name: "Ronaldo", game: 4, goals: 1 }),
+];
 
 test("count", async () => {
   const spark = await sharedSpark;
@@ -24,5 +45,14 @@ test("count", async () => {
   expect(count).toBe(999n);
 });
 
-
-
+test("rollup", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const rollup = df.rollup(col("name"), col("game"));
+  await rollup.count().where("name is null").head().then((row) => {
+    expect(row[2]).toBe(8n);
+  });
+  await rollup.sum("goals").where("name is null").head().then((row) => {
+    expect(row[2]).toBe(9n);
+  });
+});

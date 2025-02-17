@@ -46,7 +46,10 @@ export interface Row {
 
 
 export class Row implements Row {
-  constructor(private schema_: StructType) {
+  constructor(private schema_: StructType, data: NamedRow = {}) {
+    schema_.fields.forEach((field, i) => {
+      this[i] = data[field.name];
+    });
   }
 
   size(): number {

@@ -64,6 +64,15 @@ export class StructType extends DataType {
     return `StructType(${this.fields.map(f => f.toString()).join(", ")})`;
   }
 
+  fieldIndex(name: string): number {
+    const index = this.fields.findIndex(f => f.name === name);
+    if (index === -1) {
+      throw new Error(`Field "${name}" does not exist.`);
+    } else {
+      return index;
+    }
+  }
+
   add(field: StructField): StructType;
   add(name: string, dataType: DataType): StructType;
   add(name: string, dataType: DataType, nullable: boolean): StructType;
