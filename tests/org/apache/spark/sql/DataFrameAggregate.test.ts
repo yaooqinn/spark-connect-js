@@ -56,3 +56,15 @@ test("rollup", async () => {
     expect(row[2]).toBe(9n);
   });
 });
+
+test("cube", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const cube = df.cube(col("name"), col("game"));
+  await cube.count().where("name is null").head().then((row) => {
+    expect(row[2]).toBe(8n);
+  });
+  await cube.sum("goals").where("name is null").head().then((row) => {
+    expect(row[2]).toBe(9n);
+  });
+});

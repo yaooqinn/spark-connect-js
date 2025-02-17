@@ -373,7 +373,27 @@ export class DataFrame {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_ROLLUP);
   }
 
-  
+  /**
+   * Create a multi-dimensional cube for the current Dataset using the specified columns, so we
+   * can run aggregation on them. See [[RelationalGroupedDataset]] for all the available aggregate
+   * functions.
+   *
+   * {{{
+   *   // Compute the average for all numeric columns cubed by department and group.
+   *   ds.cube($"department", $"group").avg()
+   *
+   *   // Compute the max age and average salary, cubed by department and gender.
+   *   ds.cube($"department", $"gender").agg(Map(
+   *     "salary" -> "avg",
+   *     "age" -> "max"
+   *   ))
+   * }}}
+   *
+   * @group untypedrel
+   */
+  cube(...cols: Column[]): RelationalGroupedDataset {
+    return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_CUBE);
+  }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
