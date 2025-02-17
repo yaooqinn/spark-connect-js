@@ -369,7 +369,9 @@ export class DataFrame {
    *
    * @group untypedrel
    */
-  rollup(...cols: Column[]): RelationalGroupedDataset {
+  rollup(...cols: string[]): RelationalGroupedDataset;
+  rollup(...cols: Column[]): RelationalGroupedDataset;
+  rollup(...cols: string[] | Column[]): RelationalGroupedDataset {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_ROLLUP);
   }
 
@@ -391,7 +393,9 @@ export class DataFrame {
    *
    * @group untypedrel
    */
-  cube(...cols: Column[]): RelationalGroupedDataset {
+  cube(...cols: string[]): RelationalGroupedDataset;
+  cube(...cols: Column[]): RelationalGroupedDataset;
+  cube(...cols: string[] | Column[]): RelationalGroupedDataset {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_CUBE);
   }
 

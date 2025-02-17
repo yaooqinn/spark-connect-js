@@ -29,7 +29,7 @@ import { toGroupTypePB } from "./proto/ProtoUtils";
 export class RelationalGroupedDataset {
   constructor(
     public readonly df: DataFrame,
-    public readonly groupingExprs: Column[],
+    public readonly groupingExprs: string[] | Column[],
     public readonly groupType: GroupType,
     public readonly pivot: Aggregate_Pivot | undefined = undefined,
     public readonly groupingSets: Aggregate_GroupingSets[] = []
@@ -38,8 +38,12 @@ export class RelationalGroupedDataset {
   toDF(...aggExprs: Column[]): DataFrame {
     return this.df.spark.relationBuilderToDF((rb) => {
       return rb.withAggregateBuilder((ab) => {
+        if (typeof this.groupingExprs[0] === "string") {
+          ab.withGroupingExpressions(this.groupingExprs.map((c) => this.df.col(c as string).expr))
+        } else {
+          ab.withGroupingExpressions(this.groupingExprs.map((c) => (c as Column).expr))
+        }
         return ab.withInput(this.df.plan.relation)
-          .withGroupingExpressions(this.groupingExprs.map((c) => c.expr))
           .withAggregateExpressions(aggExprs.map((c) => c.expr))
           .withPivot(this.pivot)
           .withGroupingSets(this.groupingSets)
