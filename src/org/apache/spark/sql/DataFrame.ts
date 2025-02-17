@@ -449,6 +449,42 @@ export class DataFrame {
     return this.toNewDataFrame(b => b.withUnpivot(ids, variableColumnName, valueColumnName, values, this.plan.relation));
   }
 
+  /**
+   * Unpivot a DataFrame from wide format to long format, optionally leaving identifier columns
+   * set. This is the reverse to `groupBy(...).pivot(...).agg(...)`, except for the aggregation,
+   * which cannot be reversed. This is an alias for `unpivot`.
+   *
+   * @see
+   *   `org.apache.spark.sql.Dataset.unpivot(Array, Array, String, String)`
+   *
+   * This is equivalent to calling `Dataset#unpivot(Array, Array, String, String)` where `values`
+   * is set to all non-id columns that exist in the DataFrame.
+   * @param ids
+   *   Id columns
+   * @param variableColumnName
+   *   Name of the variable column
+   * @param valueColumnName
+   *   Name of the value column
+   * @group untypedrel
+   * @since 3.4.0
+   */
+  melt(ids: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
+  melt(ids: Column[], values: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
+  melt(ids: Column[], ...args: any[]): DataFrame {
+    var values: Column[] | undefined = undefined;
+    var variableColumnName: string;
+    var valueColumnName: string;
+    if (args.length === 2) {
+      variableColumnName = args[0];
+      valueColumnName = args[1];
+    } else {
+      values = args[0] as Column[];
+      variableColumnName = args[1];
+      valueColumnName = args[2];
+    }
+    return this.toNewDataFrame(b => b.withUnpivot(ids, variableColumnName, valueColumnName, values, this.plan.relation));
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());
