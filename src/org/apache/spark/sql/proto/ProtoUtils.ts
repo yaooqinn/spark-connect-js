@@ -17,10 +17,11 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Table as ArrowTable, tableToIPC } from "apache-arrow";
-import { LocalRelation, LocalRelationSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate_GroupType, LocalRelation, LocalRelationSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { StructType } from "../types/StructType";
 import { StorageLevel } from "../../storage/StorageLevel";
 import { StorageLevelSchema, StorageLevel as StorageLevelPB } from "../../../../../gen/spark/connect/common_pb";
+import { GroupType } from "./aggregate/GroupType";
 
 export function createLocalRelation(
     schema: string = "",
@@ -44,4 +45,19 @@ export function createStorageLevelPB(storageLevel: StorageLevel): StorageLevelPB
     deserialized: storageLevel.deserialized,
     replication: storageLevel.replication
   });
+}
+
+export function toGroupTypePB(groupType: GroupType): Aggregate_GroupType {
+  switch (groupType) {
+    case GroupType.GROUP_TYPE_GROUPBY:
+      return Aggregate_GroupType.GROUPBY;
+    case GroupType.GROUP_TYPE_CUBE:
+      return Aggregate_GroupType.CUBE;
+    case GroupType.GROUP_TYPE_ROLLUP:
+      return Aggregate_GroupType.ROLLUP;
+    case GroupType.GROUP_TYPE_PIVOT:
+      return Aggregate_GroupType.PIVOT;
+    case GroupType.GROUPING_SETS:
+      return Aggregate_GroupType.GROUPING_SETS;
+  }
 }

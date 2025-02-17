@@ -28,6 +28,8 @@ import { StorageLevel } from '../storage/StorageLevel';
 import { LogicalPlan } from './proto/LogicalPlan';
 import { Column } from './Column';
 import { expr } from './functions';
+import { RelationalGroupedDataset } from './RelationalGroupedDataset';
+import { GroupType } from './proto/aggregate/GroupType';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -240,7 +242,7 @@ export class DataFrame {
    *
    */
   selectExpr(...cols: string[]): DataFrame {
-    return this.select(...cols);
+    return this.select(...cols.map(col => expr(col)));
   }
 
   /**
@@ -320,6 +322,36 @@ export class DataFrame {
    */
   hint(name: string, ...parameters: any[]): DataFrame {
     return this.toNewDataFrame(b => b.withHint(name, parameters, this.plan.relation));
+  }
+
+  /**
+   * Groups the Dataset using the specified columns, so we can run aggregation on them. See
+   * [[RelationalGroupedDataset]] for all the available aggregate functions.
+   *
+   * {{{
+   *   // Compute the average for all numeric columns grouped by department.
+   *   ds.groupBy($"department").avg()
+   *
+   *   // Compute the max age and average salary, grouped by department and gender.
+   *   ds.groupBy($"department", $"gender").agg(Map(
+   *     "salary" -> "avg",
+   *     "age" -> "max"
+   *   ))
+   * }}}
+   *
+   * @group untypedrel
+   */
+  groupBy(...cols: Column[]): RelationalGroupedDataset {
+    return new RelationalGroupedDataset(this, cols, GroupType.GROUP_TYPE_GROUPBY);
+  }
+
+  /**
+   * Returns the number of rows in the Dataset.
+   *
+   * @group action
+   */
+  async count(): Promise<bigint> {
+    return this.groupBy().count().head().then(row => row.getLong(0));
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {

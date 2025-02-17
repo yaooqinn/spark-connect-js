@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
@@ -24,6 +24,7 @@ import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 import { lit } from "../functions";
+import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -120,6 +121,16 @@ export class RelationBuilder {
   withHint(name: string, parameters: any[], input?: Relation) {
     const hint = create(HintSchema, { name: name, parameters: parameters.map(p => lit(p).expr), input: input });
     this.relation.relType = { case: "hint", value: hint}
+    return this;
+  }
+  withAggregate(aggregate: Aggregate) {
+    this.relation.relType = { case: "aggregate", value: aggregate }
+    return this;
+  }
+  withAggregateBuilder(f: (b: AggregateBuilder) => void) {
+    const builder = new AggregateBuilder();
+    f(builder);
+    this.relation.relType = { case: "aggregate", value: builder.build() }
     return this;
   }
 

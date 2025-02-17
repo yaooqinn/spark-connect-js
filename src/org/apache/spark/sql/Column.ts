@@ -72,6 +72,31 @@ export class Column {
     return Column.fn("isNull", this, false);
   }
 
+  /**
+   * Gives the column an alias.
+   * {{{
+   *   // Renames colA to colB in select output.
+   *   df.select($"colA".as("colB"))
+   * }}}
+   *
+   * If the current column has metadata associated with it, this metadata will be propagated to
+   * the new column. If this not desired, use the API `as(alias: String, metadata: Metadata)` with
+   * explicit metadata.
+   *
+   * @group expr_ops
+   */
+  as(alias: string): Column {
+    return this.name(alias);
+  }
+
+  add(other: Column): Column {
+    return Column.fn("+", this, false, other);
+  }
+
+  plus(other: Column): Column {
+    return this.add(other);
+  }
+
   get asc(): Column {
     return this.asc_nulls_first;
   }
@@ -94,5 +119,9 @@ export class Column {
 
   get desc_nulls_last(): Column {
     return new Column(b => b.withSortOrder(this.expr, false, false));
+  }
+
+  name(alias: string): Column {
+    return new Column(b => b.withAlias([alias], this.expr));
   }
 }
