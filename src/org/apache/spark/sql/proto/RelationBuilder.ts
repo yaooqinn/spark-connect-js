@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { StructType } from "../types/StructType";
 import { DataTypes } from "../types";
@@ -25,6 +25,7 @@ import { CatalogBuilder } from "./CatalogBuilder";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 import { lit } from "../functions";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
+import { Column } from "../Column";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -131,6 +132,22 @@ export class RelationBuilder {
     const builder = new AggregateBuilder();
     f(builder);
     this.relation.relType = { case: "aggregate", value: builder.build() }
+    return this;
+  }
+  withUnpivot(
+      ids: Column[],
+      variableColumnName: string,
+      valueColumnName: string,
+      values?: Column[],
+      input?: Relation) {
+    const unpivot = create(UnpivotSchema, {
+      input: input,
+      ids: ids.map(id => id.expr),
+      values: values !== undefined ? create(Unpivot_ValuesSchema, { values: values.map(v => v.expr) }) : undefined,
+      variableColumnName: variableColumnName,
+      valueColumnName: valueColumnName
+    });
+    this.relation.relType = { case: "unpivot", value: unpivot }
     return this;
   }
 

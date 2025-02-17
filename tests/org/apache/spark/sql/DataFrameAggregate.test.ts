@@ -77,3 +77,14 @@ test("groupingSets", async () => {
     expect(row[0]).toBe(2n);
   });
 });
+
+test("unpivot", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const unpivot = df.unpivot([col("name")], [df.col("game"), df.col("goals")], "attribute", "value");
+  await unpivot.head().then((row) => {
+    expect(row[0]).toBe("Messi");
+    expect(row[1]).toBe("game");
+    expect(row[2]).toBe(1);
+  });
+});

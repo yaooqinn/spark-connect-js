@@ -403,6 +403,52 @@ export class DataFrame {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUPING_SETS, undefined, groupingSets);
   }
 
+  /**
+   * Unpivot a DataFrame from wide format to long format, optionally leaving identifier columns
+   * set. This is the reverse to `groupBy(...).pivot(...).agg(...)`, except for the aggregation,
+   * which cannot be reversed.
+   *
+   * This function is useful to massage a DataFrame into a format where some columns are
+   * identifier columns ("ids"), while all other columns ("values") are "unpivoted" to the rows,
+   * leaving just two non-id columns, named as given by `variableColumnName` and
+   * `valueColumnName`.
+   *
+   *
+   * When no "id" columns are given, the unpivoted DataFrame consists of only the "variable" and
+   * "value" columns.
+   *
+   * All "value" columns must share a least common data type. Unless they are the same data type,
+   * all "value" columns are cast to the nearest common data type. For instance, types
+   * `IntegerType` and `LongType` are cast to `LongType`, while `IntegerType` and `StringType` do
+   * not have a common data type and `unpivot` fails with an `AnalysisException`.
+   *
+   * @param ids
+   *   Id columns
+   * @param values
+   *   Value columns to unpivot
+   * @param variableColumnName
+   *   Name of the variable column
+   * @param valueColumnName
+   *   Name of the value column
+   * @group untypedrel
+   */
+  unpivot(ids: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
+  unpivot(ids: Column[], values: Column[], variableColumnName: string, valueColumnName: string): DataFrame;
+  unpivot(ids: Column[], ...args: any[]): DataFrame {
+    var values: Column[] | undefined = undefined;
+    var variableColumnName: string;
+    var valueColumnName: string;
+    if (args.length === 2) {
+      variableColumnName = args[0];
+      valueColumnName = args[1];
+    } else {
+      values = args[0] as Column[];
+      variableColumnName = args[1];
+      valueColumnName = args[2];
+    }
+    return this.toNewDataFrame(b => b.withUnpivot(ids, variableColumnName, valueColumnName, values, this.plan.relation));
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());
