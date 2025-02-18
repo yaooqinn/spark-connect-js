@@ -34,7 +34,7 @@ jobs:
       - name: Build Spark Connect Server
         run: docker build -t scs .github/docker
       - name: Run Spark Connect Server
-        run: docker run --name sparkconnect -p 15002:15002 scs
+        run: docker run --name sparkconnect -p 15002:15002 -d scs
       - name: Install dependencies
         run: npm install
       - name: Test

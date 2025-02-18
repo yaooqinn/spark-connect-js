@@ -19,6 +19,4 @@
 
 /opt/spark/sbin/start-connect-server.sh
 
-ls -al /opt/spark/logs
-
 tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out
