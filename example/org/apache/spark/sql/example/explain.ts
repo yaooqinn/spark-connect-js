@@ -60,19 +60,6 @@ const spark = await SparkSession.builder()
 // spark.read().format("json").load(__dirname + "/data/people.json").schema().then(schema => {
 //   console.log(schema);
 // });
-
-// spark.read().format("csv").load(__dirname + "/data/people.csv").schema().then(schema => {
-//   console.log(schema);
-// });
-
-// spark.read().format("parquet").load(__dirname + "/data/users.parquet").schema().then(schema => {
-//   console.log(schema);
-// });
-
-// spark.read().orc(__dirname + "/data/users.orc").schema().then(schema => {
-//   console.log(schema);
-// });
-
 // spark.read().table("spark_connect_typecript").schema().then(schema => {
 //   console.log(schema);
 // });
