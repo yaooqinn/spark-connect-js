@@ -15,11 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Linter
+name: CI
+
 on: [push, pull_request]
+
 jobs:
-  linter:
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Spark Connect JS
         uses: actions/checkout@v4
@@ -28,7 +31,13 @@ jobs:
         with:
           node-version: '23'
           cache: 'npm'
+      - name: Build Spark Connect Server
+        run: docker build -t scs ./github/docker
+      - name: Run Spark Connect Server
+        run: docker run --name sparkconnect -p 15002:15002 scs
       - name: Install dependencies
         run: npm install
-      - name: Lint
-        run: npm run lint
+      - name: Test
+        run: npm run test
+      - name: Stop Spark Connect Server
+        run: docker stop sparkconnect

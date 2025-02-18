@@ -15,20 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Linter
-on: [push, pull_request]
-jobs:
-  linter:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Spark Connect JS
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '23'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Lint
-        run: npm run lint
+FROM spark:4.0.0-preview2-scala2.13-java17-ubuntu
+
+USER root
+
+COPY ./entrypoint.sh /opt/spark-js/entrypoint.sh
+
+EXPOSE 4040 15002
+ENV HOSTNAME localhost
+ENTRYPOINT [ "/opt/spark-js/entrypoint.sh" ]
+
+# CMD ["/opt/spark/sbin/start-connect-server.sh && tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out"]
+ 

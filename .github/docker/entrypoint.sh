@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,20 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Linter
-on: [push, pull_request]
-jobs:
-  linter:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Spark Connect JS
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '23'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Lint
-        run: npm run lint
+/opt/spark/sbin/start-connect-server.sh
+
+ls -al /opt/spark/logs
+
+tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out
