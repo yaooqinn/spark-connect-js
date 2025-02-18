@@ -33,6 +33,7 @@ jobs:
           cache: 'npm'
       - name: Build Spark Connect Server
         run: |
+          ls -al
           cd spark-connect-js
           docker build -t scs ./github/docker
 
