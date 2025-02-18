@@ -357,6 +357,7 @@ test("date", async () => {
 
 test("timestamp", async () => {
   const spark = await sharedSpark;
+  
   await timeoutOrSatisfied(
     spark.sql("SELECT timestamp'2021-01-01 01:00:00' a, timestamp'2018-11-17 13:33:33' `b.c`").then(df => {
       return df.collect().then(rows => {

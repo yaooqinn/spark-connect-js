@@ -109,6 +109,8 @@ const spark = await SparkSession.builder()
     'My way or high way' AS ST,
     X'10011' AS BIN,
     date'2018-11-17' AS DATE,
+    timestamp'2021-01-01 01:00:00' tt,
+    timestamp'2018-11-17 13:33:33' ttt,
     timestamp'2018-11-17 13:33:33.333' AS TIMESTAMP,
     timestamp_ntz'2018-11-17 13:33:33.333' AS TIMESTAMP_NTZ,
     array(1, 2, 3) AS ARR,
@@ -125,9 +127,9 @@ const spark = await SparkSession.builder()
     // df.collect().then(row => console.log(row));
     await df.show(20, false, true);
     const res = await df.collect();
-    // res.forEach(row => {
-    //   console.log('=======\n', row);
-    // });
+    res.forEach(row => {
+      console.log('=======\n', row);
+    });
     const schema = await df.schema();
     const df2 = await spark.createDataFrame(res, schema);
     await df2.show(20, false, true);
