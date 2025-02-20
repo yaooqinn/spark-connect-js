@@ -65,5 +65,6 @@ async function run() {
     const a = row.getTimestamp(0);
     const b = row.getLong(1);
     console.log(a, b);
+}
 
 run().catch(console.error);
