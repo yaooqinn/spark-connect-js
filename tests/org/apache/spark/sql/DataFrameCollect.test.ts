@@ -357,32 +357,33 @@ test("date", async () => {
 
 test("timestamp", async () => {
   const spark = await sharedSpark;
-  
-  await timeoutOrSatisfied(
-    spark.sql("SELECT timestamp'2021-01-01 01:00:00' a, timestamp'2018-11-17 13:33:33' `b.c`").then(df => {
-      return df.collect().then(rows => {
-        expect(rows[0][0]).toBe(1609434000000);
-        expect(rows[0][1]).toBe(1542432813000);
-        expect(rows[0].getTimestamp(0)).toStrictEqual(new Date(`2021-01-01T01:00:00.000`));
-        expect(rows[0].getTimestamp(1)).toStrictEqual(new Date(`2018-11-17T13:33:33.000`));
-        return df.schema().then(schema => {
-          expect(schema.fields[0].dataType).toBe(DataTypes.TimestampType);
-          expect(schema.fields[0].name).toBe("a");
-          expect(schema.fields[0].nullable).toBe(false);
-          expect(schema.fields[1].dataType).toBe(DataTypes.TimestampType);
-          expect(schema.fields[1].name).toBe("b.c");
-          expect(schema.fields[1].nullable).toBe(false);
-          return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-            expect(rows2[0].getTimestamp(0)).toStrictEqual(new Date("2021-01-01T01:00:00.000"));
-            expect(rows2[0].get(0)).toStrictEqual(new Date("2021-01-01T01:00:00.000"));
-            expect(rows2[0][0]).toBe(1609434000000);
-            expect(rows2[0].getTimestamp(1)).toStrictEqual(new Date("2018-11-17T13:33:33.000"));
-            expect(rows2[0].get(1)).toStrictEqual(new Date("2018-11-17T13:33:33.000"));
-            expect(rows2[0][1]).toBe(1542432813000);
-          });
-        });
-      });
-  }));
+  const df = await spark.sql("SELECT timestamp'2021-01-01 01:00:00' a, timestamp'2018-11-17 13:33:33' `b.c`");
+  const rows = await df.collect();
+  const timezoneDf =  await spark.sql("SELECT timestamp'2021-01-01 01:00:00 Z' - timestamp'2021-01-01 01:00:00'")
+  const timezone = await timezoneDf.head().then(row => row[0]);
+  const timezoneNumber = Number(timezone / 1000n);
+  const date1 = new Date("2021-01-01T01:00:00Z");
+  const date2 = new Date("2018-11-17T13:33:33Z");
+  const date3 = new Date(date1.getTime() - timezoneNumber);
+  const date4 = new Date(date2.getTime() - timezoneNumber);
+  expect(rows[0][0]).toBe(date3.getTime());
+  expect(rows[0][1]).toBe(date4.getTime());
+  expect(rows[0].getTimestamp(0)).toStrictEqual(date3);
+  expect(rows[0].getTimestamp(1)).toStrictEqual(date4);
+  const schema = await df.schema();
+  expect(schema.fields[0].dataType).toBe(DataTypes.TimestampType);
+  expect(schema.fields[0].name).toBe("a");
+  expect(schema.fields[0].nullable).toBe(false);
+  expect(schema.fields[1].dataType).toBe(DataTypes.TimestampType);
+  expect(schema.fields[1].name).toBe("b.c");
+  expect(schema.fields[1].nullable).toBe(false);
+  const rows2 = await spark.createDataFrame(rows, schema).collect();
+  expect(rows2[0].getTimestamp(0)).toStrictEqual(date3);
+  expect(rows2[0].get(0)).toStrictEqual(date3);
+  expect(rows2[0][0]).toBe(date3.getTime());
+  expect(rows2[0].getTimestamp(1)).toStrictEqual(date4);
+  expect(rows2[0].get(1)).toStrictEqual(date4);
+  expect(rows2[0][1]).toBe(date4.getTime());
 });
 
 test("timestamp_ntz", async () => {
@@ -856,41 +857,30 @@ test("date array", async () => {
 });
 
 test("timestamp array", async () => {
-  const timestampArray = [new Date("2021-01-01 01:00:00"), new Date("2018-11-17 13:33:33"), new Date("2020-12-31 23:59:59")];
-  const timestampArray2 = [new Date("2020-12-31 23:59:59"), new Date("2018-11-17 13:33:33"), new Date("2021-01-01 01:00:00")];
-  const timestampArrayType = DataTypes.createArrayType(DataTypes.TimestampType, false);
-  const nestedTimestampArrayType = DataTypes.createArrayType(timestampArrayType, false);
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(
-    spark.sql("SELECT array(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59') a, array(timestamp'2020-12-31 23:59:59', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00') `b.c`, array(array(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59'), array(timestamp'2020-12-31 23:59:59', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00')) d").then(df => {
-      return df.collect().then(rows => {
-        expect(rows[0][0]).toStrictEqual(timestampArray.map(d => d.getTime()));
-        expect(rows[0].get(0)).toStrictEqual(timestampArray);
-        expect(rows[0][1]).toStrictEqual(timestampArray2.map(d => d.getTime()));
-        expect(rows[0].get(1)).toStrictEqual(timestampArray2);
-        expect(rows[0][2]).toStrictEqual([timestampArray.map(d => d.getTime()), timestampArray2.map(d => d.getTime())]);
-        expect(rows[0].get(2)).toStrictEqual([timestampArray, timestampArray2]);
-        return df.schema().then(schema => {
-          expect(schema.fields[0].dataType).toStrictEqual(timestampArrayType);
-          expect(schema.fields[0].name).toBe("a");
-          expect(schema.fields[0].nullable).toBe(false);
-          expect(schema.fields[1].dataType).toStrictEqual(timestampArrayType);
-          expect(schema.fields[1].name).toBe("b.c");
-          expect(schema.fields[1].nullable).toBe(false);
-          expect(schema.fields[2].dataType).toStrictEqual(nestedTimestampArrayType);
-          expect(schema.fields[2].name).toBe("d");
-          expect(schema.fields[2].nullable).toBe(false);
-          return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-            expect(rows2[0][0]).toStrictEqual(timestampArray.map(d => d.getTime()));
-            expect(rows2[0].get(0)).toStrictEqual(timestampArray);
-            expect(rows2[0][1]).toStrictEqual(timestampArray2.map(d => d.getTime()));
-            expect(rows2[0].get(1)).toStrictEqual(timestampArray2);
-            expect(rows2[0][2]).toStrictEqual([timestampArray.map(d => d.getTime()), timestampArray2.map(d => d.getTime())]);
-            expect(rows2[0].get(2)).toStrictEqual([timestampArray, timestampArray2]);
-          });
-        });
-      });
-  }));
+  const timezone =  await spark.sql("SELECT timestamp'2021-01-01 01:00:00 Z' - timestamp'2021-01-01 01:00:00'").then(df => df.head()).then(row => row.get(0));
+  const timezoneNumber = Number(timezone / 1000n);
+  const df = await spark.sql("SELECT array(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59') a, array(timestamp'2020-12-31 23:59:59', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00') `b.c`, array(array(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59'), array(timestamp'2020-12-31 23:59:59', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00')) d");
+  const timestampArray = [new Date("2021-01-01 01:00:00Z"), new Date("2018-11-17 13:33:33Z"), new Date("2020-12-31 23:59:59Z")];
+  const timestampArray2 = [new Date("2020-12-31 23:59:59Z"), new Date("2018-11-17 13:33:33Z"), new Date("2021-01-01 01:00:00Z")];
+  const timestampArray3 = timestampArray.map(d => new Date(d.getTime() - timezoneNumber));
+  const timestampArray4 = timestampArray2.map(d => new Date(d.getTime() - timezoneNumber));
+  const row = await df.head();
+  expect(row[0]).toStrictEqual(timestampArray3.map(d => d.getTime()));
+  expect(row.get(0)).toStrictEqual(timestampArray3);
+  expect(row[1]).toStrictEqual(timestampArray4.map(d => d.getTime()));
+  expect(row.get(1)).toStrictEqual(timestampArray4);
+  expect(row[2]).toStrictEqual([timestampArray3.map(d => d.getTime()), timestampArray4.map(d => d.getTime())]);
+  expect(row.get(2)).toStrictEqual([timestampArray3, timestampArray4]);
+  const schema = await df.schema();
+  const df2 = spark.createDataFrame([row], schema);
+  const row2 = await df2.head();
+  expect(row2[0]).toStrictEqual(timestampArray3.map(d => d.getTime()));
+  expect(row2.get(0)).toStrictEqual(timestampArray3);
+  expect(row2[1]).toStrictEqual(timestampArray4.map(d => d.getTime()));
+  expect(row2.get(1)).toStrictEqual(timestampArray4);
+  expect(row2[2]).toStrictEqual([timestampArray3.map(d => d.getTime()), timestampArray4.map(d => d.getTime())]);
+  expect(row2.get(2)).toStrictEqual([timestampArray3, timestampArray4]);
 });
 
 test("map array", async () => {
@@ -1357,32 +1347,33 @@ test("date/date map", async () => {
 
 test("timestamp/timestamp map", async () => {
   const spark = await sharedSpark;
-  const timestampMap = new Map([[new Date("2021-01-01 01:00:00"), new Date("2018-11-17 13:33:33")], [new Date("2020-12-31 23:59:59"), new Date("2021-01-01 01:00:00")]]);
-  const timestampMap2 = new Map([[new Date("2020-12-31 23:59:59"), new Date("2021-01-01 01:00:00")], [new Date("2018-11-17 13:33:33"), new Date("2021-01-01 01:00:00")]]);
+  const timezone =  await spark.sql("SELECT timestamp'2021-01-01 01:00:00 Z' - timestamp'2021-01-01 01:00:00'").then(df => df.head()).then(row => row.get(0));
+  const timezoneNumber = Number(timezone / 1000n);
+  const timestampMap = new Map([[new Date("2021-01-01 01:00:00Z"), new Date("2018-11-17 13:33:33Z")], [new Date("2020-12-31 23:59:59Z"), new Date("2021-01-01 01:00:00Z")]]);
+  const timestampMap2 = new Map([[new Date("2020-12-31 23:59:59Z"), new Date("2021-01-01 01:00:00Z")], [new Date("2018-11-17 13:33:33Z"), new Date("2021-01-01 01:00:00Z")]]);
+  const timestampMap3 = new Map();
+  timestampMap.forEach((value, key) => {
+    timestampMap3.set(new Date(Number(key) - timezoneNumber), new Date(Number(value) - timezoneNumber));
+  });
+  const timestampMap4 = new Map();
+  timestampMap2.forEach((value, key) => {
+    timestampMap4.set(new Date(Number(key) - timezoneNumber), new Date(Number(value) - timezoneNumber));
+  });
+
+  const df = await spark.sql("SELECT map(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59', timestamp'2021-01-01 01:00:00') a, map(timestamp'2020-12-31 23:59:59', timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00') b")
+  const row = await df.head();
   const timestampMapType = DataTypes.createMapType(DataTypes.TimestampType, DataTypes.TimestampType, false);
-  return timeoutOrSatisfied(
-    spark.sql("SELECT map(timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2020-12-31 23:59:59', timestamp'2021-01-01 01:00:00') a, map(timestamp'2020-12-31 23:59:59', timestamp'2021-01-01 01:00:00', timestamp'2018-11-17 13:33:33', timestamp'2021-01-01 01:00:00') b").then(df => {
-      return df.collect().then(rows => {
-        expect(getAsPlainJS(timestampMapType, rows[0][0])).toStrictEqual(timestampMap);
-        expect(rows[0].get(0)).toStrictEqual(timestampMap);
-        expect(getAsPlainJS(timestampMapType, rows[0][1])).toStrictEqual(timestampMap2);
-        expect(rows[0].get(1)).toStrictEqual(timestampMap2);
-        return df.schema().then(schema => {
-          expect(schema.fields[0].dataType).toStrictEqual(timestampMapType);
-          expect(schema.fields[0].name).toBe("a");
-          expect(schema.fields[0].nullable).toBe(false);
-          expect(schema.fields[1].dataType).toStrictEqual(timestampMapType);
-          expect(schema.fields[1].name).toBe("b");
-          expect(schema.fields[1].nullable).toBe(false);
-          return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-            expect(getAsPlainJS(timestampMapType, rows2[0][0])).toStrictEqual(timestampMap);
-            expect(rows2[0].get(0)).toStrictEqual(timestampMap);
-            expect(getAsPlainJS(timestampMapType, rows2[0][1])).toStrictEqual(timestampMap2);
-            expect(rows2[0].get(1)).toStrictEqual(timestampMap2);
-          });
-        });
-      });
-  }));
+
+  expect(getAsPlainJS(timestampMapType, row.get(0))).toStrictEqual(timestampMap3);
+  expect(row.get(0)).toStrictEqual(timestampMap3);
+  expect(getAsPlainJS(timestampMapType, row.get(1))).toStrictEqual(timestampMap4);
+  expect(row.get(1)).toStrictEqual(timestampMap4);
+  const df2 = spark.createDataFrame([row], await df.schema());
+  const row2 = await df2.head();
+  expect(getAsPlainJS(timestampMapType, row2.get(0))).toStrictEqual(timestampMap3);
+  expect(row2.get(0)).toStrictEqual(timestampMap3);
+  expect(getAsPlainJS(timestampMapType, row2.get(1))).toStrictEqual(timestampMap4);
+  expect(row2.get(1)).toStrictEqual(timestampMap4);
 });
 
 test("array map", async () => {
@@ -1451,7 +1442,7 @@ test("struct", async () => {
     i: "hello",
     j: new Uint8Array(Buffer.from("world")),
     k: new Date("2021-01-01").getTime(),
-    l: new Date("2021-01-01 01:00:00").getTime(),
+    l: new Date("2021-01-01 01:00:00Z").getTime(),
     m: [1, 2, 3],
     n: new Map([[1, 2], [3, 4]]),
     o: {a: 1, b: 2},
@@ -1470,7 +1461,7 @@ test("struct", async () => {
     i: "hello",
     j: new Uint8Array(Buffer.from("world")),
     k: new Date("2021-01-01"),
-    l: new Date("2021-01-01 01:00:00"),
+    l: new Date("2021-01-01 01:00:00Z"),
     m: [1, 2, 3],
     n: new Map([[1, 2], [3, 4]]),
     o: {a: 1, b: 2},
@@ -1490,7 +1481,7 @@ test("struct", async () => {
       "'i', 'hello', " +
       "'j', cast('world' as binary), " +
       "'k', date'2021-01-01', " +
-      "'l', timestamp'2021-01-01 01:00:00', " +
+      "'l', timestamp'2021-01-01 01:00:00Z', " +
       "'m', array(1, 2, 3), " +
       "'n', map(1, 2, 3, 4), " +
       "'o', named_struct('a', 1, 'b', 2), " +
