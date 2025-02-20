@@ -39,7 +39,7 @@ abstract class SparkThrowable extends Error {
 export function fromStatus(err: grpc.StatusObject & Error | grpc.StatusObject): Error {
   const statusDetails = err.metadata.get("grpc-status-details-bin").toString();
   let msg = err.details;
-  const conditionMatch = msg.match(/\[([A-Z_\.]+)\]/);
+  const conditionMatch = msg.match(/\[([A-Z_.]+)\]/);
   const condition = conditionMatch ? conditionMatch[1] : "_LEGACY_ERROR_TEMP_00000";
   const sqlStateMatch = msg.match(/SQLSTATE:\s*([0-9A-Z]+)/);
   const sqlState = sqlStateMatch ? sqlStateMatch[1] : "00000";

@@ -16,7 +16,7 @@
  */
 
 export function mapToIndexSignature<V>(map: Map<string, V>): { [key: string]: V } {
-  let obj: { [key: string]: V } = {};
+  const obj: { [key: string]: V } = {};
   for (const [key, value] of map.entries()) {
     obj[key] = value;
   }
