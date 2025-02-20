@@ -77,7 +77,7 @@ export class Client {
             logger.debug("Errored calling", method + ": ", handledErrr);
             reject(handledErrr);
           } else if (resp) {
-            logger.debug("Received response by", method + ": ", JSON.stringify(resp));
+            logger.debug("Received response by", method + ": ", resp);
             resolve(resp);
           } else {
             const msg = "No response or error received by " + method;
