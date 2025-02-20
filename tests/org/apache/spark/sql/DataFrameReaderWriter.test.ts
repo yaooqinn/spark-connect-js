@@ -127,45 +127,36 @@ test("DataFrameWriter validatePartitioning", async () => {
 test("DataFrameWriter save", async () => {
   const spark = await sharedSpark;
   const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200) DISTRIBUTE BY id % 100");
-  return withTable(spark, "people", async () => {
+  await withTable(spark, "people", async () => {
     await df.write.format("parquet").saveAsTable("people");
-    expect.assertions(12);
-    spark.table("people").schema().then(schema => {
-      expect(schema.fields.length).toBe(2)
-      expect(schema.fields[0].name).toBe("id")
-      expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
-      expect(schema.fields[1].name).toBe("name")
-      expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
-    });
+    let schema = await spark.table("people").schema();
+    expect(schema.fields.length).toBe(2)
+    expect(schema.fields[0].name).toBe("id")
+    expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
+    expect(schema.fields[1].name).toBe("name")
+    expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
     await df.write.mode("overwrite").parquet("people");
-    return spark.table("people").schema().then(schema => {
-      expect(schema.fields.length).toBe(2)
-      expect(schema.fields[0].name).toBe("id")
-      expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
-      expect(schema.fields[1].name).toBe("name")
-      expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
-    });
+    schema = await spark.read.parquet("people").schema();
+    expect(schema.fields.length).toBe(2)
+    expect(schema.fields[0].name).toBe("id")
+    expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
+    expect(schema.fields[1].name).toBe("name")
+    expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
 });
 
 test("DataFrameWriter insertInto", async () => {
-  return sharedSpark.then(spark => {
-    return withTable(spark, "people", async () => {
-      return spark.sql("CREATE TABLE people (id LONG, name STRING) USING parquet").then(() => {
-        return spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200)").then(df => {
-          return df.write.mode("append").insertInto("people").then(() => {
-            expect.assertions(5);
-            return spark.table("people").schema().then(schema => {
-              expect(schema.fields.length).toBe(2)
-              expect(schema.fields[0].name).toBe("id")
-              expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
-              expect(schema.fields[1].name).toBe("name")
-              expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
-            });
-          });
-        });
-      });
-    });
+  const spark = await sharedSpark;
+  await withTable(spark, "people", async () => {
+    await spark.sql("CREATE TABLE people (id LONG, name STRING) USING parquet");
+    const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200)");
+    await df.write.mode("append").insertInto("people");
+    let schema = await spark.table("people").schema();
+    expect(schema.fields.length).toBe(2)
+    expect(schema.fields[0].name).toBe("id")
+    expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
+    expect(schema.fields[1].name).toBe("name")
+    expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
 });
 

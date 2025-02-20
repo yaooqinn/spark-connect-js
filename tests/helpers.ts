@@ -62,9 +62,9 @@ export async function withDatabase(
 export async function withTable(
     spark: SparkSession,
     tableName: string,
-    fn: (tableName: string) => Promise<any>, timeout: number = 30000): Promise<void> {
+    fn: (tableName: string) => Promise<any>): Promise<void> {
   try {
-    await timeoutOrSatisfied(fn(tableName), timeout);
+    await fn(tableName);
   } finally {
     await spark.sql(`DROP TABLE IF EXISTS ${tableName}`);
   }
