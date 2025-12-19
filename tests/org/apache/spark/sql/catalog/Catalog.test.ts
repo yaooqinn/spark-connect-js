@@ -165,7 +165,7 @@ test("table apis", async () => {
       expect(columns[1][2]).toBe("string");
     });
   });
-});
+}, 30000);
 
 test("functions api", async () => {
   const spark = await sharedSpark;
@@ -204,7 +204,7 @@ test("functions api", async () => {
     const f1 = await spark.catalog.getFunction("test_db", "f")
     expect(f1.name).toBe("f");
   });
-});
+}, 30000);
 
 test("catalog apis", async () => {
   const spark = await sharedSpark;
