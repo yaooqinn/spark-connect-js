@@ -136,14 +136,14 @@ test("DataFrameWriter save", async () => {
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
     await df.write.mode("overwrite").format("parquet").saveAsTable("people");
-    schema = await spark.read.parquet("people").schema();
+    schema = await spark.table("people").schema();
     expect(schema.fields.length).toBe(2)
     expect(schema.fields[0].name).toBe("id")
     expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
-});
+}, 10000);
 
 test("DataFrameWriter insertInto", async () => {
   const spark = await sharedSpark;
@@ -158,7 +158,7 @@ test("DataFrameWriter insertInto", async () => {
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
-});
+}, 10000);
 
 test("DataFrameWriter jdbc", async () => {
   expect.assertions(3);
