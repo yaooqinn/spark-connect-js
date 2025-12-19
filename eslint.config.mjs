@@ -31,6 +31,9 @@ const compat = new FlatCompat({
 });
 
 export default [
+    {
+        ignores: ["src/gen/**/*"],
+    },
     ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended"),
     {
         plugins: {
@@ -45,6 +48,5 @@ export default [
             "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/no-unused-expressions": "off",
         },
-        ignores: ["./gen/*"],
     },
 ];
