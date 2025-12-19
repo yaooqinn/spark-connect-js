@@ -151,7 +151,7 @@ test("DataFrameWriter insertInto", async () => {
     await spark.sql("CREATE TABLE people (id LONG, name STRING) USING parquet");
     const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200)");
     await df.write.mode("append").insertInto("people");
-    let schema = await spark.table("people").schema();
+    const schema = await spark.table("people").schema();
     expect(schema.fields.length).toBe(2)
     expect(schema.fields[0].name).toBe("id")
     expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
