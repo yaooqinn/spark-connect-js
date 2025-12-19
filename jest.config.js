@@ -10,3 +10,4 @@ export const displayName = {
   color: "blue",
 };
 export const verbose = true;
+export const setupFilesAfterEnv = ["<rootDir>/jest.setup.js"];

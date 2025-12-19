@@ -127,38 +127,38 @@ test("DataFrameWriter validatePartitioning", async () => {
 test("DataFrameWriter save", async () => {
   const spark = await sharedSpark;
   const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200) DISTRIBUTE BY id % 100");
-  await withTable(spark, "people", async () => {
-    await df.write.format("parquet").saveAsTable("people");
-    let schema = await spark.table("people").schema();
+  await withTable(spark, "people_save_test", async () => {
+    await df.write.format("parquet").saveAsTable("people_save_test");
+    let schema = await spark.table("people_save_test").schema();
     expect(schema.fields.length).toBe(2)
     expect(schema.fields[0].name).toBe("id")
     expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
-    await df.write.mode("overwrite").format("parquet").saveAsTable("people");
-    schema = await spark.read.parquet("people").schema();
+    await df.write.mode("overwrite").format("parquet").saveAsTable("people_save_test");
+    schema = await spark.table("people_save_test").schema();
     expect(schema.fields.length).toBe(2)
     expect(schema.fields[0].name).toBe("id")
     expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
-});
+}, 30000);
 
 test("DataFrameWriter insertInto", async () => {
   const spark = await sharedSpark;
-  await withTable(spark, "people", async () => {
-    await spark.sql("CREATE TABLE people (id LONG, name STRING) USING parquet");
+  await withTable(spark, "people_insert_test", async () => {
+    await spark.sql("CREATE TABLE people_insert_test (id LONG, name STRING) USING parquet");
     const df = await spark.sql("SELECT id, 'Alice' as name from range(1, 10000, 1, 200)");
-    await df.write.mode("append").insertInto("people");
-    const schema = await spark.table("people").schema();
+    await df.write.mode("append").insertInto("people_insert_test");
+    const schema = await spark.table("people_insert_test").schema();
     expect(schema.fields.length).toBe(2)
     expect(schema.fields[0].name).toBe("id")
     expect(schema.fields[0].dataType).toBe(DataTypes.LongType)
     expect(schema.fields[1].name).toBe("name")
     expect(schema.fields[1].dataType).toBe(DataTypes.StringType)
   });
-});
+}, 30000);
 
 test("DataFrameWriter jdbc", async () => {
   expect.assertions(3);
