@@ -18,7 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
 import { DataTypes } from "../types";
@@ -174,6 +174,63 @@ export class RelationBuilder {
         allowMissingColumns: allowMissingColumns
       });
     this.relation.relType = { case: "setOp", value: setOp }
+    return this;
+  }
+
+  withStatCov(col1: string, col2: string, input?: Relation) {
+    const statCov = create(StatCovSchema, { input: input, col1: col1, col2: col2 });
+    this.relation.relType = { case: "cov", value: statCov }
+    return this;
+  }
+
+  withStatCorr(col1: string, col2: string, method?: string, input?: Relation) {
+    const statCorr = create(StatCorrSchema, { input: input, col1: col1, col2: col2, method: method });
+    this.relation.relType = { case: "corr", value: statCorr }
+    return this;
+  }
+
+  withStatCrosstab(col1: string, col2: string, input?: Relation) {
+    const statCrosstab = create(StatCrosstabSchema, { input: input, col1: col1, col2: col2 });
+    this.relation.relType = { case: "crosstab", value: statCrosstab }
+    return this;
+  }
+
+  withStatFreqItems(cols: string[], support?: number, input?: Relation) {
+    const statFreqItems = create(StatFreqItemsSchema, { input: input, cols: cols, support: support });
+    this.relation.relType = { case: "freqItems", value: statFreqItems }
+    return this;
+  }
+
+  withStatSampleBy(col: Column, fractions: Map<any, number>, seed?: number, input?: Relation) {
+    const fractionsList = Array.from(fractions.entries()).map(([stratum, fraction]) => {
+      const literalExpr = lit(stratum).expr;
+      // Extract the literal value from the expression
+      if (literalExpr.exprType.case !== 'literal') {
+        throw new Error('Stratum must be a literal value');
+      }
+      return create(StatSampleBy_FractionSchema, {
+        stratum: literalExpr.exprType.value,
+        fraction: fraction
+      });
+    });
+    const statSampleBy = create(StatSampleBySchema, {
+      input: input,
+      col: col.expr,
+      fractions: fractionsList,
+      seed: seed !== undefined ? BigInt(seed) : undefined
+    });
+    this.relation.relType = { case: "sampleBy", value: statSampleBy }
+    return this;
+  }
+
+  withStatApproxQuantile(cols: string[], probabilities: number[], relativeError: number, input?: Relation) {
+    const statApproxQuantile = create(StatApproxQuantileSchema, {
+      input: input,
+      cols: cols,
+      probabilities: probabilities,
+      relativeError: relativeError
+    });
+    this.relation.relType = { case: "approxQuantile", value: statApproxQuantile }
     return this;
   }
 
