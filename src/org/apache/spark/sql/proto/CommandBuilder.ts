@@ -20,7 +20,6 @@ import { Command, CommandSchema, SqlCommandSchema, WriteOperationV2 } from "../.
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
-  constructor() {}
 
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
