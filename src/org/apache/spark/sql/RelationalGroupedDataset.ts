@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-import { create } from "@bufbuild/protobuf";
-import { Aggregate_Pivot, Aggregate_PivotSchema } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
-import { toGroupingSetsPB, toLiteralBuilder } from "./proto/expression/utils";
+import { toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
@@ -52,7 +50,6 @@ export class RelationalGroupedDataset {
     public readonly df: DataFrame,
     public readonly groupingExprs: string[] | Column[],
     public readonly groupType: GroupType,
-    public readonly pivotProto: Aggregate_Pivot | undefined = undefined,
     public readonly groupingSets: Column[][] = []
   ) {}
 
@@ -69,7 +66,6 @@ export class RelationalGroupedDataset {
         }
         return ab.withInput(this.df.plan.relation)
           .withAggregateExpressions(aggExprs.map((c) => c.expr))
-          .withPivot(this.pivotProto)
           .withGroupType(toGroupTypePB(this.groupType))
       });
     });
@@ -158,21 +154,4 @@ export class RelationalGroupedDataset {
     }
   }
 
-  pivot(pivotCol: string, values?: any[]): RelationalGroupedDataset {
-    if (!pivotCol) {
-      throw new Error("pivot column name must be provided");
-    }
-    const pivotProto = create(Aggregate_PivotSchema, {
-      col: new Column(pivotCol).expr,
-      values: values ? values.map((v) => toLiteralBuilder(v).builder.build()) : undefined,
-    });
-
-    return new RelationalGroupedDataset(
-      this.df,
-      this.groupingExprs,
-      this.groupType,
-      pivotProto,
-      this.groupingSets
-    );
-  }
 }

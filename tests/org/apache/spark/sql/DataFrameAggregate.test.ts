@@ -123,18 +123,12 @@ test("advanced aggregate helpers", async () => {
   });
 });
 
-test("agg with map and pivot", async () => {
+test("agg with map", async () => {
   const spark = await sharedSpark;
   const df = spark.createDataFrame(testRows, testSchema);
 
   await df.groupBy("name").agg({ goals: "max", game: "min" }).where("name = 'Messi'").head().then((row) => {
     expect(Number(row[1])).toBe(2);
-    expect(Number(row[2])).toBe(1);
-  });
-
-  const pivoted = df.groupBy("game").pivot("name", ["Messi", "Ronaldo"]).sum("goals");
-  await pivoted.where("game = 1").head().then((row) => {
-    expect(Number(row[1])).toBe(1);
     expect(Number(row[2])).toBe(1);
   });
 });
