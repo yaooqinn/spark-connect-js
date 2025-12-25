@@ -33,7 +33,7 @@ export class RelationalGroupedDataset {
     public readonly df: DataFrame,
     public readonly groupingExprs: string[] | Column[],
     public readonly groupType: GroupType,
-    public readonly pivot: Aggregate_Pivot | undefined = undefined,
+    public readonly pivotValue: Aggregate_Pivot | undefined = undefined,
     public readonly groupingSets: Column[][] = []
   ) {}
 
@@ -50,7 +50,7 @@ export class RelationalGroupedDataset {
         }
         return ab.withInput(this.df.plan.relation)
           .withAggregateExpressions(aggExprs.map((c) => c.expr))
-          .withPivot(this.pivot)
+          .withPivot(this.pivotValue)
           .withGroupType(toGroupTypePB(this.groupType))
       });
     });
