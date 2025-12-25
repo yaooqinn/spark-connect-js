@@ -98,7 +98,7 @@ describe('UDF Tests', () => {
     );
 
     // Test with boolean
-    await spark.udf.register('isEven', (x: number) => x % 2 == 0, 'boolean');
+    await spark.udf.register('isEven', (x: number) => x % 2 === 0, 'boolean');
     
     await timeoutOrSatisfied(
       spark.sql('SELECT isEven(4) as result').then(df => {
