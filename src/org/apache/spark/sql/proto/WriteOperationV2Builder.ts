@@ -23,8 +23,6 @@ import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 export class WriteOperationV2Builder {
   private writeOp: WriteOperationV2 = create(WriteOperationV2Schema, {});
 
-  constructor() {}
-
   withInput(input: Relation) {
     this.writeOp.input = input;
     return this;
