@@ -18,7 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, NADropSchema, NAFillSchema, NAReplaceSchema, NAReplace_ReplacementSchema, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
 import { DataTypes } from "../types";
@@ -27,6 +27,7 @@ import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { toSetOpTypePB } from "./ProtoUtils";
+import { toLiteralBuilder } from "./expression/utils";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -174,6 +175,43 @@ export class RelationBuilder {
         allowMissingColumns: allowMissingColumns
       });
     this.relation.relType = { case: "setOp", value: setOp }
+    return this;
+  }
+
+  withNAFill(input: Relation, cols: string[], values: (number | string | boolean)[]): this {
+    const literals = values.map(v => toLiteralBuilder(v).builder.build());
+    const naFill = create(NAFillSchema, {
+      input: input,
+      cols: cols,
+      values: literals
+    });
+    this.relation.relType = { case: "fillNa", value: naFill };
+    return this;
+  }
+
+  withNADrop(input: Relation, cols: string[], minNonNulls?: number): this {
+    const naDrop = create(NADropSchema, {
+      input: input,
+      cols: cols,
+      minNonNulls: minNonNulls
+    });
+    this.relation.relType = { case: "dropNa", value: naDrop };
+    return this;
+  }
+
+  withNAReplace(input: Relation, cols: string[], replacement: Map<any, any>): this {
+    const replacements = Array.from(replacement.entries()).map(([oldValue, newValue]) => {
+      return create(NAReplace_ReplacementSchema, {
+        oldValue: toLiteralBuilder(oldValue).builder.build(),
+        newValue: toLiteralBuilder(newValue).builder.build()
+      });
+    });
+    const naReplace = create(NAReplaceSchema, {
+      input: input,
+      cols: cols,
+      replacements: replacements
+    });
+    this.relation.relType = { case: "replace", value: naReplace };
     return this;
   }
 
