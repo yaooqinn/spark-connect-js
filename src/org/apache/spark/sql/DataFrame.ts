@@ -556,9 +556,9 @@ export class DataFrame {
 
   /**
    * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION DISTINCT` in SQL.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * To do a SQL-style union that keeps duplicates, use [[unionAll]].
    *
    * Also as standard in SQL, this function resolves columns by position (not by name):
    *
@@ -585,17 +585,31 @@ export class DataFrame {
    * @since 2.0.0
    */
   union(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", false));
+  }
+
+  /**
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION ALL` in SQL.
+   *
+   * To do a SQL-style set union (that does deduplication of elements), use [[union]].
+   *
+   * Also as standard in SQL, this function resolves columns by position (not by name).
+   *
+   * @group typedrel
+   */
+  unionAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true));
   }
 
   /**
-   * Returns a new Dataset containing union of rows in this Dataset and another Dataset. This is
-   * an alias for `union`.
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * This is equivalent to `UNION ALL` in SQL. Unlike [[union]], this function resolves columns
+   * by name (not by position).
    *
-   * Also as standard in SQL, this function resolves columns by position (not by name).
+   * When the parameter `allowMissingColumns` is true, the set of column names
+   * in this and `other` Dataset can differ; missing columns will be filled with null.
    *
    * @group typedrel
    */
