@@ -149,6 +149,10 @@ export class DataFrameNaFunctions {
    * Returns a new [[DataFrame]] that replaces values matching the keys in `replacement` map
    * with the corresponding values.
    *
+   * For numeric replacements, you can use either:
+   * - A Map with numeric keys: `new Map([[1, 10], [3, 30]])`
+   * - An object with numeric keys (will be converted): `{1: 10, 3: 30}`
+   *
    * @since 1.0.0
    */
   replace(
@@ -161,13 +165,13 @@ export class DataFrameNaFunctions {
     if (replacement instanceof Map) {
       replacementMap = replacement;
     } else {
-      // Convert plain object to Map, preserving numeric keys
+      // Convert plain object to Map
+      // Try to parse string keys as numbers to support numeric replacements
       replacementMap = new Map();
-      for (const [key, value] of Object.entries(replacement)) {
-        // Try to parse key as number if it looks like one
-        const numericKey = Number(key);
-        const actualKey = !isNaN(numericKey) && key === numericKey.toString() ? numericKey : key;
-        replacementMap.set(actualKey, value);
+      for (const [stringKey, value] of Object.entries(replacement)) {
+        const numericKey = Number(stringKey);
+        const key = !isNaN(numericKey) ? numericKey : stringKey;
+        replacementMap.set(key, value);
       }
     }
     

@@ -120,7 +120,7 @@ test("na.fill(0, ['a']) - fill null values in specific column", async () => {
       const result = await df.na.fill(0, ['a']).collect();
       expect(result.length).toBe(3);
       expect(result[1].getInt(0)).toBe(0);
-      expect(result[1].get(1)).toBe(3);
+      expect(result[1].getInt(1)).toBe(3);
     })
   );
 });
