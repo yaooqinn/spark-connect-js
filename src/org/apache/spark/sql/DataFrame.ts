@@ -605,8 +605,8 @@ export class DataFrame {
   /**
    * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
    *
-   * This is equivalent to `UNION ALL` in SQL. Unlike [[union]], this function resolves columns
-   * by name (not by position).
+   * Unlike [[union]], this function resolves columns by name (not by position).
+   * This is equivalent to `UNION ALL` in SQL with column name matching.
    *
    * When the parameter `allowMissingColumns` is true, the set of column names
    * in this and `other` Dataset can differ; missing columns will be filled with null.
