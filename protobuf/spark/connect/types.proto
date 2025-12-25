@@ -72,6 +72,7 @@ message DataType {
 
     // Geospatial types
     Geometry geometry = 26;
+    // Geography type for geospatial data
     Geography geography = 27;
 
     Time time = 28;

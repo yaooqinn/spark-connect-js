@@ -212,6 +212,8 @@ export type DataType = Message<"spark.connect.DataType"> & {
     case: "geometry";
   } | {
     /**
+     * Geography type for geospatial data
+     *
      * @generated from field: spark.connect.DataType.Geography geography = 27;
      */
     value: DataType_Geography;

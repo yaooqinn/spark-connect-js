@@ -1502,6 +1502,9 @@ export const SubqueryExpressionSchema: GenMessage<SubqueryExpression> = /*@__PUR
   messageDesc(file_spark_connect_expressions, 10);
 
 /**
+ * DirectShufflePartitionID is an expression that returns the current shuffle partition ID.
+ * This is used internally for optimizations related to direct shuffle reads.
+ *
  * @generated from message spark.connect.DirectShufflePartitionID
  */
 export type DirectShufflePartitionID = Message<"spark.connect.DirectShufflePartitionID"> & {

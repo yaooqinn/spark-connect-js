@@ -459,5 +459,7 @@ message SubqueryExpression {
   google.protobuf.Any plan = 1;
 }
 
+// DirectShufflePartitionID is an expression that returns the current shuffle partition ID.
+// This is used internally for optimizations related to direct shuffle reads.
 message DirectShufflePartitionID {
 }
