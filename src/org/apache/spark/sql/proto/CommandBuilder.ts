@@ -16,7 +16,10 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Command, CommandSchema, SqlCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
+import { Command, CommandSchema, SqlCommandSchema, CheckpointCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
+import { Relation } from "../../../../../gen/spark/connect/relations_pb";
+import { StorageLevel } from "../../storage/StorageLevel";
+import { StorageLevelSchema } from "../../../../../gen/spark/connect/common_pb";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -25,6 +28,25 @@ export class CommandBuilder {
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
     this.command.commandType = { case: "sqlCommand", value: sqlCmd };
+    return this;
+  }
+
+  withCheckpointCommand(relation: Relation, local: boolean, eager: boolean, storageLevel?: StorageLevel) {
+    const storageLevelPB = storageLevel ? create(StorageLevelSchema, {
+      useMemory: storageLevel.useMemory,
+      useDisk: storageLevel.useDisk,
+      useOffHeap: storageLevel.useOffHeap,
+      deserialized: storageLevel.deserialized,
+      replication: storageLevel.replication
+    }) : undefined;
+    
+    const checkpointCmd = create(CheckpointCommandSchema, {
+      relation: relation,
+      local: local,
+      eager: eager,
+      storageLevel: storageLevelPB
+    });
+    this.command.commandType = { case: "checkpointCommand", value: checkpointCmd };
     return this;
   }
 

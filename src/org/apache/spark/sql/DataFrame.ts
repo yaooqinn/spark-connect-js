@@ -100,20 +100,21 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
-  // async checkpoint(): Promise<DataFrame>;
-  // async checkpoint(eager: boolean): Promise<DataFrame>;
-  // async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
-  // async localCheckpoint(): Promise<DataFrame>;
-  // async localCheckpoint(eager: boolean): Promise<DataFrame>;
-  // async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, false, eager)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
-  // async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  async localCheckpoint(eager: boolean = true): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, true, eager)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);

@@ -349,3 +349,47 @@ test("hint", async () => {
   });
 });
 
+test("checkpoint", async () => {
+  const spark = await sharedSpark;
+  
+  // Test eager checkpoint (default)
+  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
+    const checkpointed = await df.checkpoint();
+    expect(checkpointed).toBeInstanceOf(Object);
+    // Verify data is intact after checkpoint
+    const count = await checkpointed.count();
+    expect(count).toBe(99n);
+  }));
+  
+  // Test non-eager checkpoint
+  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
+    const checkpointed = await df.checkpoint(false);
+    expect(checkpointed).toBeInstanceOf(Object);
+    // Verify data is intact after checkpoint
+    const count = await checkpointed.count();
+    expect(count).toBe(99n);
+  }));
+});
+
+test("localCheckpoint", async () => {
+  const spark = await sharedSpark;
+  
+  // Test eager local checkpoint (default)
+  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
+    const checkpointed = await df.localCheckpoint();
+    expect(checkpointed).toBeInstanceOf(Object);
+    // Verify data is intact after checkpoint
+    const count = await checkpointed.count();
+    expect(count).toBe(99n);
+  }));
+  
+  // Test non-eager local checkpoint
+  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
+    const checkpointed = await df.localCheckpoint(false);
+    expect(checkpointed).toBeInstanceOf(Object);
+    // Verify data is intact after checkpoint
+    const count = await checkpointed.count();
+    expect(count).toBe(99n);
+  }));
+});
+
