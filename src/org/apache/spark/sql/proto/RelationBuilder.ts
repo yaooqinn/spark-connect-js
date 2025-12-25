@@ -195,6 +195,9 @@ export class RelationBuilder {
       numPartitions: numPartitions
     });
     this.relation.relType = { case: "repartitionByExpression", value: repartitionByExpression }
+    return this;
+  }
+
   withStatCov(col1: string, col2: string, input?: Relation) {
     const statCov = create(StatCovSchema, { input: input, col1: col1, col2: col2 });
     this.relation.relType = { case: "cov", value: statCov }
