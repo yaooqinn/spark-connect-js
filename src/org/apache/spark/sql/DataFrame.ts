@@ -656,6 +656,87 @@ export class DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", true));
   }
 
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions.
+   *
+   * Similar to coalesce defined on an RDD, this operation results in a narrow dependency, e.g.
+   * if you go from 1000 partitions to 100 partitions, there will not be a shuffle, instead each of
+   * the 100 new partitions will claim 10 of the current partitions. If a larger number of partitions
+   * is requested, it will stay at the current number of partitions.
+   *
+   * However, if you're doing a drastic coalesce, e.g. to numPartitions = 1, this may result
+   * in your computation taking place on fewer nodes than you like (e.g. one node in the case of
+   * numPartitions = 1). To avoid this, you can call repartition. This will add a shuffle step,
+   * but means the current upstream partitions will be executed in parallel (per whatever the
+   * current partitioning is).
+   *
+   * @param numPartitions the number of partitions to use.
+   * @group typedrel
+   */
+  coalesce(numPartitions: number): DataFrame {
+    return this.toNewDataFrame(b => b.withRepartition(numPartitions, false, this.plan.relation));
+  }
+
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions into
+   * `numPartitions`. The resulting DataFrame is hash partitioned.
+   *
+   * This is the same operation as "DISTRIBUTE BY" in SQL (Hive QL).
+   *
+   * @group typedrel
+   */
+  repartition(numPartitions: number): DataFrame;
+  repartition(...columns: Column[]): DataFrame;
+  repartition(numPartitions: number, ...columns: Column[]): DataFrame;
+  repartition(numPartitionsOrCol: number | Column, ...columns: Column[]): DataFrame {
+    if (typeof numPartitionsOrCol === 'number') {
+      if (columns.length === 0) {
+        // repartition(numPartitions)
+        return this.toNewDataFrame(b => b.withRepartition(numPartitionsOrCol, true, this.plan.relation));
+      } else {
+        // repartition(numPartitions, ...columns)
+        const exprs = columns.map(col => col.expr);
+        return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrCol, this.plan.relation));
+      }
+    } else {
+      // repartition(...columns)
+      const allCols = [numPartitionsOrCol, ...columns];
+      const exprs = allCols.map(col => col.expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
+  }
+
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions, using
+   * `spark.sql.shuffle.partitions` as number of partitions.
+   * The resulting DataFrame is range partitioned.
+   *
+   * At least one partition-by expression must be specified.
+   * When no explicit sort order is specified, "ascending nulls first" is assumed.
+   *
+   * Note, the rows are not sorted in each partition of the resulting DataFrame.
+   *
+   * Note that due to performance reasons this method uses sampling to estimate the ranges.
+   * Hence, the output may not be consistent, since sampling can return different values.
+   * The sample size can be controlled by the config
+   * `spark.sql.execution.rangeExchange.sampleSizePerPartition`.
+   *
+   * @group typedrel
+   */
+  repartitionByRange(...columns: Column[]): DataFrame;
+  repartitionByRange(numPartitions: number, ...columns: Column[]): DataFrame;
+  repartitionByRange(numPartitionsOrCol: number | Column, ...columns: Column[]): DataFrame {
+    if (typeof numPartitionsOrCol === 'number') {
+      // repartitionByRange(numPartitions, ...columns)
+      const allCols = columns;
+      return this.toNewDataFrame(b => b.withHint("REPARTITION_BY_RANGE", [numPartitionsOrCol, ...allCols], this.plan.relation));
+    } else {
+      // repartitionByRange(...columns)
+      const allCols = [numPartitionsOrCol, ...columns];
+      return this.toNewDataFrame(b => b.withHint("REPARTITION_BY_RANGE", allCols, this.plan.relation));
+    }
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());
