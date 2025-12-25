@@ -507,7 +507,6 @@ export class Catalog {
         source = args[2];
       } else {
         source = args[1];
-        schema = DataTypes.createStructType([]);
         options = args[2];
       }
     } else {
