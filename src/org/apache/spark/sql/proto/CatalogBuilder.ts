@@ -92,14 +92,14 @@ export class CatalogBuilder {
       path?: string,
       source?: string,
       schema?: StructType,
-      options?: { [key: string]: string }) {
+      options?: Map<string, string>) {
     const createExternalTable = create(CreateExternalTableSchema,
       {
         tableName: tableName,
         path: path,
         source: source,
         schema: schema ? DataTypes.toProtoType(schema) : undefined,
-        options: options ? options : {}
+        options: options ? mapToIndexSignature(options) : {}
       });
     this.catalog.catType = { case: "createExternalTable", value: createExternalTable };
     return this;

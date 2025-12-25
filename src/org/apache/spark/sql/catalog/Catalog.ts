@@ -452,6 +452,71 @@ export class Catalog {
     return this.catalogBuilderToDF(c => c.withCreateTable(args[0], path, source, description, schema, options));
   }
 
+  /**
+   * Creates an external table from the given path based on a data source and returns the
+   * corresponding DataFrame. It will use the default data source configured by
+   * spark.sql.sources.default.
+   *
+   * @param {string} tableName The name of the external table to create.
+   * @param {string} path The path to the data source.
+   * @returns {DataFrame} A DataFrame representing the external table.
+   */
+  createExternalTable(tableName: string, path: string): DataFrame;
+  /**
+   * Creates an external table from the given path based on a data source and returns the
+   * corresponding DataFrame.
+   *
+   * @param {string} tableName The name of the external table to create.
+   * @param {string} path The path to the data source.
+   * @param {string} source The name of the data source.
+   * @returns {DataFrame} A DataFrame representing the external table.
+   */
+  createExternalTable(tableName: string, path: string, source: string): DataFrame;
+  /**
+   * Creates an external table based on the dataset in a data source and a set of options. Then,
+   * returns the corresponding DataFrame.
+   *
+   * @param {string} tableName The name of the external table to create.
+   * @param {string} source The name of the data source.
+   * @param {Map<string, string>} options The options for the data source.
+   * @returns {DataFrame} A DataFrame representing the external table.
+   */
+  createExternalTable(tableName: string, source: string, options: Map<string, string>): DataFrame;
+  /**
+   * Creates an external table based on the dataset in a data source, a schema, and a set of
+   * options. Then, returns the corresponding DataFrame.
+   *
+   * @param {string} tableName The name of the external table to create.
+   * @param {string} source The name of the data source.
+   * @param {StructType} schema The schema of the external table.
+   * @param {Map<string, string>} options The options for the data source.
+   * @returns {DataFrame} A DataFrame representing the external table.
+   */
+  createExternalTable(tableName: string, source: string, schema: StructType, options: Map<string, string>): DataFrame;
+  /** @ignore */
+  createExternalTable(...args: any[]): DataFrame {
+    let path: string | undefined = undefined;
+    let source: string | undefined = undefined;
+    let schema: StructType | undefined = undefined;
+    let options: Map<string, string> | undefined = undefined;
+    if (args.length === 2) {
+      path = args[1];
+    } else if (args.length === 3) {
+      if (typeof args[2] === 'string') {
+        path = args[1];
+        source = args[2];
+      } else {
+        source = args[1];
+        options = args[2];
+      }
+    } else {
+      source = args[1];
+      schema = args[2];
+      options = args[3];
+    }
+    return this.catalogBuilderToDF(c => c.withCreateExternalTable(args[0], path, source, schema, options));
+  }
+
   async dropTempView(viewName: string): Promise<boolean> {
     return this.catalogBuilderToRow(c => c.withDropTempView(viewName)).then(row => row.getBoolean(0));
   }

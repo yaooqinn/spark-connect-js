@@ -167,6 +167,60 @@ test("table apis", async () => {
   });
 }, 30000);
 
+test("create external table", async () => {
+  const spark = await sharedSpark;
+  await withDatabase(spark, 'test_db', async () => {
+    await spark.sql('CREATE DATABASE IF NOT EXISTS test_db')
+    const schema = DataTypes.createStructType([
+      DataTypes.createStructField("id", DataTypes.IntegerType, true),
+      DataTypes.createStructField("value", DataTypes.StringType, true)
+    ]);
+    
+    // First create a regular table with some data
+    const options1 = new Map();
+    await spark.catalog.createTable('test_db.source_table', 'parquet', schema, options1).show()
+    await spark.sql('INSERT INTO test_db.source_table VALUES (1, "a"), (2, "b")')
+    
+    // Get the database location
+    const dbDir = await spark.catalog.getDatabase('test_db').then((database) => database.locationUri)
+    const sourcePath = dbDir + "/source_table"
+    
+    // Test createExternalTable with path only
+    await spark.catalog.createExternalTable('test_db.ext_t1', sourcePath).show()
+    
+    // Test createExternalTable with path and source
+    await spark.catalog.createExternalTable('test_db.ext_t2', sourcePath, 'parquet').show()
+    
+    // Test createExternalTable with source and options
+    const options2 = new Map();
+    options2.set("path", sourcePath)
+    await spark.catalog.createExternalTable('test_db.ext_t3', 'parquet', options2).show()
+    
+    // Test createExternalTable with source, schema and options
+    const options3 = new Map();
+    options3.set("path", sourcePath)
+    await spark.catalog.createExternalTable('test_db.ext_t4', 'parquet', schema, options3).show()
+    
+    // Verify the external tables exist and have correct type
+    await spark.catalog.getTable("test_db.ext_t1").then((table) => {
+      expect(table.name).toBe("ext_t1");
+      expect(table.database).toBe("test_db");
+      expect(table.tableType).toBe("EXTERNAL");
+    });
+    
+    await spark.catalog.getTable("test_db.ext_t2").then((table) => {
+      expect(table.name).toBe("ext_t2");
+      expect(table.database).toBe("test_db");
+      expect(table.tableType).toBe("EXTERNAL");
+    });
+    
+    // Verify data can be read from external tables
+    await spark.table("test_db.ext_t1").collect().then((rows) => {
+      expect(rows.length).toBe(2);
+    });
+  });
+}, 30000);
+
 test("functions api", async () => {
   const spark = await sharedSpark;
   await withDatabase(spark, 'test_db', async () => {
