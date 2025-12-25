@@ -24,6 +24,25 @@ import { GroupType } from "./proto/aggregate/GroupType";
 import { toGroupingSetsPB, toLiteralBuilder } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
+const supportedAggFunctions: Record<string, (c: Column) => Column> = {
+  avg: f.avg,
+  mean: f.mean,
+  sum: f.sum,
+  min: f.min,
+  max: f.max,
+  first: f.first,
+  last: f.last,
+  stddev: f.stddev,
+  stddev_pop: f.stddev_pop,
+  stddev_samp: f.stddev_samp,
+  variance: f.variance,
+  var_pop: f.var_pop,
+  var_samp: f.var_samp,
+  collect_list: f.collect_list,
+  collect_set: f.collect_set,
+  count: f.count,
+};
+
 /**
  * A set of methods for aggregations on a `DataFrame`, created by [[Dataset#groupBy groupBy]],
  * [[Dataset#cube cube]] or [[Dataset#rollup rollup]] (and also `pivot`).
@@ -125,9 +144,10 @@ export class RelationalGroupedDataset {
   agg(exprsOrMap: Record<string, string> | Column, ...exprs: Column[]): DataFrame {
     if (typeof exprsOrMap === "object" && !(exprsOrMap instanceof Column)) {
       const aggExprs = Object.entries(exprsOrMap).map(([col, func]) => {
-        const fn = (f as any)[func] as ((c: Column) => Column) | undefined;
+        const fn = supportedAggFunctions[func];
         if (typeof fn !== "function") {
-          throw new Error(`Unsupported aggregate function: ${func}`);
+          const available = Object.keys(supportedAggFunctions).join(", ");
+          throw new Error(`Unsupported aggregate function: ${func}. Supported functions: ${available}.`);
         }
         return fn(this.df.col(col));
       });
@@ -139,6 +159,9 @@ export class RelationalGroupedDataset {
   }
 
   pivot(pivotCol: string, values?: any[]): RelationalGroupedDataset {
+    if (!pivotCol) {
+      throw new Error("pivot column name must be provided");
+    }
     const pivotProto = create(Aggregate_PivotSchema, {
       col: new Column(pivotCol).expr,
       values: values ? values.map((v) => toLiteralBuilder(v).builder.build()) : undefined,
