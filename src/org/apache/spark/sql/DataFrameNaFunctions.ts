@@ -168,7 +168,8 @@ export class DataFrameNaFunctions {
     if (arg === 'all') {
       minNonNulls = 1;
     } else if (arg === 'any' || arg === undefined) {
-      minNonNulls = undefined; // Will drop if any null
+      // When undefined, the server will drop rows with any null values (all columns must be non-null)
+      minNonNulls = undefined;
     } else if (typeof arg === 'number') {
       minNonNulls = arg;
     } else {
@@ -201,8 +202,10 @@ export class DataFrameNaFunctions {
     const replacements: Array<{ oldValue: any; newValue: any }> = [];
 
     for (const [oldVal, newVal] of Object.entries(replacement)) {
-      // Object.entries always returns string keys, even if the original keys were numbers.
-      // Try to parse the key as a number if it looks like a numeric string.
+      // Object.entries always returns string keys, even if the original object had numeric keys.
+      // To preserve intended numeric types, we attempt to parse string keys that look numeric.
+      // This handles common cases where users pass { 1: 100, 2: 200 } which becomes { '1': 100, '2': 200 }.
+      // Only simple integer/decimal formats are converted; other strings remain as-is.
       let oldValue: any = oldVal;
       if (typeof oldVal === 'string' && /^-?\d+(\.\d+)?$/.test(oldVal)) {
         const parsed = Number(oldVal);
