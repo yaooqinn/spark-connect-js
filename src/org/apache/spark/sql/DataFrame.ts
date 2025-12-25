@@ -16,6 +16,7 @@
  */
 
 import { DataFrameWriter } from './DataFrameWriter';
+import { DataFrameStatFunctions } from './DataFrameStatFunctions';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -167,6 +168,10 @@ export class DataFrame {
 
   get write(): DataFrameWriter {
     return new DataFrameWriter(this);
+  }
+
+  get stat(): DataFrameStatFunctions {
+    return new DataFrameStatFunctions(this);
   }
 
   async collect(): Promise<Row[]> {
