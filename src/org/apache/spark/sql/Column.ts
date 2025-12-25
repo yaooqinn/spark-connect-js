@@ -124,4 +124,31 @@ export class Column {
   name(alias: string): Column {
     return new Column(b => b.withAlias([alias], this.expr));
   }
+
+  /**
+   * Define a windowing column.
+   *
+   * {{{
+   *   val w = Window.partitionBy("name").orderBy("id")
+   *   df.select(
+   *     sum("price").over(w.rangeBetween(Window.unboundedPreceding, 2)),
+   *     avg("price").over(w.rowsBetween(Window.currentRow, 4))
+   *   )
+   * }}}
+   *
+   * @group expr_ops
+   */
+  over(window: any): Column {
+    // Lazy load to avoid circular dependency
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const WindowSpec = require("./WindowSpec").WindowSpec;
+    if (!(window instanceof WindowSpec)) {
+      throw new Error("Argument to over() must be a WindowSpec");
+    }
+    const windowExpr = window.toExpression(this.expr);
+    // Create a new Column from the window expression
+    const col = new Column("");
+    (col as any).expr_ = windowExpr;
+    return col;
+  }
 }

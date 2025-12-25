@@ -589,12 +589,12 @@ export function bit_xor(column: Column): Column {
   return Column.fn("bit_xor", column, false);
 }
 
-export function cume_dist(column: Column): Column {
-  return Column.fn("cume_dist", column, false);
+export function cume_dist(): Column {
+  return new Column(b => b.withUnresolvedFunction("cume_dist", [], false, false));
 }
 
-export function dense_rank(column: Column): Column {
-  return Column.fn("dense_rank", column, false);
+export function dense_rank(): Column {
+  return new Column(b => b.withUnresolvedFunction("dense_rank", [], false, false));
 }
 
 export function lag(column: string | Column, offset: number): Column;
