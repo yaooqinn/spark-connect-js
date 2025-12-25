@@ -21,6 +21,7 @@ import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
 import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
+import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
   avg: f.avg,
