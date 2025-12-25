@@ -1,6 +1,9 @@
 import { Column } from "./Column";
 import { toLiteralBuilder } from "./proto/expression/utils";
 import { randomInt } from "./util/helpers";
+import { DataType } from "./types/data_types";
+import { DataTypes } from "./types/DataTypes";
+import { CommonInlineUserDefinedFunctionBuilder } from "./proto/expression/udf/CommonInlineUserDefinedFunctionBuilder";
 
 // TODOs:
 // 1. broadcast
@@ -773,4 +776,138 @@ export function rint(column: Column): Column {
  */
 export function expr(expr: string): Column {
   return new Column(b => b.withExpressionString(expr));
+}
+
+/**
+ * Creates a user-defined function (UDF) that can be used in DataFrame operations.
+ * 
+ * This function creates an inline UDF that serializes the JavaScript function to Python
+ * and executes it on the Spark cluster.
+ * 
+ * @param func - The JavaScript function to be converted to a UDF
+ * @param returnType - The return type of the UDF (DataType or string like "int", "string", etc.)
+ * @returns A function that takes Column arguments and returns a Column
+ * 
+ * @example
+ * ```typescript
+ * import { udf, col } from 'spark-connect-js';
+ * 
+ * // Create a UDF that doubles a number
+ * const doubleUdf = udf((x: number) => x * 2, "int");
+ * 
+ * // Use it in a DataFrame
+ * df.select(doubleUdf(col("value")));
+ * ```
+ * 
+ * @group udf_funcs
+ */
+export function udf(func: Function, returnType: DataType | string): (...args: Column[]) => Column {
+  return (...args: Column[]) => {
+    const dataType = typeof returnType === 'string' 
+      ? parseDataType(returnType) 
+      : returnType;
+    
+    // Serialize the JavaScript function to Python code
+    const pythonCode = serializeFunctionToPython(func);
+    const command = Buffer.from(pythonCode, 'utf-8');
+
+    // Create UDF expression
+    const udfBuilder = new CommonInlineUserDefinedFunctionBuilder("udf", true)
+      .withPythonUDF(dataType, 200, command, "3.8", [])
+      .withArguments(args.map(arg => arg.expr));
+
+    // Return Column wrapping the UDF
+    return new Column(b => b.withCommonInlineUserDefinedFunction(udfBuilder.build()));
+  };
+}
+
+/**
+ * Parse a string data type to a DataType object.
+ * 
+ * @param typeString - The data type as a string
+ * @returns DataType
+ * @private
+ */
+function parseDataType(typeString: string): DataType {
+  const lowerType = typeString.toLowerCase();
+  switch (lowerType) {
+    case 'string':
+      return DataTypes.StringType;
+    case 'int':
+    case 'integer':
+      return DataTypes.IntegerType;
+    case 'long':
+    case 'bigint':
+      return DataTypes.LongType;
+    case 'double':
+      return DataTypes.DoubleType;
+    case 'float':
+      return DataTypes.FloatType;
+    case 'boolean':
+      return DataTypes.BooleanType;
+    case 'byte':
+      return DataTypes.ByteType;
+    case 'short':
+      return DataTypes.ShortType;
+    case 'binary':
+      return DataTypes.BinaryType;
+    case 'date':
+      return DataTypes.DateType;
+    case 'timestamp':
+      return DataTypes.TimestampType;
+    default:
+      // For complex types, use unparsed
+      return DataTypes.createUnparsedDataType(typeString);
+  }
+}
+
+/**
+ * Serialize a JavaScript function to Python code.
+ * This is a simple implementation that converts basic JS functions to Python.
+ * 
+ * @param func - The JavaScript function
+ * @returns Python code as a string
+ * @private
+ */
+function serializeFunctionToPython(func: Function): string {
+  const funcStr = func.toString();
+  
+  // Simple conversion for arrow functions
+  if (funcStr.includes('=>')) {
+    // Extract the function body
+    const match = funcStr.match(/\(([^)]*)\)\s*=>\s*(.+)/);
+    if (match) {
+      const params = match[1].trim() || 'x';
+      let body = match[2].trim();
+      
+      // Remove curly braces if present
+      if (body.startsWith('{') && body.endsWith('}')) {
+        body = body.slice(1, -1).trim();
+      }
+      
+      // Remove 'return' keyword if present
+      body = body.replace(/^return\s+/, '');
+      
+      // Convert basic JS operators to Python
+      body = body.replace(/===/g, '==');
+      body = body.replace(/!==/g, '!=');
+      
+      // Generate Python lambda
+      return `lambda ${params}: ${body}`;
+    }
+  }
+  
+  // Fallback: try to extract function body
+  const bodyMatch = funcStr.match(/function[^{]*{([\s\S]*)}/) || 
+                   funcStr.match(/{([\s\S]*)}/);
+  if (bodyMatch) {
+    let body = bodyMatch[1].trim();
+    body = body.replace(/^return\s+/, '');
+    body = body.replace(/===/g, '==');
+    body = body.replace(/!==/g, '!=');
+    return `lambda x: ${body}`;
+  }
+  
+  // Simple fallback
+  return `lambda x: x`;
 }

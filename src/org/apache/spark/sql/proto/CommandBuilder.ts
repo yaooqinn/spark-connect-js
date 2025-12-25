@@ -17,6 +17,7 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Command, CommandSchema, SqlCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
+import { CommonInlineUserDefinedFunction } from "../../../../../gen/spark/connect/expressions_pb";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -25,6 +26,11 @@ export class CommandBuilder {
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
     this.command.commandType = { case: "sqlCommand", value: sqlCmd };
+    return this;
+  }
+
+  withRegisterFunction(udf: CommonInlineUserDefinedFunction) {
+    this.command.commandType = { case: "registerFunction", value: udf };
     return this;
   }
 
