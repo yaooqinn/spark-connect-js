@@ -7,7 +7,7 @@ An <b><red>experimental</red></b> client for [Spark Connect](https://spark.apach
 - [ ] For minor changes or some features associated with certern classes, SEARCH 'TODO'
 - [ ] Support Retry / Reattachable execution
 - [ ] Support Checkpoint for DataFrame
-- [ ] Support DataFrameNaFunctions
+- [x] Support DataFrameNaFunctions
 - [ ] Support DataFrame Join 
 - [ ] Support UserDefinedType
   - [ ] UserDefinedType declaration

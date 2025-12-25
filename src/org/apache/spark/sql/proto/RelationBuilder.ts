@@ -178,7 +178,7 @@ export class RelationBuilder {
     return this;
   }
 
-  withNAFill(input: Relation, cols: string[], values: (number | string | boolean)[]): this {
+  withNAFill(input: Relation | undefined, cols: string[], values: (number | string | boolean)[]): this {
     const literals = values.map(v => toLiteralBuilder(v).builder.build());
     const naFill = create(NAFillSchema, {
       input: input,
@@ -189,7 +189,7 @@ export class RelationBuilder {
     return this;
   }
 
-  withNADrop(input: Relation, cols: string[], minNonNulls?: number): this {
+  withNADrop(input: Relation | undefined, cols: string[], minNonNulls?: number): this {
     const naDrop = create(NADropSchema, {
       input: input,
       cols: cols,
@@ -199,7 +199,7 @@ export class RelationBuilder {
     return this;
   }
 
-  withNAReplace(input: Relation, cols: string[], replacement: Map<any, any>): this {
+  withNAReplace(input: Relation | undefined, cols: string[], replacement: Map<any, any>): this {
     const replacements = Array.from(replacement.entries()).map(([oldValue, newValue]) => {
       return create(NAReplace_ReplacementSchema, {
         oldValue: toLiteralBuilder(oldValue).builder.build(),
