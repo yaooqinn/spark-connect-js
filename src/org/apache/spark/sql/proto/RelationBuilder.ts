@@ -191,7 +191,7 @@ export class RelationBuilder {
         joinType: toJoinTypePB(joinType),
         usingColumns: usingColumns
       });
-    this.relation.relType = { case: "join", value: join }
+    this.relation.relType = { case: "join", value: join };
     return this;
   }
 
@@ -219,7 +219,7 @@ export class RelationBuilder {
         allowExactMatches: allowExactMatches !== undefined ? allowExactMatches : true,
         direction: direction || "backward"
       });
-    this.relation.relType = { case: "asOfJoin", value: asOfJoin }
+    this.relation.relType = { case: "asOfJoin", value: asOfJoin };
     return this;
   }
 
@@ -235,7 +235,7 @@ export class RelationBuilder {
         joinType: toLateralJoinTypePB(joinType),
         condition: condition
       });
-    this.relation.relType = { case: "lateralJoin", value: lateralJoin }
+    this.relation.relType = { case: "lateralJoin", value: lateralJoin };
     return this;
   }
 
