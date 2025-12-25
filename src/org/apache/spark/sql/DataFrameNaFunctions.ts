@@ -67,7 +67,11 @@ export class DataFrameNaFunctions {
    * ```
    */
   fillna(value: number | string | boolean, cols?: string[]): DataFrame {
-    const values = [lit(value).expr.exprType.value];
+    const literalExpr = lit(value).expr.exprType;
+    if (literalExpr.case !== 'literal') {
+      throw new Error('Invalid value type for fillna');
+    }
+    const values = [literalExpr.value];
     const columns = cols || [];
     return this.df.spark.relationBuilderToDF(b =>
       b.withNAFill(columns, values, this.df.plan.relation)
@@ -114,7 +118,11 @@ export class DataFrameNaFunctions {
    */
   drop(minNonNulls?: number, cols?: string[]): DataFrame;
   drop(arg?: 'any' | 'all' | number, cols?: string[]): DataFrame {
-    return this.dropna(arg, cols);
+    if (typeof arg === 'string') {
+      return this.dropna(arg as 'any' | 'all', cols);
+    } else {
+      return this.dropna(arg as number | undefined, cols);
+    }
   }
 
   /**
