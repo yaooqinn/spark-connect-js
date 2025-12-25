@@ -78,6 +78,8 @@ message Relation {
     WithRelations with_relations = 41;
     Transpose transpose = 42;
     UnresolvedTableValuedFunction unresolved_table_valued_function = 43;
+    LateralJoin lateral_join = 44;
+    ChunkedCachedLocalRelation chunked_cached_local_relation = 45;
 
     // NA functions
     NAFill fill_na = 90;
@@ -1139,4 +1141,36 @@ message AsOfJoin {
 
   // (Required) Whether to search for prior, subsequent, or closest matches.
   string direction = 10;
+}
+
+message LateralJoin {
+  // (Required) Left input relation.
+  Relation left = 1;
+
+  // (Required) Right input relation.
+  Relation right = 2;
+
+  // (Required) The join type.
+  JoinType join_type = 3;
+
+  // (Optional) The join condition.
+  optional Expression condition = 4;
+
+  enum JoinType {
+    JOIN_TYPE_UNSPECIFIED = 0;
+    JOIN_TYPE_INNER = 1;
+    JOIN_TYPE_LEFT_OUTER = 2;
+    JOIN_TYPE_CROSS = 3;
+  }
+}
+
+message ChunkedCachedLocalRelation {
+  // (Required) The user id.
+  string user_id = 1;
+
+  // (Required) The session id.
+  string session_id = 2;
+
+  // (Required) The hash value.
+  string hash = 3;
 }

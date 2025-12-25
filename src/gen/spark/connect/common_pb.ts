@@ -26,7 +26,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file spark/connect/common.proto.
  */
 export const file_spark_connect_common: GenFile = /*@__PURE__*/
-  fileDesc("ChpzcGFyay9jb25uZWN0L2NvbW1vbi5wcm90bxINc3BhcmsuY29ubmVjdCJ1CgxTdG9yYWdlTGV2ZWwSEAoIdXNlX2Rpc2sYASABKAgSEgoKdXNlX21lbW9yeRgCIAEoCBIUCgx1c2Vfb2ZmX2hlYXAYAyABKAgSFAoMZGVzZXJpYWxpemVkGAQgASgIEhMKC3JlcGxpY2F0aW9uGAUgASgFIjYKE1Jlc291cmNlSW5mb3JtYXRpb24SDAoEbmFtZRgBIAEoCRIRCglhZGRyZXNzZXMYAiADKAkilAEKF0V4ZWN1dG9yUmVzb3VyY2VSZXF1ZXN0EhUKDXJlc291cmNlX25hbWUYASABKAkSDgoGYW1vdW50GAIgASgDEh0KEGRpc2NvdmVyeV9zY3JpcHQYAyABKAlIAIgBARITCgZ2ZW5kb3IYBCABKAlIAYgBAUITChFfZGlzY292ZXJ5X3NjcmlwdEIJCgdfdmVuZG9yIjwKE1Rhc2tSZXNvdXJjZVJlcXVlc3QSFQoNcmVzb3VyY2VfbmFtZRgBIAEoCRIOCgZhbW91bnQYAiABKAEi6wIKD1Jlc291cmNlUHJvZmlsZRJRChJleGVjdXRvcl9yZXNvdXJjZXMYASADKAsyNS5zcGFyay5jb25uZWN0LlJlc291cmNlUHJvZmlsZS5FeGVjdXRvclJlc291cmNlc0VudHJ5EkkKDnRhc2tfcmVzb3VyY2VzGAIgAygLMjEuc3BhcmsuY29ubmVjdC5SZXNvdXJjZVByb2ZpbGUuVGFza1Jlc291cmNlc0VudHJ5GmAKFkV4ZWN1dG9yUmVzb3VyY2VzRW50cnkSCwoDa2V5GAEgASgJEjUKBXZhbHVlGAIgASgLMiYuc3BhcmsuY29ubmVjdC5FeGVjdXRvclJlc291cmNlUmVxdWVzdDoCOAEaWAoSVGFza1Jlc291cmNlc0VudHJ5EgsKA2tleRgBIAEoCRIxCgV2YWx1ZRgCIAEoCzIiLnNwYXJrLmNvbm5lY3QuVGFza1Jlc291cmNlUmVxdWVzdDoCOAEiSgoGT3JpZ2luEjQKDXB5dGhvbl9vcmlnaW4YASABKAsyGy5zcGFyay5jb25uZWN0LlB5dGhvbk9yaWdpbkgAQgoKCGZ1bmN0aW9uIjMKDFB5dGhvbk9yaWdpbhIQCghmcmFnbWVudBgBIAEoCRIRCgljYWxsX3NpdGUYAiABKAlCNgoeb3JnLmFwYWNoZS5zcGFyay5jb25uZWN0LnByb3RvUAFaEmludGVybmFsL2dlbmVyYXRlZGIGcHJvdG8z");
+  fileDesc("ChpzcGFyay9jb25uZWN0L2NvbW1vbi5wcm90bxINc3BhcmsuY29ubmVjdCJ1CgxTdG9yYWdlTGV2ZWwSEAoIdXNlX2Rpc2sYASABKAgSEgoKdXNlX21lbW9yeRgCIAEoCBIUCgx1c2Vfb2ZmX2hlYXAYAyABKAgSFAoMZGVzZXJpYWxpemVkGAQgASgIEhMKC3JlcGxpY2F0aW9uGAUgASgFIjYKE1Jlc291cmNlSW5mb3JtYXRpb24SDAoEbmFtZRgBIAEoCRIRCglhZGRyZXNzZXMYAiADKAkilAEKF0V4ZWN1dG9yUmVzb3VyY2VSZXF1ZXN0EhUKDXJlc291cmNlX25hbWUYASABKAkSDgoGYW1vdW50GAIgASgDEh0KEGRpc2NvdmVyeV9zY3JpcHQYAyABKAlIAIgBARITCgZ2ZW5kb3IYBCABKAlIAYgBAUITChFfZGlzY292ZXJ5X3NjcmlwdEIJCgdfdmVuZG9yIjwKE1Rhc2tSZXNvdXJjZVJlcXVlc3QSFQoNcmVzb3VyY2VfbmFtZRgBIAEoCRIOCgZhbW91bnQYAiABKAEi6wIKD1Jlc291cmNlUHJvZmlsZRJRChJleGVjdXRvcl9yZXNvdXJjZXMYASADKAsyNS5zcGFyay5jb25uZWN0LlJlc291cmNlUHJvZmlsZS5FeGVjdXRvclJlc291cmNlc0VudHJ5EkkKDnRhc2tfcmVzb3VyY2VzGAIgAygLMjEuc3BhcmsuY29ubmVjdC5SZXNvdXJjZVByb2ZpbGUuVGFza1Jlc291cmNlc0VudHJ5GmAKFkV4ZWN1dG9yUmVzb3VyY2VzRW50cnkSCwoDa2V5GAEgASgJEjUKBXZhbHVlGAIgASgLMiYuc3BhcmsuY29ubmVjdC5FeGVjdXRvclJlc291cmNlUmVxdWVzdDoCOAEaWAoSVGFza1Jlc291cmNlc0VudHJ5EgsKA2tleRgBIAEoCRIxCgV2YWx1ZRgCIAEoCzIiLnNwYXJrLmNvbm5lY3QuVGFza1Jlc291cmNlUmVxdWVzdDoCOAEiegoGT3JpZ2luEjQKDXB5dGhvbl9vcmlnaW4YASABKAsyGy5zcGFyay5jb25uZWN0LlB5dGhvbk9yaWdpbkgAEi4KCmp2bV9vcmlnaW4YAiABKAsyGC5zcGFyay5jb25uZWN0Lkp2bU9yaWdpbkgAQgoKCGZ1bmN0aW9uIjMKDFB5dGhvbk9yaWdpbhIQCghmcmFnbWVudBgBIAEoCRIRCgljYWxsX3NpdGUYAiABKAkiMAoJSnZtT3JpZ2luEhAKCGZyYWdtZW50GAEgASgJEhEKCWNhbGxfc2l0ZRgCIAEoCUI2Ch5vcmcuYXBhY2hlLnNwYXJrLmNvbm5lY3QucHJvdG9QAVoSaW50ZXJuYWwvZ2VuZXJhdGVkYgZwcm90bzM");
 
 /**
  * StorageLevel for persisting Datasets/Tables.
@@ -220,6 +220,12 @@ export type Origin = Message<"spark.connect.Origin"> & {
      */
     value: PythonOrigin;
     case: "pythonOrigin";
+  } | {
+    /**
+     * @generated from field: spark.connect.JvmOrigin jvm_origin = 2;
+     */
+    value: JvmOrigin;
+    case: "jvmOrigin";
   } | { case: undefined; value?: undefined };
 };
 
@@ -255,4 +261,30 @@ export type PythonOrigin = Message<"spark.connect.PythonOrigin"> & {
  */
 export const PythonOriginSchema: GenMessage<PythonOrigin> = /*@__PURE__*/
   messageDesc(file_spark_connect_common, 6);
+
+/**
+ * @generated from message spark.connect.JvmOrigin
+ */
+export type JvmOrigin = Message<"spark.connect.JvmOrigin"> & {
+  /**
+   * (Required) Name of the origin, for example, the name of the class
+   *
+   * @generated from field: string fragment = 1;
+   */
+  fragment: string;
+
+  /**
+   * (Required) Callsite to show to end users, for example, stacktrace.
+   *
+   * @generated from field: string call_site = 2;
+   */
+  callSite: string;
+};
+
+/**
+ * Describes the message spark.connect.JvmOrigin.
+ * Use `create(JvmOriginSchema)` to create a new message.
+ */
+export const JvmOriginSchema: GenMessage<JvmOrigin> = /*@__PURE__*/
+  messageDesc(file_spark_connect_common, 7);
 
