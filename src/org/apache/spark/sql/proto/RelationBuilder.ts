@@ -27,6 +27,7 @@ import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { toSetOpTypePB } from "./ProtoUtils";
+import { toLiteralBuilder } from "./expression/utils";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -179,25 +180,25 @@ export class RelationBuilder {
 
   withNAFill(cols: string[], values: Expression_Literal[], input?: Relation) {
     const naFill = create(NAFillSchema, { input: input, cols: cols, values: values });
-    this.relation.relType = { case: "fillNa", value: naFill }
+    this.relation.relType = { case: "fillNa", value: naFill };
     return this;
   }
 
   withNADrop(cols: string[], minNonNulls: number | undefined, input?: Relation) {
     const naDrop = create(NADropSchema, { input: input, cols: cols, minNonNulls: minNonNulls });
-    this.relation.relType = { case: "dropNa", value: naDrop }
+    this.relation.relType = { case: "dropNa", value: naDrop };
     return this;
   }
 
   withNAReplace(cols: string[], replacements: Array<{ oldValue: any; newValue: any }>, input?: Relation) {
     const replacementProtos = replacements.map(r => {
       return create(NAReplace_ReplacementSchema, {
-        oldValue: lit(r.oldValue).expr.exprType.value as Expression_Literal,
-        newValue: lit(r.newValue).expr.exprType.value as Expression_Literal
+        oldValue: toLiteralBuilder(r.oldValue).builder.build(),
+        newValue: toLiteralBuilder(r.newValue).builder.build()
       });
     });
     const naReplace = create(NAReplaceSchema, { input: input, cols: cols, replacements: replacementProtos });
-    this.relation.relType = { case: "replace", value: naReplace }
+    this.relation.relType = { case: "replace", value: naReplace };
     return this;
   }
 

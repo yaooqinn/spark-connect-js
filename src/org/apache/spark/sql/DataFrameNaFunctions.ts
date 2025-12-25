@@ -16,7 +16,7 @@
  */
 
 import { DataFrame } from './DataFrame';
-import { lit } from './functions';
+import { toLiteralBuilder } from './proto/expression/utils';
 
 /**
  * Functionality for working with missing data in DataFrames.
@@ -67,11 +67,8 @@ export class DataFrameNaFunctions {
    * ```
    */
   fillna(value: number | string | boolean, cols?: string[]): DataFrame {
-    const literalExpr = lit(value).expr.exprType;
-    if (literalExpr.case !== 'literal') {
-      throw new Error('Invalid value type for fillna');
-    }
-    const values = [literalExpr.value];
+    const literalValue = toLiteralBuilder(value).builder.build();
+    const values = [literalValue];
     const columns = cols || [];
     return this.df.spark.relationBuilderToDF(b =>
       b.withNAFill(columns, values, this.df.plan.relation)
@@ -204,8 +201,15 @@ export class DataFrameNaFunctions {
     const replacements: Array<{ oldValue: any; newValue: any }> = [];
 
     for (const [oldVal, newVal] of Object.entries(replacement)) {
-      // Convert string keys to numbers if they represent numbers
-      const oldValue = isNaN(Number(oldVal)) ? oldVal : Number(oldVal);
+      // Object.entries always returns string keys, even if the original keys were numbers.
+      // Try to parse the key as a number if it looks like a numeric string.
+      let oldValue: any = oldVal;
+      if (typeof oldVal === 'string' && /^-?\d+(\.\d+)?$/.test(oldVal)) {
+        const parsed = Number(oldVal);
+        if (!isNaN(parsed)) {
+          oldValue = parsed;
+        }
+      }
       replacements.push({ oldValue, newValue: newVal });
     }
 
