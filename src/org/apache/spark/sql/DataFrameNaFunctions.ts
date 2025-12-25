@@ -153,13 +153,13 @@ export class DataFrameNaFunctions {
    */
   replace(
     cols: string | string[],
-    replacement: { [key: string]: any } | Map<any, any>
+    replacement: { [key: string]: string | number | boolean } | Map<string | number | boolean, string | number | boolean>
   ): DataFrame {
     const columnNames = Array.isArray(cols) ? cols : [cols];
     const replacementMap = replacement instanceof Map ? replacement : new Map(Object.entries(replacement));
     
     return this.df.spark.relationBuilderToDF(b =>
-      b.withNAReplace(this.df.plan.relation, columnNames, replacementMap)
+      b.withNAReplace(this.df.plan.relation, columnNames, replacementMap as Map<string | number | boolean, string | number | boolean>)
     );
   }
 }

@@ -178,28 +178,28 @@ export class RelationBuilder {
     return this;
   }
 
-  withNAFill(input: Relation | undefined, cols: string[], values: (number | string | boolean)[]): this {
+  withNAFill(input: Relation | undefined, columnNames: string[], values: (number | string | boolean)[]): this {
     const literals = values.map(v => toLiteralBuilder(v).builder.build());
     const naFill = create(NAFillSchema, {
       input: input,
-      cols: cols,
+      cols: columnNames,
       values: literals
     });
     this.relation.relType = { case: "fillNa", value: naFill };
     return this;
   }
 
-  withNADrop(input: Relation | undefined, cols: string[], minNonNulls?: number): this {
+  withNADrop(input: Relation | undefined, columnNames: string[], minNonNulls?: number): this {
     const naDrop = create(NADropSchema, {
       input: input,
-      cols: cols,
+      cols: columnNames,
       minNonNulls: minNonNulls
     });
     this.relation.relType = { case: "dropNa", value: naDrop };
     return this;
   }
 
-  withNAReplace(input: Relation | undefined, cols: string[], replacement: Map<any, any>): this {
+  withNAReplace(input: Relation | undefined, columnNames: string[], replacement: Map<string | number | boolean, string | number | boolean>): this {
     const replacements = Array.from(replacement.entries()).map(([oldValue, newValue]) => {
       return create(NAReplace_ReplacementSchema, {
         oldValue: toLiteralBuilder(oldValue).builder.build(),
@@ -208,7 +208,7 @@ export class RelationBuilder {
     });
     const naReplace = create(NAReplaceSchema, {
       input: input,
-      cols: cols,
+      cols: columnNames,
       replacements: replacements
     });
     this.relation.relType = { case: "replace", value: naReplace };
