@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+import { create } from "@bufbuild/protobuf";
+import { Aggregate_Pivot, Aggregate_PivotSchema } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
-import { toGroupingSetsPB } from "./proto/expression/utils";
+import { toLiteralBuilder, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
 /**
@@ -61,5 +62,48 @@ export class RelationalGroupedDataset {
 
   sum(...cols: string[]): DataFrame {
     return this.toDF(...cols.map((c) => f.sum(this.df.col(c))))
+  }
+
+  /**
+   * Pivots a column of the current `DataFrame` and performs the specified aggregation.
+   * 
+   * This method is only supported after a `groupBy` operation. There are two versions of pivot:
+   * one with explicit pivot values and one without.
+   * 
+   * @param pivotColumn - Column name or Column to pivot on
+   * @param values - Optional list of values that will be translated to columns in the output DataFrame
+   * @returns A new RelationalGroupedDataset with pivot configuration
+   * 
+   * @example
+   * ```typescript
+   * // Pivot without values (Spark will compute distinct values)
+   * df.groupBy("year").pivot("course").sum("earnings")
+   * 
+   * // Pivot with explicit values (more efficient)
+   * df.groupBy("year").pivot("course", ["dotNET", "Java"]).sum("earnings")
+   * ```
+   */
+  pivot(pivotColumn: string | Column, values?: any[]): RelationalGroupedDataset {
+    if (this.groupType !== GroupType.GROUP_TYPE_GROUPBY) {
+      if (this.groupType === GroupType.GROUP_TYPE_PIVOT) {
+        throw new Error("pivot cannot be applied on a pivot");
+      }
+      throw new Error("pivot can only be applied after groupBy");
+    }
+
+    const pivotCol = typeof pivotColumn === "string" ? this.df.col(pivotColumn) : pivotColumn;
+    
+    const pivotProto = create(Aggregate_PivotSchema, {
+      col: pivotCol.expr,
+      values: values ? values.map(v => toLiteralBuilder(v).builder.build()) : []
+    });
+
+    return new RelationalGroupedDataset(
+      this.df,
+      this.groupingExprs,
+      GroupType.GROUP_TYPE_PIVOT,
+      pivotProto,
+      this.groupingSets
+    );
   }
 }
