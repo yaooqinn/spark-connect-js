@@ -100,6 +100,17 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
+  /**
+   * Returns a checkpointed version of this DataFrame. Checkpointing can be used to truncate the
+   * logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to files inside the checkpoint
+   * directory set with `spark.sql.checkpoint.location`.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @group basic
+   */
   async checkpoint(eager: boolean = true): Promise<DataFrame> {
     const plan = this.spark.planFromCommandBuilder(b =>
       b.withCheckpointCommand(this.plan.relation!, false, eager)
@@ -108,6 +119,19 @@ export class DataFrame {
     return this;
   }
 
+  /**
+   * Returns a locally checkpointed version of this DataFrame. Checkpointing can be used to truncate
+   * the logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to a local temporary directory.
+   *
+   * This is a local checkpoint and is less reliable than a regular checkpoint because it is stored
+   * in executor storage and may be lost if executors fail.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @group basic
+   */
   async localCheckpoint(eager: boolean = true): Promise<DataFrame> {
     const plan = this.spark.planFromCommandBuilder(b =>
       b.withCheckpointCommand(this.plan.relation!, true, eager)
