@@ -18,7 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, AsOfJoinSchema, FilterSchema, HintSchema, JoinSchema, LateralJoinSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, SetOperationSchema, ShowStringSchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
 import { DataTypes } from "../types";
@@ -26,7 +26,7 @@ import { StructType } from "../types/StructType";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
-import { toSetOpTypePB } from "./ProtoUtils";
+import { toJoinTypePB, toLateralJoinTypePB, toSetOpTypePB } from "./ProtoUtils";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -174,6 +174,68 @@ export class RelationBuilder {
         allowMissingColumns: allowMissingColumns
       });
     this.relation.relType = { case: "setOp", value: setOp }
+    return this;
+  }
+
+  withJoin(
+      left?: Relation,
+      right?: Relation,
+      joinCondition?: Expression,
+      joinType?: string,
+      usingColumns?: string[]) {
+    const join = create(JoinSchema,
+      {
+        left: left,
+        right: right,
+        joinCondition: joinCondition,
+        joinType: toJoinTypePB(joinType),
+        usingColumns: usingColumns
+      });
+    this.relation.relType = { case: "join", value: join }
+    return this;
+  }
+
+  withAsOfJoin(
+      left?: Relation,
+      right?: Relation,
+      leftAsOf?: Expression,
+      rightAsOf?: Expression,
+      joinExpr?: Expression,
+      usingColumns?: string[],
+      joinType?: string,
+      tolerance?: Expression,
+      allowExactMatches?: boolean,
+      direction?: string) {
+    const asOfJoin = create(AsOfJoinSchema,
+      {
+        left: left,
+        right: right,
+        leftAsOf: leftAsOf,
+        rightAsOf: rightAsOf,
+        joinExpr: joinExpr,
+        usingColumns: usingColumns,
+        joinType: joinType || "inner",
+        tolerance: tolerance,
+        allowExactMatches: allowExactMatches !== undefined ? allowExactMatches : true,
+        direction: direction || "backward"
+      });
+    this.relation.relType = { case: "asOfJoin", value: asOfJoin }
+    return this;
+  }
+
+  withLateralJoin(
+      left?: Relation,
+      right?: Relation,
+      joinType?: string,
+      condition?: Expression) {
+    const lateralJoin = create(LateralJoinSchema,
+      {
+        left: left,
+        right: right,
+        joinType: toLateralJoinTypePB(joinType),
+        condition: condition
+      });
+    this.relation.relType = { case: "lateralJoin", value: lateralJoin }
     return this;
   }
 
