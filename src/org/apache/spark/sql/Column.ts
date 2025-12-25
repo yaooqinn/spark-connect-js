@@ -146,9 +146,11 @@ export class Column {
       throw new Error("Argument to over() must be a WindowSpec");
     }
     const windowExpr = window.toExpression(this.expr);
-    // Create a new Column from the window expression
+    // Create a new Column with the window expression
+    // We create an empty Column and directly set its expression
+    // since there's no public API to create a Column from an Expression
     const col = new Column("");
-    (col as any).expr_ = windowExpr;
+    col['expr_'] = windowExpr;
     return col;
   }
 }
