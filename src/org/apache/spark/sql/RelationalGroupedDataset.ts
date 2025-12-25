@@ -92,7 +92,7 @@ export class RelationalGroupedDataset {
     }
 
     const pivotCol = typeof pivotColumn === "string" ? this.df.col(pivotColumn) : pivotColumn;
-    
+
     const pivotProto = create(Aggregate_PivotSchema, {
       col: pivotCol.expr,
       values: values ? values.map(v => toLiteralBuilder(v).builder.build()) : []
