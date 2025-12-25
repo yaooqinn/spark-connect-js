@@ -101,6 +101,8 @@ export class WindowSpec {
     // Lazy load to avoid circular dependency
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const ExpressionBuilder = require("./proto/expression/ExpressionBuilder").ExpressionBuilder;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Window = require("./Window").Window;
     const builder = new ExpressionBuilder();
     
     builder.withWindowBuilder((wb: WindowBuilder) => {
@@ -117,10 +119,22 @@ export class WindowSpec {
       if (this.frameSpec_) {
         wb.withWindowFrameBuilder((fb: WindowFrameBuilder) => {
           fb.withFrameType(this.frameSpec_!.frameType);
-          fb.withExpressionBoundaries(
-            lit(this.frameSpec_!.lower).expr,
-            lit(this.frameSpec_!.upper).expr
-          );
+          
+          const lower = this.frameSpec_!.lower;
+          const upper = this.frameSpec_!.upper;
+          
+          // Handle special boundary values
+          if (lower === Window.unboundedPreceding && upper === Window.unboundedFollowing) {
+            fb.withUnboundedBoundaries();
+          } else if (lower === Window.currentRow && upper === Window.currentRow) {
+            fb.withCurrentRowBoundaries();
+          } else {
+            // Use expression boundaries for numeric values
+            fb.withExpressionBoundaries(
+              lit(lower).expr,
+              lit(upper).expr
+            );
+          }
         });
       }
     });

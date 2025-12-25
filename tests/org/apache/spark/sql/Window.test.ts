@@ -83,6 +83,21 @@ describe('WindowSpec', () => {
     const spec = Window.orderBy('salary', 'name');
     expect(spec).toBeInstanceOf(WindowSpec);
   });
+
+  test('should handle unbounded preceding to current row', () => {
+    const spec = Window.rowsBetween(Window.unboundedPreceding, Window.currentRow);
+    expect(spec).toBeInstanceOf(WindowSpec);
+  });
+
+  test('should handle unbounded following', () => {
+    const spec = Window.rangeBetween(Window.currentRow, Window.unboundedFollowing);
+    expect(spec).toBeInstanceOf(WindowSpec);
+  });
+
+  test('should handle numeric boundaries', () => {
+    const spec = Window.rowsBetween(-1, 1);
+    expect(spec).toBeInstanceOf(WindowSpec);
+  });
 });
 
 describe('Column.over()', () => {
