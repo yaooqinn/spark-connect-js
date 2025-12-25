@@ -102,30 +102,26 @@ test("short", async () => {
 
 test("integer", async () => {
   const spark = await sharedSpark;
-  const df = await spark.sql("SELECT 1 as a, 2147483647 `b.c`").then(df => {
-      return df.collect().then(rows => {
-        expect(rows[0].getInt(0)).toBe(1);
-        expect(rows[0].getInt(1)).toBe(2147483647);
-        return df.schema().then(schema => {
-          expect(schema.fields[0].dataType).toBe(DataTypes.IntegerType);
-          expect(schema.fields[0].name).toBe("a");
-          expect(schema.fields[0].nullable).toBe(false);
-          expect(schema.fields[1].dataType).toBe(DataTypes.IntegerType);
-          expect(schema.fields[1].name).toBe("b.c");
-          expect(schema.fields[1].nullable).toBe(false);
-          return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-            expect(rows2[0].getInt(0)).toBe(1);
-            expect(rows2[0].get(0)).toBe(1);
-            expect(rows2[0].getAs<number>(0)).toBe(1);
-            expect(rows2[0][0]).toBe(1);
-            expect(rows2[0].getInt(1)).toBe(2147483647);
-            expect(rows2[0].get(1)).toBe(2147483647);
-            expect(rows2[0].getAs<number>(1)).toBe(2147483647);
-            expect(rows2[0][1]).toBe(2147483647);
-          });
-        });
-      });
-  }));
+  const df = await spark.sql("SELECT 1 as a, 2147483647 `b.c`");
+  const rows = await df.collect();
+  expect(rows[0].getInt(0)).toBe(1);
+  expect(rows[0].getInt(1)).toBe(2147483647);
+  const schema = await df.schema();
+  expect(schema.fields[0].dataType).toBe(DataTypes.IntegerType);
+  expect(schema.fields[0].name).toBe("a");
+  expect(schema.fields[0].nullable).toBe(false);
+  expect(schema.fields[1].dataType).toBe(DataTypes.IntegerType);
+  expect(schema.fields[1].name).toBe("b.c");
+  expect(schema.fields[1].nullable).toBe(false);
+  const rows2 = await spark.createDataFrame(rows, schema).collect();
+  expect(rows2[0].getInt(0)).toBe(1);
+  expect(rows2[0].get(0)).toBe(1);
+  expect(rows2[0].getAs<number>(0)).toBe(1);
+  expect(rows2[0][0]).toBe(1);
+  expect(rows2[0].getInt(1)).toBe(2147483647);
+  expect(rows2[0].get(1)).toBe(2147483647);
+  expect(rows2[0].getAs<number>(1)).toBe(2147483647);
+  expect(rows2[0][1]).toBe(2147483647);
 });
 
 test("long", async () => {
