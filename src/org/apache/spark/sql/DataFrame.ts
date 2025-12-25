@@ -755,13 +755,24 @@ export class DataFrame {
    */
   repartitionByRange(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
   repartitionByRange(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    // Helper to convert column to sort order (asc by default if not already sorted)
+    const toSortCol = (col: Column): Column => {
+      // Check if column already has a SortOrder expression
+      const expr = col.expr;
+      if (expr.exprType.case === "sortOrder") {
+        return col;
+      }
+      // Default to ascending nulls first for range partitioning
+      return col.asc;
+    };
+
     if (typeof numPartitionsOrExpr === 'number') {
       // repartitionByRange(numPartitions, ...partitionExprs)
-      const exprs = partitionExprs.map(col => col.expr);
+      const exprs = partitionExprs.map(col => toSortCol(col).expr);
       return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
     } else {
       // repartitionByRange(...partitionExprs)
-      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => col.expr);
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => toSortCol(col).expr);
       return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
     }
   }

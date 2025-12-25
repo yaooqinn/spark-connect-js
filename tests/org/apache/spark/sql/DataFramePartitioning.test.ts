@@ -94,6 +94,8 @@ test("repartitionByRange with columns", async () => {
     if (plan.relation?.relType.case === "repartitionByExpression") {
       expect(plan.relation.relType.value.partitionExprs.length).toBe(1);
       expect(plan.relation.relType.value.numPartitions).toBeUndefined();
+      // Verify it's wrapped in SortOrder
+      expect(plan.relation.relType.value.partitionExprs[0].exprType.case).toBe("sortOrder");
     }
     // Verify it can be collected
     const rows = await repartitioned.collect();
@@ -111,6 +113,8 @@ test("repartitionByRange with numPartitions and columns", async () => {
     if (plan.relation?.relType.case === "repartitionByExpression") {
       expect(plan.relation.relType.value.partitionExprs.length).toBe(1);
       expect(plan.relation.relType.value.numPartitions).toBe(5);
+      // Verify it's wrapped in SortOrder
+      expect(plan.relation.relType.value.partitionExprs[0].exprType.case).toBe("sortOrder");
     }
     // Verify it can be collected
     const rows = await repartitioned.collect();
