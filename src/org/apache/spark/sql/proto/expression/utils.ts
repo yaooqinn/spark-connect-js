@@ -17,7 +17,7 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Expression, Expression_Literal, Expression_SortOrder, Expression_SortOrder_NullOrdering, Expression_SortOrder_SortDirection, Expression_SortOrderSchema, JavaUDF, JavaUDFSchema, PythonUDF, PythonUDFSchema, ScalarScalaUDF, ScalarScalaUDFSchema } from "../../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate_GroupingSets, Aggregate_GroupingSetsSchema } from "../../../../../../gen/spark/connect/relations_pb";
+import { Aggregate_GroupingSets, Aggregate_GroupingSetsSchema, Aggregate_Pivot, Aggregate_PivotSchema } from "../../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../../Column";
 import { DataType, DataTypes } from "../../types";
 import { LiteralBuilder } from "./LiteralBuilder";
@@ -141,5 +141,12 @@ export function toLiteralBuilder(value: any): { builder: LiteralBuilder, dataTyp
 export function toGroupingSetsPB(cols: Column[]): Aggregate_GroupingSets {
   return create(Aggregate_GroupingSetsSchema, {
     groupingSet: cols.map(c => c.expr)
+  })
+}
+
+export function toPivotPB(col: Expression, values?: any[]): Aggregate_Pivot {
+  return create(Aggregate_PivotSchema, {
+    col: col,
+    values: values ? values.map(v => toLiteralBuilder(v).builder.build()) : []
   })
 }
