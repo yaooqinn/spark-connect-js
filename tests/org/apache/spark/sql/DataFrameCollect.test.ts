@@ -22,41 +22,33 @@ import { sharedSpark } from '../../../../helpers';
 
 test("null", async () => {
   const spark = await sharedSpark;
-  await (spark.sql("SELECT null as a").then(df => {
-    return df.collect().then(rows => {
-      expect(rows[0].isNullAt(0)).toBe(true);
-      return df.schema().then(schema => {
-        expect(schema.fields[0].dataType).toBe(DataTypes.NullType);
-        expect(schema.fields[0].name).toBe("a");
-        expect(schema.fields[0].nullable).toBe(true);
-        return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-          expect(rows2[0].isNullAt(0)).toBe(true);
-          expect(rows2[0].get(0)).toBe(null);
-          expect(rows2[0][0]).toBe(null);
-        });
-      });
-    });
-  }));
+  const df = await spark.sql("SELECT null as a");
+  const rows = await df.collect();
+  expect(rows[0].isNullAt(0)).toBe(true);
+  const schema = await df.schema();
+  expect(schema.fields[0].dataType).toBe(DataTypes.NullType);
+  expect(schema.fields[0].name).toBe("a");
+  expect(schema.fields[0].nullable).toBe(true);
+  const rows2 = await spark.createDataFrame(rows, schema).collect();
+  expect(rows2[0].isNullAt(0)).toBe(true);
+  expect(rows2[0].get(0)).toBe(null);
+  expect(rows2[0][0]).toBe(null);
 });
 
 test("boolean", async () => {
   const spark = await sharedSpark;
-  await (spark.sql("SELECT true as a").then(df => {
-    return df.collect().then(rows => {
-      expect(rows[0].getBoolean(0)).toBe(true);
-      return df.schema().then(schema => {
-        expect(schema.fields[0].dataType).toBe(DataTypes.BooleanType);
-        expect(schema.fields[0].name).toBe("a");
-        expect(schema.fields[0].nullable).toBe(false);
-        return spark.createDataFrame(rows, schema).collect().then(rows2 => {
-          expect(rows2[0].getBoolean(0)).toBe(true);
-          expect(rows2[0].get(0)).toBe(true);
-          expect(rows2[0].getAs<boolean>(0)).toBe(true);
-          expect(rows2[0][0]).toBe(true);
-        });
-      });
-    });
-  }));
+  const df = await spark.sql("SELECT true as a");
+  const rows = await df.collect();
+  expect(rows[0].getBoolean(0)).toBe(true);
+  const schema = await df.schema();
+  expect(schema.fields[0].dataType).toBe(DataTypes.BooleanType);
+  expect(schema.fields[0].name).toBe("a");
+  expect(schema.fields[0].nullable).toBe(false);
+  const rows2 = await spark.createDataFrame(rows, schema).collect();
+  expect(rows2[0].getBoolean(0)).toBe(true);
+  expect(rows2[0].get(0)).toBe(true);
+  expect(rows2[0].getAs<boolean>(0)).toBe(true);
+  expect(rows2[0][0]).toBe(true);
 });
 
 test("byte", async () => {
