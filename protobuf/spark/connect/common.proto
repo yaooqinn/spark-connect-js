@@ -86,11 +86,20 @@ message Origin {
   // (Required) Indicate the origin type.
   oneof function {
     PythonOrigin python_origin = 1;
+    JvmOrigin jvm_origin = 2;
   }
 }
 
 message PythonOrigin {
   // (Required) Name of the origin, for example, the name of the function
+  string fragment = 1;
+
+  // (Required) Callsite to show to end users, for example, stacktrace.
+  string call_site = 2;
+}
+
+message JvmOrigin {
+  // (Required) Name of the origin, for example, the name of the class
   string fragment = 1;
 
   // (Required) Callsite to show to end users, for example, stacktrace.

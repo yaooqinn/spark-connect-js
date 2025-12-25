@@ -69,6 +69,12 @@ message DataType {
 
     // UnparsedDataType
     Unparsed unparsed = 24;
+
+    // Geospatial types
+    Geometry geometry = 26;
+    Geography geography = 27;
+
+    Time time = 28;
   }
 
   message Boolean {
@@ -197,5 +203,18 @@ message DataType {
   message Unparsed {
     // (Required) The unparsed data type string
     string data_type_string = 1;
+  }
+
+  message Geometry {
+    uint32 type_variation_reference = 1;
+  }
+
+  message Geography {
+    uint32 type_variation_reference = 1;
+  }
+
+  message Time {
+    optional int32 precision = 1;
+    uint32 type_variation_reference = 2;
   }
 }
