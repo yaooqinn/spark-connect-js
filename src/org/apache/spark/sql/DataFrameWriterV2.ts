@@ -16,12 +16,13 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { CommandSchema, WriteOperationV2Schema, WriteOperationV2_Mode } from "../../../../gen/spark/connect/commands_pb";
+import { CommandSchema, WriteOperationV2_Mode } from "../../../../gen/spark/connect/commands_pb";
 import { DataFrame } from "./DataFrame";
 import { Column } from "./Column";
 import { expr } from "./functions";
 import { AnalysisException } from "./errors";
 import { ExecutePlanResponseHandler } from "./proto/ExecutePlanResponseHandler";
+import { WriteOperationV2Builder } from "./proto/WriteOperationV2Builder";
 
 /**
  * Interface used to write a DataFrame to external storage using V2 data sources.
@@ -146,27 +147,33 @@ export class DataFrameWriterV2 {
     mode: string,
     condition?: Column | string
   ): Promise<ExecutePlanResponseHandler[]> {
-    const writeOp = create(WriteOperationV2Schema, {
-      input: this.df_.plan.relation,
-      tableName: this.tableName_,
-      provider: this.provider_,
-      partitioningColumns: this.partitionColumns_.map(c => c.expr),
-      options: Object.fromEntries(this.options_),
-      tableProperties: Object.fromEntries(this.tableProperties_),
-      mode: this.getModeProto(mode)
-    });
+    const builder = new WriteOperationV2Builder()
+      .withInput(this.df_.plan.relation)
+      .withTableName(this.tableName_)
+      .withOptions(Object.fromEntries(this.options_))
+      .withTableProperties(Object.fromEntries(this.tableProperties_))
+      .withMode(this.getModeProto(mode));
+
+    if (this.provider_) {
+      builder.withProvider(this.provider_);
+    }
+
+    if (this.partitionColumns_.length > 0) {
+      builder.withPartitioningColumns(this.partitionColumns_.map(c => c.expr));
+    }
 
     if (this.clusteringColumns_.length > 0) {
-      writeOp.clusteringColumns = this.clusteringColumns_;
+      builder.withClusteringColumns(this.clusteringColumns_);
     }
 
     if (condition) {
-      writeOp.overwriteCondition =
-        typeof condition === 'string'
-          ? expr(condition).expr
-          : condition.expr;
+      const conditionExpr = typeof condition === 'string'
+        ? expr(condition).expr
+        : condition.expr;
+      builder.withOverwriteCondition(conditionExpr);
     }
 
+    const writeOp = builder.build();
     const writeCmd = create(CommandSchema, { 
       commandType: { case: "writeOperationV2", value: writeOp }
     });
