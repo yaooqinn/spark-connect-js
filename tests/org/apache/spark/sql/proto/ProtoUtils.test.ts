@@ -205,4 +205,3 @@ test("toLateralJoinTypePB - default to inner for undefined or unknown", () => {
   expect(toLateralJoinTypePB("unknown")).toBe(LateralJoin_JoinType.INNER);
 });
 
-
