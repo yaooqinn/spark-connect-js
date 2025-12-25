@@ -101,3 +101,40 @@ test("tanspose", async () => {
   });
 });
 
+test("advanced aggregate helpers", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const grouped = df.groupBy("name");
+
+  await grouped.avg("goals").where("name = 'Ronaldo'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(1.25, 3);
+  });
+
+  await grouped.min("goals").where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBe(0);
+  });
+
+  await grouped.stddevSamp("goals").where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(0.81649, 4);
+  });
+
+  await grouped.varPop("goals").where("name = 'Ronaldo'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(0.1875, 4);
+  });
+});
+
+test("agg with map and pivot", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  await df.groupBy("name").agg({ goals: "max", game: "min" }).where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBe(2);
+    expect(Number(row[2])).toBe(1);
+  });
+
+  const pivoted = df.groupBy("game").pivot("name", ["Messi", "Ronaldo"]).sum("goals");
+  await pivoted.where("game = 1").head().then((row) => {
+    expect(Number(row[1])).toBe(1);
+    expect(Number(row[2])).toBe(1);
+  });
+});

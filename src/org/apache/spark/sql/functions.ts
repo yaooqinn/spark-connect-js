@@ -457,6 +457,10 @@ export function stddev_sample(column: string | Column): Column {
   return Column.fn("stddev_samp", column, false);
 }
 
+export function stddev_samp(column: string | Column): Column {
+  return Column.fn("stddev_samp", column, false);
+}
+
 export function stddev_pop(column: string | Column): Column {
   return Column.fn("stddev_pop", column, false);
 }

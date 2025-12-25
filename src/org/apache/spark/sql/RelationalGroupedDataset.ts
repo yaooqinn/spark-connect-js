@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+import { create } from "@bufbuild/protobuf";
+import { Aggregate_Pivot, Aggregate_PivotSchema } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
-import { toGroupingSetsPB } from "./proto/expression/utils";
+import { toGroupingSetsPB, toLiteralBuilder } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
 /**
@@ -32,7 +33,7 @@ export class RelationalGroupedDataset {
     public readonly df: DataFrame,
     public readonly groupingExprs: string[] | Column[],
     public readonly groupType: GroupType,
-    public readonly pivot: Aggregate_Pivot | undefined = undefined,
+    public readonly pivotProto: Aggregate_Pivot | undefined = undefined,
     public readonly groupingSets: Column[][] = []
   ) {}
 
@@ -49,7 +50,7 @@ export class RelationalGroupedDataset {
         }
         return ab.withInput(this.df.plan.relation)
           .withAggregateExpressions(aggExprs.map((c) => c.expr))
-          .withPivot(this.pivot)
+          .withPivot(this.pivotProto)
           .withGroupType(toGroupTypePB(this.groupType))
       });
     });
@@ -61,5 +62,94 @@ export class RelationalGroupedDataset {
 
   sum(...cols: string[]): DataFrame {
     return this.toDF(...cols.map((c) => f.sum(this.df.col(c))))
+  }
+
+  avg(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.avg(this.df.col(c))))
+  }
+
+  mean(...cols: string[]): DataFrame {
+    return this.avg(...cols)
+  }
+
+  min(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.min(this.df.col(c))))
+  }
+
+  max(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.max(this.df.col(c))))
+  }
+
+  first(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.first(this.df.col(c))))
+  }
+
+  last(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.last(this.df.col(c))))
+  }
+
+  stddev(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev(this.df.col(c))))
+  }
+
+  stddevPop(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev_pop(this.df.col(c))))
+  }
+
+  stddevSamp(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev_samp(this.df.col(c))))
+  }
+
+  variance(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.variance(this.df.col(c))))
+  }
+
+  varPop(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.var_pop(this.df.col(c))))
+  }
+
+  varSamp(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.var_samp(this.df.col(c))))
+  }
+
+  collect_list(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.collect_list(this.df.col(c))))
+  }
+
+  collect_set(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.collect_set(this.df.col(c))))
+  }
+
+  agg(exprs: Record<string, string>): DataFrame;
+  agg(...exprs: Column[]): DataFrame;
+  agg(exprsOrMap: Record<string, string> | Column, ...exprs: Column[]): DataFrame {
+    if (typeof exprsOrMap === "object" && !(exprsOrMap instanceof Column)) {
+      const aggExprs = Object.entries(exprsOrMap).map(([col, func]) => {
+        const fn = (f as any)[func] as ((c: Column) => Column) | undefined;
+        if (typeof fn !== "function") {
+          throw new Error(`Unsupported aggregate function: ${func}`);
+        }
+        return fn(this.df.col(col));
+      });
+      return this.toDF(...aggExprs);
+    } else {
+      const allExprs = [exprsOrMap as Column, ...exprs];
+      return this.toDF(...allExprs);
+    }
+  }
+
+  pivot(pivotCol: string, values?: any[]): RelationalGroupedDataset {
+    const pivotProto = create(Aggregate_PivotSchema, {
+      col: new Column(pivotCol).expr,
+      values: values ? values.map((v) => toLiteralBuilder(v).builder.build()) : undefined,
+    });
+
+    return new RelationalGroupedDataset(
+      this.df,
+      this.groupingExprs,
+      this.groupType,
+      pivotProto,
+      this.groupingSets
+    );
   }
 }
