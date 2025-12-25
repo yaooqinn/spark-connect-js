@@ -39,21 +39,12 @@ export function delay(ms: number) {
   return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
-export function timeoutOrSatisfied(promise: Promise<any>, timeout: number = 30000): Promise<void> {
-  const timeoutPromise = new Promise<void>((_, reject) => {
-    setTimeout(() => {
-      reject(new Error("Timeout"));
-    }, timeout);
-  });
-  return Promise.race([promise, timeoutPromise]);
-}
-
 export async function withDatabase(
     spark: SparkSession,
     dbName: string,
-    fn: (dbName: string) => Promise<any>, timeout: number = 30000): Promise<void> {
+    fn: (dbName: string) => Promise<any>): Promise<void> {
   try {
-    await timeoutOrSatisfied(fn(dbName), timeout);
+    await fn(dbName);
   } finally {
     await spark.sql(`DROP DATABASE IF EXISTS ${dbName} CASCADE`);
   }
@@ -70,10 +61,10 @@ export async function withTable(
   }
 }
 
-export async function withTempDir(fn: (dir: string) => Promise<any>, timeout: number = 30000): Promise<void> {
+export async function withTempDir(fn: (dir: string) => Promise<any>): Promise<void> {
   return await createTempDir().then(async (dir) => {
     try {
-      await timeoutOrSatisfied(fn(dir), timeout);
+      await fn(dir);
     } finally {
       // Clean up the temporary directory
       rm(dir, { recursive: true }, (err) => {

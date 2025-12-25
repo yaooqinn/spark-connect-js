@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-import { sharedSpark, timeoutOrSatisfied } from '../../../../helpers';
+import { sharedSpark } from '../../../../helpers';
 import { col } from '../../../../../src/org/apache/spark/sql/functions';
 
 test("stat.cov api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 1.0 as a, 2.0 as b UNION ALL SELECT 2.0 as a, 3.0 as b UNION ALL SELECT 3.0 as a, 4.0 as b").then(async df => {
       const covariance = await df.stat.cov("a", "b");
       expect(covariance).toBeCloseTo(1.0, 5);
@@ -30,7 +30,7 @@ test("stat.cov api", async () => {
 
 test("stat.corr api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 1.0 as a, 2.0 as b UNION ALL SELECT 2.0 as a, 3.0 as b UNION ALL SELECT 3.0 as a, 4.0 as b").then(async df => {
       const correlation = await df.stat.corr("a", "b");
       expect(correlation).toBeCloseTo(1.0, 5);
@@ -40,7 +40,7 @@ test("stat.corr api", async () => {
 
 test("stat.corr with method api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 1.0 as a, 2.0 as b UNION ALL SELECT 2.0 as a, 3.0 as b UNION ALL SELECT 3.0 as a, 4.0 as b").then(async df => {
       const correlation = await df.stat.corr("a", "b", "pearson");
       expect(correlation).toBeCloseTo(1.0, 5);
@@ -50,7 +50,7 @@ test("stat.corr with method api", async () => {
 
 test("stat.crosstab api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 'a' as col1, 'x' as col2 UNION ALL SELECT 'a' as col1, 'y' as col2 UNION ALL SELECT 'b' as col1, 'x' as col2").then(async df => {
       const crosstabDf = df.stat.crosstab("col1", "col2");
       const rows = await crosstabDf.collect();
@@ -61,7 +61,7 @@ test("stat.crosstab api", async () => {
 
 test("stat.freqItems api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 'a' as col1, 1 as col2 UNION ALL SELECT 'a' as col1, 2 as col2 UNION ALL SELECT 'b' as col1, 1 as col2").then(async df => {
       const freqDf = df.stat.freqItems(["col1", "col2"]);
       const rows = await freqDf.collect();
@@ -72,7 +72,7 @@ test("stat.freqItems api", async () => {
 
 test("stat.freqItems with support api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 'a' as col1, 1 as col2 UNION ALL SELECT 'a' as col1, 2 as col2 UNION ALL SELECT 'b' as col1, 1 as col2").then(async df => {
       const freqDf = df.stat.freqItems(["col1", "col2"], 0.4);
       const rows = await freqDf.collect();
@@ -83,7 +83,7 @@ test("stat.freqItems with support api", async () => {
 
 test("stat.sampleBy api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 'a' as key, 1 as value UNION ALL SELECT 'a' as key, 2 as value UNION ALL SELECT 'b' as key, 3 as value UNION ALL SELECT 'b' as key, 4 as value").then(async df => {
       const fractions = new Map();
       fractions.set("a", 0.5);
@@ -97,7 +97,7 @@ test("stat.sampleBy api", async () => {
 
 test("stat.approxQuantile api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 1.0 as a, 2.0 as b UNION ALL SELECT 2.0 as a, 3.0 as b UNION ALL SELECT 3.0 as a, 4.0 as b UNION ALL SELECT 4.0 as a, 5.0 as b").then(async df => {
       const quantileDf = df.stat.approxQuantile(["a", "b"], [0.0, 0.5, 1.0], 0.01);
       const rows = await quantileDf.collect();
@@ -108,7 +108,7 @@ test("stat.approxQuantile api", async () => {
 
 test("stat.approxQuantile exact api", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.sql("SELECT 1.0 as a UNION ALL SELECT 2.0 as a UNION ALL SELECT 3.0 as a UNION ALL SELECT 4.0 as a UNION ALL SELECT 5.0 as a").then(async df => {
       const quantileDf = df.stat.approxQuantile(["a"], [0.0, 0.25, 0.5, 0.75, 1.0], 0.0);
       const rows = await quantileDf.collect();
