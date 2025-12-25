@@ -16,11 +16,12 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { WriteOperationV2Schema, WriteOperationV2_Mode } from "../../../../gen/spark/connect/commands_pb";
+import { CommandSchema, WriteOperationV2Schema, WriteOperationV2_Mode } from "../../../../gen/spark/connect/commands_pb";
 import { DataFrame } from "./DataFrame";
 import { Column } from "./Column";
 import { expr } from "./functions";
 import { AnalysisException } from "./errors";
+import { ExecutePlanResponseHandler } from "./proto/ExecutePlanResponseHandler";
 
 /**
  * Interface used to write a DataFrame to external storage using V2 data sources.
@@ -100,49 +101,49 @@ export class DataFrameWriterV2 {
   /**
    * Create new table
    */
-  async create(): Promise<void> {
-    await this.executeWrite('create');
+  create(): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('create');
   }
 
   /**
    * Replace existing table
    */
-  async replace(): Promise<void> {
-    await this.executeWrite('replace');
+  replace(): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('replace');
   }
 
   /**
    * Create or replace table
    */
-  async createOrReplace(): Promise<void> {
-    await this.executeWrite('createOrReplace');
+  createOrReplace(): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('createOrReplace');
   }
 
   /**
    * Append to existing table
    */
-  async append(): Promise<void> {
-    await this.executeWrite('append');
+  append(): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('append');
   }
 
   /**
    * Overwrite matching rows
    */
-  async overwrite(condition: Column | string): Promise<void> {
-    await this.executeWrite('overwrite', condition);
+  overwrite(condition: Column | string): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('overwrite', condition);
   }
 
   /**
    * Overwrite partitions
    */
-  async overwritePartitions(): Promise<void> {
-    await this.executeWrite('overwritePartitions');
+  overwritePartitions(): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWrite('overwritePartitions');
   }
 
   private async executeWrite(
     mode: string,
     condition?: Column | string
-  ): Promise<void> {
+  ): Promise<ExecutePlanResponseHandler[]> {
     const writeOp = create(WriteOperationV2Schema, {
       input: this.df_.plan.relation,
       tableName: this.tableName_,
@@ -164,11 +165,11 @@ export class DataFrameWriterV2 {
           : condition.expr;
     }
 
-    const plan = this.df_.spark.planFromCommandBuilder(b =>
-      b.withWriteOperationV2(writeOp)
-    );
-
-    await this.df_.spark.client.execute(plan.plan);
+    const writeCmd = create(CommandSchema, { 
+      commandType: { case: "writeOperationV2", value: writeOp }
+    });
+    
+    return this.df_.spark.execute(writeCmd);
   }
 
   private getModeProto(mode: string): WriteOperationV2_Mode {
