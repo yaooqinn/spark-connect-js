@@ -16,6 +16,7 @@
  */
 
 import { DataFrameWriter } from './DataFrameWriter';
+import { DataFrameWriterV2 } from './DataFrameWriterV2';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -167,6 +168,13 @@ export class DataFrame {
 
   get write(): DataFrameWriter {
     return new DataFrameWriter(this);
+  }
+
+  /**
+   * Create a write builder for writing to a table using V2 API
+   */
+  writeTo(tableName: string): DataFrameWriterV2 {
+    return new DataFrameWriterV2(tableName, this);
   }
 
   async collect(): Promise<Row[]> {

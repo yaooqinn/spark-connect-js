@@ -16,7 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Command, CommandSchema, SqlCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
+import { Command, CommandSchema, SqlCommandSchema, WriteOperationV2 } from "../../../../../gen/spark/connect/commands_pb";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -25,6 +25,11 @@ export class CommandBuilder {
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
     this.command.commandType = { case: "sqlCommand", value: sqlCmd };
+    return this;
+  }
+
+  withWriteOperationV2(writeOp: WriteOperationV2) {
+    this.command.commandType = { case: "writeOperationV2", value: writeOp };
     return this;
   }
 
