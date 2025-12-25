@@ -121,4 +121,3 @@ test("repartitionByRange with numPartitions and columns", async () => {
     expect(rows.length).toBe(100);
   })());
 });
-
