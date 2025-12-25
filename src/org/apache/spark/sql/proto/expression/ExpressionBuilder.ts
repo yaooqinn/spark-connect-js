@@ -16,7 +16,33 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { CallFunctionSchema, CommonInlineUserDefinedFunction, Expression, Expression_AliasSchema, Expression_Cast_EvalMode, Expression_CastSchema, Expression_ExpressionStringSchema, Expression_LambdaFunctionSchema, Expression_Literal, Expression_UnresolvedAttribute, Expression_UnresolvedAttributeSchema, Expression_UnresolvedExtractValueSchema, Expression_UnresolvedFunction, Expression_UnresolvedFunctionSchema, Expression_UnresolvedNamedLambdaVariableSchema, Expression_UnresolvedRegexSchema, Expression_UnresolvedStarSchema, Expression_UpdateFieldsSchema, ExpressionCommon, ExpressionSchema, MergeAction_ActionType, MergeAction_Assignment, MergeActionSchema, NamedArgumentExpressionSchema, TypedAggregateExpressionSchema } from "../../../../../../gen/spark/connect/expressions_pb";
+import { 
+  CallFunctionSchema, 
+  CommonInlineUserDefinedFunction, 
+  Expression, 
+  Expression_AliasSchema, 
+  Expression_Cast_EvalMode, 
+  Expression_CastSchema, 
+  Expression_ExpressionStringSchema, 
+  Expression_LambdaFunctionSchema, 
+  Expression_Literal, 
+  Expression_UnresolvedAttribute, 
+  Expression_UnresolvedAttributeSchema, 
+  Expression_UnresolvedExtractValueSchema, 
+  Expression_UnresolvedFunction, 
+  Expression_UnresolvedFunctionSchema, 
+  Expression_UnresolvedNamedLambdaVariableSchema, 
+  Expression_UnresolvedRegexSchema, 
+  Expression_UnresolvedStarSchema, 
+  Expression_UpdateFieldsSchema, 
+  ExpressionCommon, 
+  ExpressionSchema, 
+  MergeAction_ActionType, 
+  MergeAction_Assignment, 
+  MergeActionSchema, 
+  NamedArgumentExpressionSchema, 
+  TypedAggregateExpressionSchema 
+} from "../../../../../../gen/spark/connect/expressions_pb";
 import { DataTypes } from "../../types";
 import { DataType } from "../../types/data_types";
 import { LiteralBuilder } from "./LiteralBuilder";

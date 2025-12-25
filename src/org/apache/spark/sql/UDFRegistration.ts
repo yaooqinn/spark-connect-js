@@ -19,7 +19,7 @@ import { SparkSession } from './SparkSession';
 import { DataType } from './types/data_types';
 import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
-import { parseDataType, serializeFunctionToPython } from './util/udf_utils';
+import { parseDataType, serializeFunctionToPython, PYTHON_UDF_EVAL_TYPE_SQL, DEFAULT_PYTHON_VERSION } from './util/udf_utils';
 import { DataTypes } from './types/DataTypes';
 
 /**
@@ -55,7 +55,7 @@ export class UDFRegistration {
 
     // Create UDF using the builder
     const udf = new CommonInlineUserDefinedFunctionBuilder(name, true)
-      .withPythonUDF(dataType, 200, command, "3.8", [])
+      .withPythonUDF(dataType, PYTHON_UDF_EVAL_TYPE_SQL, command, DEFAULT_PYTHON_VERSION, [])
       .build();
 
     // Register the UDF via command

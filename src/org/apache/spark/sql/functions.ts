@@ -3,7 +3,7 @@ import { toLiteralBuilder } from "./proto/expression/utils";
 import { randomInt } from "./util/helpers";
 import { DataType } from "./types/data_types";
 import { CommonInlineUserDefinedFunctionBuilder } from "./proto/expression/udf/CommonInlineUserDefinedFunctionBuilder";
-import { parseDataType, serializeFunctionToPython } from "./util/udf_utils";
+import { parseDataType, serializeFunctionToPython, PYTHON_UDF_EVAL_TYPE_SQL, DEFAULT_PYTHON_VERSION, UDF_NAME_RANDOM_MAX } from "./util/udf_utils";
 
 // TODOs:
 // 1. broadcast
@@ -812,11 +812,11 @@ export function udf(func: (...args: any[]) => any, returnType: DataType | string
     const command = Buffer.from(pythonCode, 'utf-8');
 
     // Generate a unique name for the UDF to avoid naming conflicts
-    const uniqueName = `udf_${randomInt(0, 1000000)}`;
+    const uniqueName = `udf_${randomInt(0, UDF_NAME_RANDOM_MAX)}`;
 
     // Create UDF expression
     const udfBuilder = new CommonInlineUserDefinedFunctionBuilder(uniqueName, true)
-      .withPythonUDF(dataType, 200, command, "3.8", [])
+      .withPythonUDF(dataType, PYTHON_UDF_EVAL_TYPE_SQL, command, DEFAULT_PYTHON_VERSION, [])
       .withArguments(args.map(arg => arg.expr));
 
     // Return Column wrapping the UDF

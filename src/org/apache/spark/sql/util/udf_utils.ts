@@ -19,6 +19,22 @@ import { DataType } from '../types/data_types';
 import { DataTypes } from '../types/DataTypes';
 
 /**
+ * Python UDF evaluation type for SQL expressions.
+ * See PySpark's pyspark.sql.udf for details.
+ */
+export const PYTHON_UDF_EVAL_TYPE_SQL = 200;
+
+/**
+ * Default Python version for UDF execution.
+ */
+export const DEFAULT_PYTHON_VERSION = "3.8";
+
+/**
+ * Maximum value for random UDF name generation.
+ */
+export const UDF_NAME_RANDOM_MAX = 1000000;
+
+/**
  * Parse a string data type to a DataType object.
  * 
  * @param typeString - The data type as a string
@@ -61,8 +77,14 @@ export function parseDataType(typeString: string): DataType {
  * Serialize a JavaScript function to Python code.
  * This is a simple implementation that converts basic JS functions to Python.
  * 
+ * **Limitations:**
+ * - Only handles simple arrow functions and traditional functions
+ * - Does not support complex JavaScript constructs (closures, async, etc.)
+ * - Basic operator conversion (=== to ==, !== to !=)
+ * - For production use, consider using more sophisticated JS-to-Python converters
+ * 
  * @param func - The JavaScript function
- * @returns Python code as a string
+ * @returns Python code as a string (Python lambda expression)
  */
 export function serializeFunctionToPython(func: (...args: any[]) => any): string {
   const funcStr = func.toString();
@@ -103,6 +125,7 @@ export function serializeFunctionToPython(func: (...args: any[]) => any): string
     return `lambda x: ${body}`;
   }
   
-  // Simple fallback
+  // Fallback: identity function
+  // This is used when the function cannot be parsed properly
   return `lambda x: x`;
 }
