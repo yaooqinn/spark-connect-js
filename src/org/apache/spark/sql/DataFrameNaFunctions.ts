@@ -127,7 +127,7 @@ export class DataFrameNaFunctions {
     valueOrValueMap: number | string | boolean | { [key: string]: number | string | boolean },
     cols?: string[]
   ): DataFrame {
-    if (typeof valueOrValueMap === 'object' && !Array.isArray(valueOrValueMap)) {
+    if (typeof valueOrValueMap === 'object' && !Array.isArray(valueOrValueMap) && valueOrValueMap !== null) {
       // fill(valueMap: { [key: string]: number | string | boolean })
       const valueMap = valueOrValueMap as { [key: string]: number | string | boolean };
       const columnNames = Object.keys(valueMap);
@@ -156,10 +156,23 @@ export class DataFrameNaFunctions {
     replacement: { [key: string]: string | number | boolean } | Map<string | number | boolean, string | number | boolean>
   ): DataFrame {
     const columnNames = Array.isArray(cols) ? cols : [cols];
-    const replacementMap = replacement instanceof Map ? replacement : new Map(Object.entries(replacement));
+    let replacementMap: Map<string | number | boolean, string | number | boolean>;
+    
+    if (replacement instanceof Map) {
+      replacementMap = replacement;
+    } else {
+      // Convert plain object to Map, preserving numeric keys
+      replacementMap = new Map();
+      for (const [key, value] of Object.entries(replacement)) {
+        // Try to parse key as number if it looks like one
+        const numericKey = Number(key);
+        const actualKey = !isNaN(numericKey) && key === numericKey.toString() ? numericKey : key;
+        replacementMap.set(actualKey, value);
+      }
+    }
     
     return this.df.spark.relationBuilderToDF(b =>
-      b.withNAReplace(this.df.plan.relation, columnNames, replacementMap as Map<string | number | boolean, string | number | boolean>)
+      b.withNAReplace(this.df.plan.relation, columnNames, replacementMap)
     );
   }
 }

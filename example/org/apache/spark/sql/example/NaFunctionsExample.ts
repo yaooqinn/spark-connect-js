@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { SparkSession } from '../../src/org/apache/spark/sql/SparkSession';
+import { SparkSession } from '../../../../../../src/org/apache/spark/sql/SparkSession';
 
 /**
  * Example demonstrating DataFrame NA (missing data) functions.
