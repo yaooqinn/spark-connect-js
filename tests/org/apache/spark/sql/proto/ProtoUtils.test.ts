@@ -16,9 +16,10 @@
  */
 
 import { tableFromArrays, tableToIPC } from "apache-arrow";
-import { createLocalRelation, createLocalRelationFromArrowTable } from "../../../../../../src/org/apache/spark/sql/proto/ProtoUtils";
+import { createLocalRelation, createLocalRelationFromArrowTable, toJoinTypePB, toLateralJoinTypePB } from "../../../../../../src/org/apache/spark/sql/proto/ProtoUtils";
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 import { StructType } from "../../../../../../src/org/apache/spark/sql/types/StructType";
+import { Join_JoinType, LateralJoin_JoinType } from "../../../../../../src/gen/spark/connect/relations_pb";
 
 test("createLocalRelation from empty object", () => {
   const schema = DataTypes.createStructType([]);
@@ -130,4 +131,77 @@ test("createLocalRelation from object with five fields", () => {
   expect(l2.data).toStrictEqual(l1.data);
 });
 
+test("toJoinTypePB - inner join", () => {
+  expect(toJoinTypePB("inner")).toBe(Join_JoinType.INNER);
+});
+
+test("toJoinTypePB - full outer join variations", () => {
+  expect(toJoinTypePB("outer")).toBe(Join_JoinType.FULL_OUTER);
+  expect(toJoinTypePB("full")).toBe(Join_JoinType.FULL_OUTER);
+  expect(toJoinTypePB("fullouter")).toBe(Join_JoinType.FULL_OUTER);
+  expect(toJoinTypePB("full_outer")).toBe(Join_JoinType.FULL_OUTER);
+  expect(toJoinTypePB("FULL")).toBe(Join_JoinType.FULL_OUTER);
+  expect(toJoinTypePB("FULLOUTER")).toBe(Join_JoinType.FULL_OUTER);
+});
+
+test("toJoinTypePB - left outer join variations", () => {
+  expect(toJoinTypePB("left")).toBe(Join_JoinType.LEFT_OUTER);
+  expect(toJoinTypePB("leftouter")).toBe(Join_JoinType.LEFT_OUTER);
+  expect(toJoinTypePB("left_outer")).toBe(Join_JoinType.LEFT_OUTER);
+  expect(toJoinTypePB("LEFT")).toBe(Join_JoinType.LEFT_OUTER);
+  expect(toJoinTypePB("LEFTOUTER")).toBe(Join_JoinType.LEFT_OUTER);
+});
+
+test("toJoinTypePB - right outer join variations", () => {
+  expect(toJoinTypePB("right")).toBe(Join_JoinType.RIGHT_OUTER);
+  expect(toJoinTypePB("rightouter")).toBe(Join_JoinType.RIGHT_OUTER);
+  expect(toJoinTypePB("right_outer")).toBe(Join_JoinType.RIGHT_OUTER);
+  expect(toJoinTypePB("RIGHT")).toBe(Join_JoinType.RIGHT_OUTER);
+});
+
+test("toJoinTypePB - semi join variations", () => {
+  expect(toJoinTypePB("semi")).toBe(Join_JoinType.LEFT_SEMI);
+  expect(toJoinTypePB("leftsemi")).toBe(Join_JoinType.LEFT_SEMI);
+  expect(toJoinTypePB("left_semi")).toBe(Join_JoinType.LEFT_SEMI);
+  expect(toJoinTypePB("SEMI")).toBe(Join_JoinType.LEFT_SEMI);
+});
+
+test("toJoinTypePB - anti join variations", () => {
+  expect(toJoinTypePB("anti")).toBe(Join_JoinType.LEFT_ANTI);
+  expect(toJoinTypePB("leftanti")).toBe(Join_JoinType.LEFT_ANTI);
+  expect(toJoinTypePB("left_anti")).toBe(Join_JoinType.LEFT_ANTI);
+  expect(toJoinTypePB("ANTI")).toBe(Join_JoinType.LEFT_ANTI);
+});
+
+test("toJoinTypePB - cross join", () => {
+  expect(toJoinTypePB("cross")).toBe(Join_JoinType.CROSS);
+  expect(toJoinTypePB("CROSS")).toBe(Join_JoinType.CROSS);
+});
+
+test("toJoinTypePB - default to inner for undefined or unknown", () => {
+  expect(toJoinTypePB(undefined)).toBe(Join_JoinType.INNER);
+  expect(toJoinTypePB("unknown")).toBe(Join_JoinType.INNER);
+});
+
+test("toLateralJoinTypePB - inner join", () => {
+  expect(toLateralJoinTypePB("inner")).toBe(LateralJoin_JoinType.INNER);
+  expect(toLateralJoinTypePB("INNER")).toBe(LateralJoin_JoinType.INNER);
+});
+
+test("toLateralJoinTypePB - left outer join variations", () => {
+  expect(toLateralJoinTypePB("left")).toBe(LateralJoin_JoinType.LEFT_OUTER);
+  expect(toLateralJoinTypePB("leftouter")).toBe(LateralJoin_JoinType.LEFT_OUTER);
+  expect(toLateralJoinTypePB("left_outer")).toBe(LateralJoin_JoinType.LEFT_OUTER);
+  expect(toLateralJoinTypePB("LEFT")).toBe(LateralJoin_JoinType.LEFT_OUTER);
+});
+
+test("toLateralJoinTypePB - cross join", () => {
+  expect(toLateralJoinTypePB("cross")).toBe(LateralJoin_JoinType.CROSS);
+  expect(toLateralJoinTypePB("CROSS")).toBe(LateralJoin_JoinType.CROSS);
+});
+
+test("toLateralJoinTypePB - default to inner for undefined or unknown", () => {
+  expect(toLateralJoinTypePB(undefined)).toBe(LateralJoin_JoinType.INNER);
+  expect(toLateralJoinTypePB("unknown")).toBe(LateralJoin_JoinType.INNER);
+});
 
