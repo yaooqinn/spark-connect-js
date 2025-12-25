@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM spark:4.0.0-preview2-scala2.13-java17-ubuntu
+FROM apache/spark:4.1.0-scala2.13-java21-r-ubuntu
 
 USER root
 
