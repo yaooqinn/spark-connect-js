@@ -81,7 +81,8 @@ export class DataFrameWriterV2 {
   }
 
   /**
-   * Partition by columns
+   * Partition by columns.
+   * Note: Each call to partitionBy replaces previously set partition columns.
    */
   partitionBy(...cols: (string | Column)[]): DataFrameWriterV2 {
     this.partitionColumns_ = cols.map(c => 
@@ -91,7 +92,8 @@ export class DataFrameWriterV2 {
   }
 
   /**
-   * Cluster by columns (for data sources that support clustering)
+   * Cluster by columns (for data sources that support clustering).
+   * Note: Each call to clusterBy replaces previously set clustering columns.
    */
   clusterBy(...cols: string[]): DataFrameWriterV2 {
     this.clusteringColumns_ = cols;
@@ -183,9 +185,10 @@ export class DataFrameWriterV2 {
     };
     const protoMode = modeMap[mode];
     if (protoMode === undefined) {
+      const validModes = Object.keys(modeMap).map(m => `"${m}"`).join(', ');
       throw new AnalysisException(
         "INVALID_WRITE_MODE_V2",
-        `The specified write mode "${mode}" is invalid. Valid modes include "create", "replace", "createOrReplace", "append", "overwrite", and "overwritePartitions".`,
+        `The specified write mode "${mode}" is invalid. Valid modes include ${validModes}.`,
         "42000"
       );
     }
