@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-import { create } from "@bufbuild/protobuf";
-import { Aggregate_Pivot, Aggregate_PivotSchema } from "../../../../gen/spark/connect/relations_pb";
+import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
-import { toLiteralBuilder, toGroupingSetsPB } from "./proto/expression/utils";
+import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 
 /**
@@ -92,11 +91,7 @@ export class RelationalGroupedDataset {
     }
 
     const pivotCol = typeof pivotColumn === "string" ? this.df.col(pivotColumn) : pivotColumn;
-
-    const pivotProto = create(Aggregate_PivotSchema, {
-      col: pivotCol.expr,
-      values: values ? values.map(v => toLiteralBuilder(v).builder.build()) : []
-    });
+    const pivotProto = toPivotPB(pivotCol.expr, values);
 
     return new RelationalGroupedDataset(
       this.df,
