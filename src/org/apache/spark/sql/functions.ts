@@ -801,7 +801,7 @@ export function expr(expr: string): Column {
  * 
  * @group udf_funcs
  */
-export function udf(func: Function, returnType: DataType | string): (...args: Column[]) => Column {
+export function udf(func: (...args: any[]) => any, returnType: DataType | string): (...args: Column[]) => Column {
   return (...args: Column[]) => {
     const dataType = typeof returnType === 'string' 
       ? parseDataType(returnType) 
@@ -869,7 +869,7 @@ function parseDataType(typeString: string): DataType {
  * @returns Python code as a string
  * @private
  */
-function serializeFunctionToPython(func: Function): string {
+function serializeFunctionToPython(func: (...args: any[]) => any): string {
   const funcStr = func.toString();
   
   // Simple conversion for arrow functions

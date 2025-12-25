@@ -43,7 +43,7 @@ export class UDFRegistration {
    * const result = await spark.sql("SELECT myUdf(id) FROM range(10)");
    * ```
    */
-  async register(name: string, func: Function, returnType: DataType | string): Promise<void> {
+  async register(name: string, func: (...args: any[]) => any, returnType: DataType | string): Promise<void> {
     const dataType = typeof returnType === 'string' 
       ? this.parseDataType(returnType) 
       : returnType;
@@ -136,7 +136,7 @@ export class UDFRegistration {
    * @returns Python code as a string
    * @private
    */
-  private serializeFunctionToPython(func: Function): string {
+  private serializeFunctionToPython(func: (...args: any[]) => any): string {
     const funcStr = func.toString();
     
     // Simple conversion for arrow functions
