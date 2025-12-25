@@ -20,6 +20,7 @@ import { WriteOperationV2Schema, WriteOperationV2_Mode } from "../../../../gen/s
 import { DataFrame } from "./DataFrame";
 import { Column } from "./Column";
 import { expr } from "./functions";
+import { AnalysisException } from "./errors";
 
 /**
  * Interface used to write a DataFrame to external storage using V2 data sources.
@@ -179,6 +180,14 @@ export class DataFrameWriterV2 {
       'overwrite': WriteOperationV2_Mode.OVERWRITE,
       'overwritePartitions': WriteOperationV2_Mode.OVERWRITE_PARTITIONS
     };
-    return modeMap[mode];
+    const protoMode = modeMap[mode];
+    if (protoMode === undefined) {
+      throw new AnalysisException(
+        "INVALID_WRITE_MODE_V2",
+        `The specified write mode "${mode}" is invalid. Valid modes include "create", "replace", "createOrReplace", "append", "overwrite", and "overwritePartitions".`,
+        "42000"
+      );
+    }
+    return protoMode;
   }
 }

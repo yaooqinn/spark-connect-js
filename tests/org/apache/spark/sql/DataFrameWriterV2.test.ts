@@ -188,4 +188,7 @@ test("DataFrameWriterV2 getModeProto()", async () => {
   expect((writerV2 as any).getModeProto("append")).toBe(WriteOperationV2_Mode.APPEND);
   expect((writerV2 as any).getModeProto("overwrite")).toBe(WriteOperationV2_Mode.OVERWRITE);
   expect((writerV2 as any).getModeProto("overwritePartitions")).toBe(WriteOperationV2_Mode.OVERWRITE_PARTITIONS);
+  
+  expect(() => (writerV2 as any).getModeProto("invalid")).toThrow("INVALID_WRITE_MODE_V2");
+  expect(() => (writerV2 as any).getModeProto("invalid")).toThrow("invalid");
 });
