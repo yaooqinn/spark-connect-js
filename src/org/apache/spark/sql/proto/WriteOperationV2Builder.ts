@@ -58,7 +58,34 @@ export class WriteOperationV2Builder {
   withMode(mode: string): WriteOperationV2Builder;
   withMode(mode: WriteOperationV2_Mode | string): WriteOperationV2Builder {
     if (typeof mode === 'string') {
-      this.writeOp.mode = WriteOperationV2Builder.getModeFromString(mode);
+      let protoMode: WriteOperationV2_Mode;
+      switch (mode) {
+        case 'create':
+          protoMode = WriteOperationV2_Mode.CREATE;
+          break;
+        case 'replace':
+          protoMode = WriteOperationV2_Mode.REPLACE;
+          break;
+        case 'createOrReplace':
+          protoMode = WriteOperationV2_Mode.CREATE_OR_REPLACE;
+          break;
+        case 'append':
+          protoMode = WriteOperationV2_Mode.APPEND;
+          break;
+        case 'overwrite':
+          protoMode = WriteOperationV2_Mode.OVERWRITE;
+          break;
+        case 'overwritePartitions':
+          protoMode = WriteOperationV2_Mode.OVERWRITE_PARTITIONS;
+          break;
+        default:
+          throw new AnalysisException(
+            "INVALID_WRITE_MODE_V2",
+            `The specified write mode "${mode}" is invalid. Valid modes include "create", "replace", "createOrReplace", "append", "overwrite", and "overwritePartitions".`,
+            "42000"
+          );
+      }
+      this.writeOp.mode = protoMode;
     } else {
       this.writeOp.mode = mode;
     }
@@ -77,26 +104,5 @@ export class WriteOperationV2Builder {
 
   build(): WriteOperationV2 {
     return this.writeOp;
-  }
-
-  static getModeFromString(mode: string): WriteOperationV2_Mode {
-    const modeMap: Record<string, WriteOperationV2_Mode> = {
-      'create': WriteOperationV2_Mode.CREATE,
-      'replace': WriteOperationV2_Mode.REPLACE,
-      'createOrReplace': WriteOperationV2_Mode.CREATE_OR_REPLACE,
-      'append': WriteOperationV2_Mode.APPEND,
-      'overwrite': WriteOperationV2_Mode.OVERWRITE,
-      'overwritePartitions': WriteOperationV2_Mode.OVERWRITE_PARTITIONS
-    };
-    const protoMode = modeMap[mode];
-    if (protoMode === undefined) {
-      const validModes = Object.keys(modeMap).map(m => `"${m}"`).join(', ');
-      throw new AnalysisException(
-        "INVALID_WRITE_MODE_V2",
-        `The specified write mode "${mode}" is invalid. Valid modes include ${validModes}.`,
-        "42000"
-      );
-    }
-    return protoMode;
   }
 }
