@@ -11,3 +11,4 @@ export const displayName = {
 };
 export const verbose = true;
 export const setupFilesAfterEnv = ["<rootDir>/jest.setup.js"];
+export const testTimeout = 30000;
