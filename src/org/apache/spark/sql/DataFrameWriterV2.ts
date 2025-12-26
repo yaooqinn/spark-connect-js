@@ -150,7 +150,7 @@ export class DataFrameWriterV2 {
       .withTableName(this.tableName_)
       .withOptions(Object.fromEntries(this.options_))
       .withTableProperties(Object.fromEntries(this.tableProperties_))
-      .withMode(WriteOperationV2Builder.getModeFromString(mode));
+      .withMode(mode);
 
     if (this.provider_) {
       builder.withProvider(this.provider_);

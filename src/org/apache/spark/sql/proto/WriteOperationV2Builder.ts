@@ -54,8 +54,14 @@ export class WriteOperationV2Builder {
     return this;
   }
 
-  withMode(mode: WriteOperationV2_Mode) {
-    this.writeOp.mode = mode;
+  withMode(mode: WriteOperationV2_Mode): WriteOperationV2Builder;
+  withMode(mode: string): WriteOperationV2Builder;
+  withMode(mode: WriteOperationV2_Mode | string): WriteOperationV2Builder {
+    if (typeof mode === 'string') {
+      this.writeOp.mode = WriteOperationV2Builder.getModeFromString(mode);
+    } else {
+      this.writeOp.mode = mode;
+    }
     return this;
   }
 
