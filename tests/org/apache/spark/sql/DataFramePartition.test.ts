@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-import { sharedSpark, timeoutOrSatisfied } from '../../../../helpers';
+import { sharedSpark } from '../../../../helpers';
 import { col } from '../../../../../src/org/apache/spark/sql/functions';
 
 test("repartition with numPartitions", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.range(0, 100).then(async df => {
+  await (spark.range(0, 100).then(async df => {
     const repartitioned = df.repartition(10);
     return repartitioned.collect().then(rows => {
       expect(rows.length).toBe(100);
@@ -30,7 +30,7 @@ test("repartition with numPartitions", async () => {
 
 test("repartition with columns", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.sql("SELECT id % 10 as key, id FROM range(100)").then(async df => {
+  await (spark.sql("SELECT id % 10 as key, id FROM range(100)").then(async df => {
     const repartitioned = df.repartition(col("key"));
     return repartitioned.collect().then(rows => {
       expect(rows.length).toBe(100);
@@ -40,7 +40,7 @@ test("repartition with columns", async () => {
 
 test("repartition with numPartitions and columns", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.sql("SELECT id % 10 as key, id FROM range(100)").then(async df => {
+  await (spark.sql("SELECT id % 10 as key, id FROM range(100)").then(async df => {
     const repartitioned = df.repartition(5, col("key"));
     return repartitioned.collect().then(rows => {
       expect(rows.length).toBe(100);
@@ -50,7 +50,7 @@ test("repartition with numPartitions and columns", async () => {
 
 test("coalesce", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.range(0, 100).then(async df => {
+  await (spark.range(0, 100).then(async df => {
     const coalesced = df.coalesce(1);
     return coalesced.collect().then(rows => {
       expect(rows.length).toBe(100);
@@ -60,7 +60,7 @@ test("coalesce", async () => {
 
 test("repartitionByRange with columns", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.sql("SELECT id FROM range(100)").then(async df => {
+  await (spark.sql("SELECT id FROM range(100)").then(async df => {
     const repartitioned = df.repartitionByRange(col("id"));
     return repartitioned.collect().then(rows => {
       expect(rows.length).toBe(100);
@@ -70,7 +70,7 @@ test("repartitionByRange with columns", async () => {
 
 test("repartitionByRange with numPartitions and columns", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(spark.sql("SELECT id FROM range(100)").then(async df => {
+  await (spark.sql("SELECT id FROM range(100)").then(async df => {
     const repartitioned = df.repartitionByRange(5, col("id"));
     return repartitioned.collect().then(rows => {
       expect(rows.length).toBe(100);
