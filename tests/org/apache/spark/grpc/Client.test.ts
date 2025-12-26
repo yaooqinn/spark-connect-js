@@ -20,14 +20,9 @@ import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import * as connect from "../../../../../src/gen/spark/connect/base_pb";
 import { AnalyzePlanResponseHandler } from "../../../../../src/org/apache/spark/sql/proto/AnalyzePlanResponeHandler";
 
-const integrationUrl = process.env.SPARK_CONNECT_TEST_URL ?? process.env.SPARK_CONNECT_URL;
-const integrationEnabled = !!integrationUrl;
-const connectionString = integrationUrl ?? "sc://localhost:15002;user_id=yao;user_name=kent";
-const integrationTest = integrationEnabled ? test : test.skip;
-
 async function withClient<T>(f: (client: Client) => Promise<T>): Promise<T> {
   const builder = Client.builder();
-  builder.connectionString(connectionString);
+  builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent");
   const client = builder.build();
   return f(client);
 }
@@ -47,7 +42,7 @@ test('Client Basic', async () => {
   expect(client.session_id_).toBe("6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b");
 });
 
-integrationTest("get all configs", async () => {
+test("get all configs", async () => {
   withClient(async client => {
     const getAll = create(connect.ConfigRequest_GetAllSchema, {});
     const op = create(connect.ConfigRequest_OperationSchema,
@@ -75,7 +70,7 @@ integrationTest("get all configs", async () => {
   });
 });
 
-integrationTest("analyze plan - sparkVersion", async () => {
+test("analyze plan - sparkVersion", async () => {
   const resp = await withClient<AnalyzePlanResponseHandler>(async client => {
     return client.analyze(b => b.withSparkVersion()).then(resp => new AnalyzePlanResponseHandler(resp));
   });

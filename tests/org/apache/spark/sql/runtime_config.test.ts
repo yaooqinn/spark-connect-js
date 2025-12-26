@@ -18,19 +18,14 @@
 import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import { RuntimeConfig } from "../../../../../src/org/apache/spark/sql/RuntimeConfig";
 
-const integrationUrl = process.env.SPARK_CONNECT_TEST_URL ?? process.env.SPARK_CONNECT_URL;
-const integrationEnabled = !!integrationUrl;
-const connectionString = integrationUrl ?? "sc://localhost:15002;user_id=yao;user_name=kent";
-const integrationTest = integrationEnabled ? test : test.skip;
-
 function withClient(f: (client: Client) => void) {
   const builder = Client.builder();
-  builder.connectionString(connectionString);
+  builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent");
   const client = builder.build();
   f(client);
 }
 
-integrationTest('runtime config - set, unset, get', async () => {
+test('runtime config - set, unset, get', async () => {
   withClient(async client => {
     const config = new RuntimeConfig(client);
     await config.get("spark.executor.id").then(v => {
@@ -65,7 +60,7 @@ integrationTest('runtime config - set, unset, get', async () => {
   });
 });
 
-integrationTest("runtime config - get all configs", async () => {
+test("runtime config - get all configs", async () => {
   withClient(client => {
     const config = new RuntimeConfig(client);
     config.getAll().then(configs => {
@@ -75,7 +70,7 @@ integrationTest("runtime config - get all configs", async () => {
   });
 });
 
-integrationTest("runtime config - is modifiable", async () => {
+test("runtime config - is modifiable", async () => {
   withClient(client => {
     const config = new RuntimeConfig(client);
     config.isModifiable("spark.sql.warehouse.dir").then(v => {
