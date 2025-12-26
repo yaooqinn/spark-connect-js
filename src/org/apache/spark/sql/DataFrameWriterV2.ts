@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 
-import { create } from "@bufbuild/protobuf";
-import { CommandSchema, WriteOperationV2_Mode } from "../../../../gen/spark/connect/commands_pb";
 import { DataFrame } from "./DataFrame";
 import { Column } from "./Column";
 import { expr } from "./functions";
-import { AnalysisException } from "./errors";
 import { ExecutePlanResponseHandler } from "./proto/ExecutePlanResponseHandler";
 import { WriteOperationV2Builder } from "./proto/WriteOperationV2Builder";
+import { CommandBuilder } from "./proto/CommandBuilder";
 
 /**
  * Interface used to write a DataFrame to external storage using V2 data sources.
@@ -152,7 +150,7 @@ export class DataFrameWriterV2 {
       .withTableName(this.tableName_)
       .withOptions(Object.fromEntries(this.options_))
       .withTableProperties(Object.fromEntries(this.tableProperties_))
-      .withMode(this.getModeProto(mode));
+      .withMode(WriteOperationV2Builder.getModeFromString(mode));
 
     if (this.provider_) {
       builder.withProvider(this.provider_);
@@ -174,31 +172,10 @@ export class DataFrameWriterV2 {
     }
 
     const writeOp = builder.build();
-    const writeCmd = create(CommandSchema, { 
-      commandType: { case: "writeOperationV2", value: writeOp }
-    });
+    const command = new CommandBuilder()
+      .withWriteOperationV2(writeOp)
+      .build();
     
-    return this.df_.spark.execute(writeCmd);
-  }
-
-  private getModeProto(mode: string): WriteOperationV2_Mode {
-    const modeMap: Record<string, WriteOperationV2_Mode> = {
-      'create': WriteOperationV2_Mode.CREATE,
-      'replace': WriteOperationV2_Mode.REPLACE,
-      'createOrReplace': WriteOperationV2_Mode.CREATE_OR_REPLACE,
-      'append': WriteOperationV2_Mode.APPEND,
-      'overwrite': WriteOperationV2_Mode.OVERWRITE,
-      'overwritePartitions': WriteOperationV2_Mode.OVERWRITE_PARTITIONS
-    };
-    const protoMode = modeMap[mode];
-    if (protoMode === undefined) {
-      const validModes = Object.keys(modeMap).map(m => `"${m}"`).join(', ');
-      throw new AnalysisException(
-        "INVALID_WRITE_MODE_V2",
-        `The specified write mode "${mode}" is invalid. Valid modes include ${validModes}.`,
-        "42000"
-      );
-    }
-    return protoMode;
+    return this.df_.spark.execute(command);
   }
 }

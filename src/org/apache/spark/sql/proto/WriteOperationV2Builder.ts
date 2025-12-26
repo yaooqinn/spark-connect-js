@@ -19,6 +19,7 @@ import { create } from "@bufbuild/protobuf";
 import { WriteOperationV2, WriteOperationV2Schema, WriteOperationV2_Mode } from "../../../../../gen/spark/connect/commands_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
+import { AnalysisException } from "../errors";
 
 export class WriteOperationV2Builder {
   private writeOp: WriteOperationV2 = create(WriteOperationV2Schema, {});
@@ -70,5 +71,26 @@ export class WriteOperationV2Builder {
 
   build(): WriteOperationV2 {
     return this.writeOp;
+  }
+
+  static getModeFromString(mode: string): WriteOperationV2_Mode {
+    const modeMap: Record<string, WriteOperationV2_Mode> = {
+      'create': WriteOperationV2_Mode.CREATE,
+      'replace': WriteOperationV2_Mode.REPLACE,
+      'createOrReplace': WriteOperationV2_Mode.CREATE_OR_REPLACE,
+      'append': WriteOperationV2_Mode.APPEND,
+      'overwrite': WriteOperationV2_Mode.OVERWRITE,
+      'overwritePartitions': WriteOperationV2_Mode.OVERWRITE_PARTITIONS
+    };
+    const protoMode = modeMap[mode];
+    if (protoMode === undefined) {
+      const validModes = Object.keys(modeMap).map(m => `"${m}"`).join(', ');
+      throw new AnalysisException(
+        "INVALID_WRITE_MODE_V2",
+        `The specified write mode "${mode}" is invalid. Valid modes include ${validModes}.`,
+        "42000"
+      );
+    }
+    return protoMode;
   }
 }
