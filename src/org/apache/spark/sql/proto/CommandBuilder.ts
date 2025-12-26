@@ -19,7 +19,7 @@ import { create } from "@bufbuild/protobuf";
 import { Command, CommandSchema, SqlCommandSchema, CheckpointCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 import { StorageLevel } from "../../storage/StorageLevel";
-import { StorageLevelSchema } from "../../../../../gen/spark/connect/common_pb";
+import { createStorageLevelPB } from "./ProtoUtils";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -32,13 +32,7 @@ export class CommandBuilder {
   }
 
   withCheckpointCommand(relation: Relation, local: boolean, eager: boolean, storageLevel?: StorageLevel) {
-    const storageLevelPB = storageLevel ? create(StorageLevelSchema, {
-      useMemory: storageLevel.useMemory,
-      useDisk: storageLevel.useDisk,
-      useOffHeap: storageLevel.useOffHeap,
-      deserialized: storageLevel.deserialized,
-      replication: storageLevel.replication
-    }) : undefined;
+    const storageLevelPB = storageLevel ? createStorageLevelPB(storageLevel) : undefined;
     
     const checkpointCmd = create(CheckpointCommandSchema, {
       relation: relation,
