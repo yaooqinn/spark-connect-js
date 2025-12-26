@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-import { create } from "@bufbuild/protobuf";
 import * as c from "../../../../gen/spark/connect/commands_pb";
 import { DataFrame } from "./DataFrame";
 import { SaveMode } from "./SaveMode";
 import { AnalysisException } from "./errors";
 import { ExecutePlanResponseHandler } from "./proto/ExecutePlanResponseHandler";
 import { CaseInsensitiveMap } from "./util/CaseInsensitiveMap";
+import { WriteOperationBuilder } from "./proto/WriteOperationBuilder";
+import { CommandBuilder } from "./proto/CommandBuilder";
 
 /**
  * Interface used to write a [[Dataset]] to external storage systems (e.g. file systems,
@@ -32,15 +33,15 @@ import { CaseInsensitiveMap } from "./util/CaseInsensitiveMap";
  * @see https://spark.apache.org/docs/latest/api/java/index.html?org/apache/spark/sql/DataFrameWriter.html
  * @author Kent Yao <yao@apache.org>
  * 
- * TODO: Some featuers are not implemented yet:
+ * TODO: Some features are not implemented yet:
  */
 export class DataFrameWriter {
   private mode_: c.WriteOperation_SaveMode = c.WriteOperation_SaveMode.ERROR_IF_EXISTS;
-  private source_?: string = undefined;
+  private source_?: string;
   private extraOptions_ = new CaseInsensitiveMap<string>();
   private partitioningColumns_: string[] = [];
   private bucketColumnNames_: string[] = [];
-  private numBuckets_: number | undefined = undefined;
+  private numBuckets_?: number;
   private sortColumnNames_: string[] = [];
   private clusteringColumns_: string[] = [];
 
@@ -48,12 +49,12 @@ export class DataFrameWriter {
 
   mode(saveMode: string | SaveMode): DataFrameWriter {
     if (typeof saveMode === "string") {
-      saveMode = saveMode.toUpperCase();
-      if (saveMode === "ERROR" || saveMode === "ERRORIFEXISTS" || saveMode === "DEFAULT") {
-        saveMode = "ERROR_IF_EXISTS";
+      let normalizedMode = saveMode.toUpperCase();
+      if (normalizedMode === "ERROR" || normalizedMode === "ERRORIFEXISTS" || normalizedMode === "DEFAULT") {
+        normalizedMode = "ERROR_IF_EXISTS";
       }
-      this.mode_ = c.WriteOperation_SaveMode[saveMode as keyof typeof c.WriteOperation_SaveMode];
-      if (!this.mode_) {
+      this.mode_ = c.WriteOperation_SaveMode[normalizedMode as keyof typeof c.WriteOperation_SaveMode];
+      if (this.mode_ === undefined) {
         throw new AnalysisException(
           "INVALID_SAVE_MODE",
           `The specified save mode "${saveMode}" is invalid. Valid save modes include "append", "overwrite", "ignore", "error", "errorifexists", and "default"`,
@@ -75,10 +76,8 @@ export class DataFrameWriter {
     return this;
   }
 
-  options(opts: {[key: string]: string }): DataFrameWriter {
-    for (const key in opts) {
-      this.option(key, opts[key]);
-    }
+  options(opts: Record<string, string>): DataFrameWriter {
+    Object.entries(opts).forEach(([key, value]) => this.option(key, value));
     return this;
   }
 
@@ -137,13 +136,12 @@ export class DataFrameWriter {
   /**
    * Saves the content of the `DataFrame` as the specified table.
    */
-  save(path: string | undefined = undefined): Promise<ExecutePlanResponseHandler[]> {
-    const setPath = (write: c.WriteOperation) => {
+  save(path?: string): Promise<ExecutePlanResponseHandler[]> {
+    return this.executeWriteOperation(builder => {
       if (path) {
-        write.saveType = { case: "path", value: path }
+        builder.withPath(path);
       }
-    }
-    return this.executeWriteOperation(setPath);
+    });
   }
 
   /**
@@ -158,16 +156,9 @@ export class DataFrameWriter {
    *   `insertInto` is not a table creating operation.
    */
   insertInto(tableName: string): Promise<ExecutePlanResponseHandler[]> {
-    const setTable = (write: c.WriteOperation) => {
-      write.saveType = {
-        case: "table",
-        value: create(c.WriteOperation_SaveTableSchema, {
-          tableName: tableName,
-          saveMethod: c.WriteOperation_SaveTable_TableSaveMethod.INSERT_INTO
-        })
-      }
-    }
-    return this.executeWriteOperation(setTable);
+    return this.executeWriteOperation(builder => {
+      builder.withTable(tableName, c.WriteOperation_SaveTable_TableSaveMethod.INSERT_INTO);
+    });
   }
 
   /**
@@ -196,16 +187,9 @@ export class DataFrameWriter {
    *
    */
   saveAsTable(tableName: string): Promise<ExecutePlanResponseHandler[]> {
-    const setTable = (write: c.WriteOperation) => {
-      write.saveType = {
-        case: "table",
-        value: create(c.WriteOperation_SaveTableSchema, {
-          tableName: tableName,
-          saveMethod: c.WriteOperation_SaveTable_TableSaveMethod.SAVE_AS_TABLE
-        })
-      }
-    }
-    return this.executeWriteOperation(setTable);
+    return this.executeWriteOperation(builder => {
+      builder.withTable(tableName, c.WriteOperation_SaveTable_TableSaveMethod.SAVE_AS_TABLE);
+    });
   }
 
   /**
@@ -232,7 +216,7 @@ export class DataFrameWriter {
    *   transaction isolation levels defined by JDBC's Connection object, with default of
    *   "READ_UNCOMMITTED".
    */
-  jdbc(url: string, table: string, connectionProperties: {[key: string]: string}): Promise<ExecutePlanResponseHandler[]> {
+  jdbc(url: string, table: string, connectionProperties: Record<string, string>): Promise<ExecutePlanResponseHandler[]> {
     this.assertNotPartitioned("jdbc");
     this.assertNotBucketed("jdbc");
     this.assertNotClustered("jdbc");
@@ -345,25 +329,31 @@ export class DataFrameWriter {
     return this.format("xml").save(path);
   }
 
-  private executeWriteOperation(f: (op: c.WriteOperation) => void): Promise<ExecutePlanResponseHandler[]> {
-    const write = create(c.WriteOperationSchema, {})
-    write.input = this.df.plan.relation
-    f(write);
-    write.mode = this.mode_;
-    if (this.source_) {
-      write.source = this.source_;
-    }
-    write.sortColumnNames = this.sortColumnNames_;
-    write.partitioningColumns = this.partitioningColumns_;
-    write.clusteringColumns = this.clusteringColumns_;
-    if (this.numBuckets_) {
-      write.bucketBy = create(c.WriteOperation_BucketBySchema, {
-        bucketColumnNames: this.bucketColumnNames_, numBuckets: this.numBuckets_ });
-    }
-    write.options = this.extraOptions_.toIndexSignature();
+  private executeWriteOperation(f: (builder: WriteOperationBuilder) => void): Promise<ExecutePlanResponseHandler[]> {
+    const builder = new WriteOperationBuilder()
+      .withInput(this.df.plan.relation!)
+      .withMode(this.mode_)
+      .withPartitioningColumns(this.partitioningColumns_)
+      .withClusteringColumns(this.clusteringColumns_)
+      .withSortColumnNames(this.sortColumnNames_)
+      .withOptions(this.extraOptions_.toIndexSignature());
 
-    const writeCmd = create(c.CommandSchema, { commandType: { case: "writeOperation", value: write }});
-    return this.df.spark.execute(writeCmd);
+    if (this.source_) {
+      builder.withSource(this.source_);
+    }
+
+    if (this.numBuckets_ !== undefined) {
+      builder.withBucketBy(this.bucketColumnNames_, this.numBuckets_);
+    }
+
+    f(builder);
+
+    const writeOp = builder.build();
+    const command = new CommandBuilder()
+      .withWriteOperation(writeOp)
+      .build();
+
+    return this.df.spark.execute(command);
   }
 
   private validatePartitioning(): void {
