@@ -383,5 +383,12 @@ test("localCheckpoint", async () => {
   expect(checkpointed2).toBeInstanceOf(Object);
   const count2 = await checkpointed2.count();
   expect(count2).toBe(99n);
+  
+  // Test local checkpoint with storage level
+  const df3 = spark.range(1, 100);
+  const checkpointed3 = await df3.localCheckpoint(true, StorageLevel.MEMORY_ONLY);
+  expect(checkpointed3).toBeInstanceOf(Object);
+  const count3 = await checkpointed3.count();
+  expect(count3).toBe(99n);
 });
 

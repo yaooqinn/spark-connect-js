@@ -130,11 +130,13 @@ export class DataFrame {
    * @param eager
    *   Whether to checkpoint this DataFrame immediately (default is true).
    *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @param storageLevel
+   *   The storage level to use for the local checkpoint. If not specified, the default storage level is used.
    * @group basic
    */
-  async localCheckpoint(eager: boolean = true): Promise<DataFrame> {
+  async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
     const plan = this.spark.planFromCommandBuilder(b =>
-      b.withCheckpointCommand(this.plan.relation!, true, eager)
+      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
     );
     await this.spark.client.execute(plan.plan);
     return this;
