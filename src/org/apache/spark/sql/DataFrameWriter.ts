@@ -33,7 +33,7 @@ import { CommandBuilder } from "./proto/CommandBuilder";
  * @see https://spark.apache.org/docs/latest/api/java/index.html?org/apache/spark/sql/DataFrameWriter.html
  * @author Kent Yao <yao@apache.org>
  * 
- * TODO: Some featuers are not implemented yet:
+ * TODO: Some features are not implemented yet:
  */
 export class DataFrameWriter {
   private mode_: c.WriteOperation_SaveMode = c.WriteOperation_SaveMode.ERROR_IF_EXISTS;
