@@ -146,7 +146,7 @@ export class DataFrameWriterV2 {
     condition?: Column | string
   ): Promise<ExecutePlanResponseHandler[]> {
     const builder = new WriteOperationV2Builder()
-      .withInput(this.df_.plan.relation)
+      .withInput(this.df_.plan.relation!)
       .withTableName(this.tableName_)
       .withOptions(Object.fromEntries(this.options_))
       .withTableProperties(Object.fromEntries(this.tableProperties_))

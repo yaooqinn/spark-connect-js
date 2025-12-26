@@ -176,6 +176,7 @@ export class DataFrame {
    */
   writeTo(tableName: string): DataFrameWriterV2 {
     return new DataFrameWriterV2(tableName, this);
+  }
 
   get stat(): DataFrameStatFunctions {
     return new DataFrameStatFunctions(this);
