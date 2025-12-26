@@ -402,7 +402,7 @@ export class DataFrame {
   }
 
   groupingSets(groupingSets: Column[][], ...cols: Column[]): RelationalGroupedDataset {
-    return new RelationalGroupedDataset(this, cols, GroupType.GROUPING_SETS, groupingSets);
+    return new RelationalGroupedDataset(this, cols, GroupType.GROUPING_SETS, undefined, groupingSets);
   }
 
   /**
