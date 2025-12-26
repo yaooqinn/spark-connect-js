@@ -16,7 +16,10 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Command, CommandSchema, SqlCommandSchema, WriteOperationV2 } from "../../../../../gen/spark/connect/commands_pb";
+import { Command, CommandSchema, SqlCommandSchema, CheckpointCommandSchema, WriteOperationV2 } from "../../../../../gen/spark/connect/commands_pb";
+import { Relation } from "../../../../../gen/spark/connect/relations_pb";
+import { StorageLevel } from "../../storage/StorageLevel";
+import { createStorageLevelPB } from "./ProtoUtils";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -29,6 +32,19 @@ export class CommandBuilder {
 
   withWriteOperationV2(writeOp: WriteOperationV2) {
     this.command.commandType = { case: "writeOperationV2", value: writeOp };
+    return this;
+  }
+
+  withCheckpointCommand(relation: Relation, local: boolean, eager: boolean, storageLevel?: StorageLevel) {
+    const storageLevelPB = storageLevel ? createStorageLevelPB(storageLevel) : undefined;
+    
+    const checkpointCmd = create(CheckpointCommandSchema, {
+      relation: relation,
+      local: local,
+      eager: eager,
+      storageLevel: storageLevelPB
+    });
+    this.command.commandType = { case: "checkpointCommand", value: checkpointCmd };
     return this;
   }
 

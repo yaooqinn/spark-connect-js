@@ -102,20 +102,47 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
-  // async checkpoint(): Promise<DataFrame>;
-  // async checkpoint(eager: boolean): Promise<DataFrame>;
-  // async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
-  // async localCheckpoint(): Promise<DataFrame>;
-  // async localCheckpoint(eager: boolean): Promise<DataFrame>;
-  // async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a checkpointed version of this DataFrame. Checkpointing can be used to truncate the
+   * logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to files inside the checkpoint
+   * directory set with `spark.sql.checkpoint.location`.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @group basic
+   */
+  async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, false, eager)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
-  // async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a locally checkpointed version of this DataFrame. Checkpointing can be used to truncate
+   * the logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to a local temporary directory.
+   *
+   * This is a local checkpoint and is less reliable than a regular checkpoint because it is stored
+   * in executor storage and may be lost if executors fail.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @param storageLevel
+   *   The storage level to use for the local checkpoint. If not specified, the default storage level is used.
+   * @group basic
+   */
+  async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
