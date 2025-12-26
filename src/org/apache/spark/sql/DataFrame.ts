@@ -17,6 +17,7 @@
 
 import { DataFrameWriter } from './DataFrameWriter';
 import { DataFrameWriterV2 } from './DataFrameWriterV2';
+import { DataFrameStatFunctions } from './DataFrameStatFunctions';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -175,6 +176,9 @@ export class DataFrame {
    */
   writeTo(tableName: string): DataFrameWriterV2 {
     return new DataFrameWriterV2(tableName, this);
+
+  get stat(): DataFrameStatFunctions {
+    return new DataFrameStatFunctions(this);
   }
 
   async collect(): Promise<Row[]> {
@@ -662,6 +666,127 @@ export class DataFrame {
    */
   exceptAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", true));
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  repartition(numPartitions: number): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions.
+   * The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions,
+   * using `numPartitions` partitions. The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartition(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    if (typeof numPartitionsOrExpr === 'number') {
+      if (partitionExprs.length === 0) {
+        // repartition(numPartitions)
+        return this.toNewDataFrame(b => b.withRepartition(numPartitionsOrExpr, true, this.plan.relation));
+      } else {
+        // repartition(numPartitions, ...partitionExprs)
+        const exprs = partitionExprs.map(col => col.expr);
+        return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+      }
+    } else {
+      // repartition(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => col.expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions, when
+   * the fewer partitions are requested. If a larger number of partitions is requested,
+   * it will stay at the current number of partitions. Similar to coalesce defined on an `RDD`,
+   * this operation results in a narrow dependency, e.g. if you go from 1000 partitions to 100
+   * partitions, there will not be a shuffle, instead each of the 100 new partitions will claim 10
+   * of the current partitions. If a larger number of partitions is requested, it will stay at the
+   * current number of partitions.
+   * 
+   * However, if you're doing a drastic coalesce, e.g. to numPartitions = 1, this may result
+   * in your computation taking place on fewer nodes than you like (e.g. one node in the case of
+   * numPartitions = 1). To avoid this, you can call repartition(). This will add a shuffle step,
+   * but means the current upstream partitions will be executed in parallel (per whatever
+   * the current partitioning is).
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  coalesce(numPartitions: number): DataFrame {
+    return this.toNewDataFrame(b => b.withRepartition(numPartitions, false, this.plan.relation));
+  }
+
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions. The resulting
+   * DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions into
+   * `numPartitions`. The resulting DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartitionByRange(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    // Helper to convert column to sort order (asc by default if not already sorted)
+    const toSortCol = (col: Column): Column => {
+      // Check if column already has a SortOrder expression
+      const expr = col.expr;
+      if (expr.exprType.case === "sortOrder") {
+        return col;
+      }
+      // Default to ascending nulls first for range partitioning
+      return col.asc;
+    };
+
+    if (typeof numPartitionsOrExpr === 'number') {
+      // repartitionByRange(numPartitions, ...partitionExprs)
+      const exprs = partitionExprs.map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+    } else {
+      // repartitionByRange(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
