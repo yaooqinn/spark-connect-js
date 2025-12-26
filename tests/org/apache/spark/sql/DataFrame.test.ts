@@ -349,3 +349,46 @@ test("hint", async () => {
   });
 });
 
+test("checkpoint", async () => {
+  const spark = await sharedSpark;
+  
+  // Test eager checkpoint (default)
+  const df1 = spark.range(1, 100);
+  const checkpointed1 = await df1.checkpoint();
+  expect(checkpointed1).toBeInstanceOf(Object);
+  const count1 = await checkpointed1.count();
+  expect(count1).toBe(99n);
+  
+  // Test non-eager checkpoint
+  const df2 = spark.range(1, 100);
+  const checkpointed2 = await df2.checkpoint(false);
+  expect(checkpointed2).toBeInstanceOf(Object);
+  const count2 = await checkpointed2.count();
+  expect(count2).toBe(99n);
+});
+
+test("localCheckpoint", async () => {
+  const spark = await sharedSpark;
+  
+  // Test eager local checkpoint (default)
+  const df1 = spark.range(1, 100);
+  const checkpointed1 = await df1.localCheckpoint();
+  expect(checkpointed1).toBeInstanceOf(Object);
+  const count1 = await checkpointed1.count();
+  expect(count1).toBe(99n);
+  
+  // Test non-eager local checkpoint
+  const df2 = spark.range(1, 100);
+  const checkpointed2 = await df2.localCheckpoint(false);
+  expect(checkpointed2).toBeInstanceOf(Object);
+  const count2 = await checkpointed2.count();
+  expect(count2).toBe(99n);
+  
+  // Test local checkpoint with storage level
+  const df3 = spark.range(1, 100);
+  const checkpointed3 = await df3.localCheckpoint(true, StorageLevel.MEMORY_ONLY);
+  expect(checkpointed3).toBeInstanceOf(Object);
+  const count3 = await checkpointed3.count();
+  expect(count3).toBe(99n);
+});
+
