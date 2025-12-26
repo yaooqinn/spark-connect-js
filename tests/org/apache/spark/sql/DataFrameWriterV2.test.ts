@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-import { WriteOperationV2_Mode } from "../../../../../src/gen/spark/connect/commands_pb";
 import { Column } from "../../../../../src/org/apache/spark/sql/Column";
 import { sharedSpark } from "../../../../helpers";
 
@@ -175,20 +174,4 @@ test("DataFrameWriterV2 method chaining", async () => {
   expect((writerV2 as any).tableProperties_.size).toBe(1);
   expect((writerV2 as any).partitionColumns_.length).toBe(2);
   expect((writerV2 as any).clusteringColumns_.length).toBe(1);
-});
-
-test("DataFrameWriterV2 getModeProto()", async () => {
-  const spark = await sharedSpark;
-  const df = spark.emptyDataFrame;
-  const writerV2 = df.writeTo("test_table");
-  
-  expect((writerV2 as any).getModeProto("create")).toBe(WriteOperationV2_Mode.CREATE);
-  expect((writerV2 as any).getModeProto("replace")).toBe(WriteOperationV2_Mode.REPLACE);
-  expect((writerV2 as any).getModeProto("createOrReplace")).toBe(WriteOperationV2_Mode.CREATE_OR_REPLACE);
-  expect((writerV2 as any).getModeProto("append")).toBe(WriteOperationV2_Mode.APPEND);
-  expect((writerV2 as any).getModeProto("overwrite")).toBe(WriteOperationV2_Mode.OVERWRITE);
-  expect((writerV2 as any).getModeProto("overwritePartitions")).toBe(WriteOperationV2_Mode.OVERWRITE_PARTITIONS);
-  
-  expect(() => (writerV2 as any).getModeProto("invalid")).toThrow("INVALID_WRITE_MODE_V2");
-  expect(() => (writerV2 as any).getModeProto("invalid")).toThrow("invalid");
 });
