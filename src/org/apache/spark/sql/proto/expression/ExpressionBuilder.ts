@@ -16,7 +16,33 @@
  */
 
 import { create } from "@bufbuild/protobuf";
-import { CallFunctionSchema, Expression, Expression_AliasSchema, Expression_Cast_EvalMode, Expression_CastSchema, Expression_ExpressionStringSchema, Expression_LambdaFunctionSchema, Expression_Literal, Expression_UnresolvedAttribute, Expression_UnresolvedAttributeSchema, Expression_UnresolvedExtractValueSchema, Expression_UnresolvedFunction, Expression_UnresolvedFunctionSchema, Expression_UnresolvedNamedLambdaVariableSchema, Expression_UnresolvedRegexSchema, Expression_UnresolvedStarSchema, Expression_UpdateFieldsSchema, ExpressionCommon, ExpressionSchema, MergeAction_ActionType, MergeAction_Assignment, MergeActionSchema, NamedArgumentExpressionSchema, TypedAggregateExpressionSchema } from "../../../../../../gen/spark/connect/expressions_pb";
+import { 
+  CallFunctionSchema, 
+  CommonInlineUserDefinedFunction, 
+  Expression, 
+  Expression_AliasSchema, 
+  Expression_Cast_EvalMode, 
+  Expression_CastSchema, 
+  Expression_ExpressionStringSchema, 
+  Expression_LambdaFunctionSchema, 
+  Expression_Literal, 
+  Expression_UnresolvedAttribute, 
+  Expression_UnresolvedAttributeSchema, 
+  Expression_UnresolvedExtractValueSchema, 
+  Expression_UnresolvedFunction, 
+  Expression_UnresolvedFunctionSchema, 
+  Expression_UnresolvedNamedLambdaVariableSchema, 
+  Expression_UnresolvedRegexSchema, 
+  Expression_UnresolvedStarSchema, 
+  Expression_UpdateFieldsSchema, 
+  ExpressionCommon, 
+  ExpressionSchema, 
+  MergeAction_ActionType, 
+  MergeAction_Assignment, 
+  MergeActionSchema, 
+  NamedArgumentExpressionSchema, 
+  TypedAggregateExpressionSchema 
+} from "../../../../../../gen/spark/connect/expressions_pb";
 import { DataTypes } from "../../types";
 import { DataType } from "../../types/data_types";
 import { LiteralBuilder } from "./LiteralBuilder";
@@ -195,6 +221,11 @@ export class ExpressionBuilder {
     const udf = scalarScalaUdf(payload, inputTypes, outputType, nullable, aggregate);
     const expr = create(TypedAggregateExpressionSchema, { scalarScalaUdf: udf });
     this.expression.exprType = { case: "typedAggregateExpression", value: expr };
+    return this;
+  }
+
+  withCommonInlineUserDefinedFunction(udf: CommonInlineUserDefinedFunction) {
+    this.expression.exprType = { case: "commonInlineUserDefinedFunction", value: udf };
     return this;
   }
 

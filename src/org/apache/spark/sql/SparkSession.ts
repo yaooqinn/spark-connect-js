@@ -38,6 +38,7 @@ import { CommandBuilder } from './proto/CommandBuilder';
 import { ExecutePlanResponseHandler } from './proto/ExecutePlanResponseHandler';
 import { Catalog } from './catalog/Catalog';
 import { LogicalPlan } from './proto/LogicalPlan';
+import { UDFRegistration } from './UDFRegistration';
 
 /**
  * @since 1.0.0
@@ -47,6 +48,7 @@ export class SparkSession {
   private conf_: RuntimeConfig;
   private version_?: string;
   public readonly catalog: Catalog = new Catalog(this);
+  public readonly udf: UDFRegistration = new UDFRegistration(this);
   
   constructor(public client: Client) {
     this.conf_ = new RuntimeConfig(client);
