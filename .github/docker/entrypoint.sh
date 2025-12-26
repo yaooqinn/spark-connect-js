@@ -17,6 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Create checkpoint directory
+mkdir -p /tmp/spark-checkpoint
+
+# Set checkpoint location in Spark configuration
+export SPARK_CONNECT_SERVER_OPTS="-Dspark.sql.checkpoint.location=/tmp/spark-checkpoint"
+
 /opt/spark/sbin/start-connect-server.sh
 
 tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out

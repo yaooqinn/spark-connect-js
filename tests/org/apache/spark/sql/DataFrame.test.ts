@@ -352,9 +352,6 @@ test("hint", async () => {
 test("checkpoint", async () => {
   const spark = await sharedSpark;
   
-  // Set checkpoint directory for the test
-  await spark.conf.set("spark.sql.checkpoint.location", "/tmp/spark-checkpoint");
-  
   // Test eager checkpoint (default)
   const df1 = spark.range(1, 100);
   const checkpointed1 = await df1.checkpoint();
