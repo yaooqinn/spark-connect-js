@@ -353,43 +353,35 @@ test("checkpoint", async () => {
   const spark = await sharedSpark;
   
   // Test eager checkpoint (default)
-  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
-    const checkpointed = await df.checkpoint();
-    expect(checkpointed).toBeInstanceOf(Object);
-    // Verify data is intact after checkpoint
-    const count = await checkpointed.count();
-    expect(count).toBe(99n);
-  }));
+  const df1 = spark.range(1, 100);
+  const checkpointed1 = await df1.checkpoint();
+  expect(checkpointed1).toBeInstanceOf(Object);
+  const count1 = await checkpointed1.count();
+  expect(count1).toBe(99n);
   
   // Test non-eager checkpoint
-  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
-    const checkpointed = await df.checkpoint(false);
-    expect(checkpointed).toBeInstanceOf(Object);
-    // Verify data is intact after checkpoint
-    const count = await checkpointed.count();
-    expect(count).toBe(99n);
-  }));
+  const df2 = spark.range(1, 100);
+  const checkpointed2 = await df2.checkpoint(false);
+  expect(checkpointed2).toBeInstanceOf(Object);
+  const count2 = await checkpointed2.count();
+  expect(count2).toBe(99n);
 });
 
 test("localCheckpoint", async () => {
   const spark = await sharedSpark;
   
   // Test eager local checkpoint (default)
-  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
-    const checkpointed = await df.localCheckpoint();
-    expect(checkpointed).toBeInstanceOf(Object);
-    // Verify data is intact after checkpoint
-    const count = await checkpointed.count();
-    expect(count).toBe(99n);
-  }));
+  const df1 = spark.range(1, 100);
+  const checkpointed1 = await df1.localCheckpoint();
+  expect(checkpointed1).toBeInstanceOf(Object);
+  const count1 = await checkpointed1.count();
+  expect(count1).toBe(99n);
   
   // Test non-eager local checkpoint
-  await timeoutOrSatisfied(spark.range(1, 100).then(async df => {
-    const checkpointed = await df.localCheckpoint(false);
-    expect(checkpointed).toBeInstanceOf(Object);
-    // Verify data is intact after checkpoint
-    const count = await checkpointed.count();
-    expect(count).toBe(99n);
-  }));
+  const df2 = spark.range(1, 100);
+  const checkpointed2 = await df2.localCheckpoint(false);
+  expect(checkpointed2).toBeInstanceOf(Object);
+  const count2 = await checkpointed2.count();
+  expect(count2).toBe(99n);
 });
 
