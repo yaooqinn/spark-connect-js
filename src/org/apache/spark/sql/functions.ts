@@ -454,6 +454,10 @@ export function stddev(column: string | Column): Column {
 }
 
 export function stddev_sample(column: string | Column): Column {
+  return stddev_samp(column);
+}
+
+export function stddev_samp(column: string | Column): Column {
   return Column.fn("stddev_samp", column, false);
 }
 

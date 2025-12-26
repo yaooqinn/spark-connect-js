@@ -15,13 +15,32 @@
  * limitations under the License.
  */
 
-import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
 import { Column } from "./Column";
 import { DataFrame } from "./DataFrame";
 import * as f from "./functions";
 import { GroupType } from "./proto/aggregate/GroupType";
 import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
+import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+
+const supportedAggFunctions: Record<string, (c: Column) => Column> = {
+  avg: f.avg,
+  mean: f.mean,
+  sum: f.sum,
+  min: f.min,
+  max: f.max,
+  first: f.first,
+  last: f.last,
+  stddev: f.stddev,
+  stddev_pop: f.stddev_pop,
+  stddev_samp: f.stddev_samp,
+  variance: f.variance,
+  var_pop: f.var_pop,
+  var_samp: f.var_samp,
+  collect_list: f.collect_list,
+  collect_set: f.collect_set,
+  count: f.count,
+};
 
 /**
  * A set of methods for aggregations on a `DataFrame`, created by [[Dataset#groupBy groupBy]],
@@ -63,21 +82,97 @@ export class RelationalGroupedDataset {
     return this.toDF(...cols.map((c) => f.sum(this.df.col(c))))
   }
 
+
+  avg(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.avg(this.df.col(c))))
+  }
+
+  mean(...cols: string[]): DataFrame {
+    return this.avg(...cols)
+  }
+
+  min(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.min(this.df.col(c))))
+  }
+
+  max(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.max(this.df.col(c))))
+  }
+
+  first(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.first(this.df.col(c))))
+  }
+
+  last(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.last(this.df.col(c))))
+  }
+
+  stddev(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev(this.df.col(c))))
+  }
+
+  stddevPop(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev_pop(this.df.col(c))))
+  }
+
+  stddevSamp(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.stddev_samp(this.df.col(c))))
+  }
+
+  variance(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.variance(this.df.col(c))))
+  }
+
+  varPop(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.var_pop(this.df.col(c))))
+  }
+
+  varSamp(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.var_samp(this.df.col(c))))
+  }
+
+  collect_list(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.collect_list(this.df.col(c))))
+  }
+
+  collect_set(...cols: string[]): DataFrame {
+    return this.toDF(...cols.map((c) => f.collect_set(this.df.col(c))))
+  }
+
+  agg(exprs: Record<string, string>): DataFrame;
+  agg(...exprs: Column[]): DataFrame;
+  agg(exprsOrMap: Record<string, string> | Column, ...exprs: Column[]): DataFrame {
+    if (typeof exprsOrMap === "object" && !(exprsOrMap instanceof Column)) {
+      const aggExprs = Object.entries(exprsOrMap).map(([col, func]) => {
+        const fn = supportedAggFunctions[func];
+        if (typeof fn !== "function") {
+          const available = Object.keys(supportedAggFunctions).join(", ");
+          throw new Error(`Unsupported aggregate function: ${func}. Supported functions: ${available}.`);
+        }
+        return fn(this.df.col(col));
+      });
+      return this.toDF(...aggExprs);
+    } else {
+      const allExprs = [exprsOrMap as Column, ...exprs];
+      return this.toDF(...allExprs);
+    }
+  }
+
   /**
    * Pivots a column of the current `DataFrame` and performs the specified aggregation.
-   * 
+   *
    * This method is only supported after a `groupBy` operation. There are two versions of pivot:
    * one with explicit pivot values and one without.
-   * 
+   *
    * @param pivotColumn - Column name or Column to pivot on
    * @param values - Optional list of values that will be translated to columns in the output DataFrame
    * @returns A new RelationalGroupedDataset with pivot configuration
-   * 
+   *
    * @example
    * ```typescript
    * // Pivot without values (Spark will compute distinct values)
    * df.groupBy("year").pivot("course").sum("earnings")
-   * 
+   *
    * // Pivot with explicit values (more efficient)
    * df.groupBy("year").pivot("course", ["dotNET", "Java"]).sum("earnings")
    * ```
