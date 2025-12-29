@@ -16,6 +16,8 @@
  */
 
 import { DataFrameWriter } from './DataFrameWriter';
+import { DataFrameWriterV2 } from './DataFrameWriterV2';
+import { DataFrameStatFunctions } from './DataFrameStatFunctions';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -100,20 +102,47 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
-  // async checkpoint(): Promise<DataFrame>;
-  // async checkpoint(eager: boolean): Promise<DataFrame>;
-  // async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
-  // async localCheckpoint(): Promise<DataFrame>;
-  // async localCheckpoint(eager: boolean): Promise<DataFrame>;
-  // async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a checkpointed version of this DataFrame. Checkpointing can be used to truncate the
+   * logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to files inside the checkpoint
+   * directory set with `spark.sql.checkpoint.location`.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @group basic
+   */
+  async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, false, eager)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
-  // async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a locally checkpointed version of this DataFrame. Checkpointing can be used to truncate
+   * the logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to a local temporary directory.
+   *
+   * This is a local checkpoint and is less reliable than a regular checkpoint because it is stored
+   * in executor storage and may be lost if executors fail.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @param storageLevel
+   *   The storage level to use for the local checkpoint. If not specified, the default storage level is used.
+   * @group basic
+   */
+  async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
@@ -167,6 +196,17 @@ export class DataFrame {
 
   get write(): DataFrameWriter {
     return new DataFrameWriter(this);
+  }
+
+  /**
+   * Create a write builder for writing to a table using V2 API
+   */
+  writeTo(tableName: string): DataFrameWriterV2 {
+    return new DataFrameWriterV2(tableName, this);
+  }
+
+  get stat(): DataFrameStatFunctions {
+    return new DataFrameStatFunctions(this);
   }
 
   async collect(): Promise<Row[]> {
@@ -759,9 +799,9 @@ export class DataFrame {
 
   /**
    * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION DISTINCT` in SQL.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * To do a SQL-style union that keeps duplicates, use [[unionAll]].
    *
    * Also as standard in SQL, this function resolves columns by position (not by name):
    *
@@ -788,17 +828,31 @@ export class DataFrame {
    * @since 2.0.0
    */
   union(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", false));
+  }
+
+  /**
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION ALL` in SQL.
+   *
+   * To do a SQL-style set union (that does deduplication of elements), use [[union]].
+   *
+   * Also as standard in SQL, this function resolves columns by position (not by name).
+   *
+   * @group typedrel
+   */
+  unionAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true));
   }
 
   /**
-   * Returns a new Dataset containing union of rows in this Dataset and another Dataset. This is
-   * an alias for `union`.
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * Unlike [[union]], this function resolves columns by name (not by position).
+   * This is equivalent to `UNION ALL` in SQL with column name matching.
    *
-   * Also as standard in SQL, this function resolves columns by position (not by name).
+   * When the parameter `allowMissingColumns` is true, the set of column names
+   * in this and `other` Dataset can differ; missing columns will be filled with null.
    *
    * @group typedrel
    */
@@ -857,6 +911,127 @@ export class DataFrame {
    */
   exceptAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", true));
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  repartition(numPartitions: number): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions.
+   * The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions,
+   * using `numPartitions` partitions. The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartition(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    if (typeof numPartitionsOrExpr === 'number') {
+      if (partitionExprs.length === 0) {
+        // repartition(numPartitions)
+        return this.toNewDataFrame(b => b.withRepartition(numPartitionsOrExpr, true, this.plan.relation));
+      } else {
+        // repartition(numPartitions, ...partitionExprs)
+        const exprs = partitionExprs.map(col => col.expr);
+        return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+      }
+    } else {
+      // repartition(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => col.expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions, when
+   * the fewer partitions are requested. If a larger number of partitions is requested,
+   * it will stay at the current number of partitions. Similar to coalesce defined on an `RDD`,
+   * this operation results in a narrow dependency, e.g. if you go from 1000 partitions to 100
+   * partitions, there will not be a shuffle, instead each of the 100 new partitions will claim 10
+   * of the current partitions. If a larger number of partitions is requested, it will stay at the
+   * current number of partitions.
+   * 
+   * However, if you're doing a drastic coalesce, e.g. to numPartitions = 1, this may result
+   * in your computation taking place on fewer nodes than you like (e.g. one node in the case of
+   * numPartitions = 1). To avoid this, you can call repartition(). This will add a shuffle step,
+   * but means the current upstream partitions will be executed in parallel (per whatever
+   * the current partitioning is).
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  coalesce(numPartitions: number): DataFrame {
+    return this.toNewDataFrame(b => b.withRepartition(numPartitions, false, this.plan.relation));
+  }
+
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions. The resulting
+   * DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions into
+   * `numPartitions`. The resulting DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartitionByRange(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    // Helper to convert column to sort order (asc by default if not already sorted)
+    const toSortCol = (col: Column): Column => {
+      // Check if column already has a SortOrder expression
+      const expr = col.expr;
+      if (expr.exprType.case === "sortOrder") {
+        return col;
+      }
+      // Default to ascending nulls first for range partitioning
+      return col.asc;
+    };
+
+    if (typeof numPartitionsOrExpr === 'number') {
+      // repartitionByRange(numPartitions, ...partitionExprs)
+      const exprs = partitionExprs.map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+    } else {
+      // repartitionByRange(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {

@@ -17,11 +17,11 @@
 
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 import { StorageLevel } from "../../../../../../src/org/apache/spark/storage/StorageLevel";
-import { sharedSpark, timeoutOrSatisfied, withDatabase } from "../../../../../helpers"
+import { sharedSpark, withDatabase } from "../../../../../helpers"
 
 test("current database", async () => {
   const catalog = await sharedSpark.then(spark => spark.catalog);
-  await timeoutOrSatisfied(
+  await (
     catalog.currentDatabase().then((currentDatabase) => {
       expect(currentDatabase).toBe("default");
     }));
@@ -29,7 +29,7 @@ test("current database", async () => {
 
 test("set current database", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.catalog.setCurrentDatabase("default").then(() => {
       return spark.catalog.currentDatabase().then((currentDatabase) => {
         expect(currentDatabase).toBe("default");
@@ -262,18 +262,18 @@ test("functions api", async () => {
 
 test("catalog apis", async () => {
   const spark = await sharedSpark;
-  await timeoutOrSatisfied(
+  await (
     spark.catalog.listCatalogs().collect().then((catalogs) => {
       expect(catalogs[0][0]).toBe("spark_catalog");
     })
   );
-  await timeoutOrSatisfied(
+  await (
     spark.catalog.listCatalogs("spark*").collect().then((catalogs) => {
       expect(catalogs[0][0]).toBe("spark_catalog");
     })
   );
 
-  await timeoutOrSatisfied(
+  await (
     spark.catalog.currentCatalog().then((functions) => {
       expect(functions).toBe("spark_catalog");
     })

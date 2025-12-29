@@ -17,6 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/opt/spark/sbin/start-connect-server.sh
+# Create checkpoint directory
+mkdir -p /tmp/spark-checkpoint
+
+/opt/spark/sbin/start-connect-server.sh --conf spark.checkpoint.dir=/tmp/spark-checkpoint
 
 tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out

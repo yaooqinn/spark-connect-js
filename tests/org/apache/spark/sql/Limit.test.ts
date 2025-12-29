@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-import { sharedSpark, timeoutOrSatisfied } from "../../../../helpers";
+import { sharedSpark } from "../../../../helpers";
 
 test("limit api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.limit(5).collect().then(rows => {
       expect(rows.length).toBe(5);
       expect(rows[0].getLong(0)).toBe(0n);
@@ -33,7 +33,7 @@ test("limit api", async () => {
 
 test("head api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.head(5).then(rows => {
       expect(rows.length).toBe(5);
       expect(rows[0].getLong(0)).toBe(0n);
@@ -47,7 +47,7 @@ test("head api", async () => {
 
 test("head api exceeds", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(3)").then(async df => {
+  return (spark.sql("SELECT * from range(3)").then(async df => {
     return df.head(5).then(rows => {
       expect(rows.length).toBe(3);
       expect(rows[0].getLong(0)).toBe(0n);
@@ -59,7 +59,7 @@ test("head api exceeds", async () => {
 
 test("head api default", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.head().then(row => {
       expect(row.getLong(0)).toBe(0n);
     });
@@ -68,7 +68,7 @@ test("head api default", async () => {
 
 test("first api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.first().then(row => {
       expect(row.getLong(0)).toBe(0n);
     });
@@ -77,7 +77,7 @@ test("first api", async () => {
 
 test("take api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.take(5).then(rows => {
       expect(rows.length).toBe(5);
       expect(rows[0].getLong(0)).toBe(0n);
@@ -91,7 +91,7 @@ test("take api", async () => {
 
 test("offset api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.offset(5).collect().then(rows => {
       expect(rows.length).toBe(5);
       expect(rows[0].getLong(0)).toBe(5n);
@@ -105,7 +105,7 @@ test("offset api", async () => {
 
 test("tail api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.tail(5).then(rows => {
       expect(rows.length).toBe(5);
       expect(rows[0].getLong(0)).toBe(5n);
@@ -120,7 +120,7 @@ test("tail api", async () => {
 
 test("isEmpty api", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(0)").then(async df => {
+  return (spark.sql("SELECT * from range(0)").then(async df => {
     return df.isEmpty().then(isEmpty => {
       expect(isEmpty).toBe(true);
     });
@@ -129,7 +129,7 @@ test("isEmpty api", async () => {
 
 test("isEmpty api false", async () => {
   const spark = await sharedSpark;
-  return timeoutOrSatisfied(spark.sql("SELECT * from range(10)").then(async df => {
+  return (spark.sql("SELECT * from range(10)").then(async df => {
     return df.isEmpty().then(isEmpty => {
       expect(isEmpty).toBe(false);
     });
