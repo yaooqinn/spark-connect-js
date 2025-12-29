@@ -8,7 +8,7 @@ An <b><red>experimental</red></b> client for [Spark Connect](https://spark.apach
 - [ ] Support Retry / Reattachable execution
 - [ ] Support Checkpoint for DataFrame
 - [ ] Support DataFrameNaFunctions
-- [ ] Support DataFrame Join 
+- [x] Support DataFrame Join 
 - [ ] Support UserDefinedType
   - [ ] UserDefinedType declaration
   - [ ] UserDefinedType & Proto bidi-converions

@@ -17,6 +17,9 @@
 
 import { DataFrameWriter } from './DataFrameWriter';
 import { DataStreamWriter } from './DataStreamWriter';
+import { DataFrameWriterV2 } from './DataFrameWriterV2';
+import { DataFrameStatFunctions } from './DataFrameStatFunctions';
+import { DataFrameNaFunctions } from './DataFrameNaFunctions';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -101,20 +104,52 @@ export class DataFrame {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
 
-  // async checkpoint(): Promise<DataFrame>;
-  // async checkpoint(eager: boolean): Promise<DataFrame>;
-  // async checkpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
-  // async localCheckpoint(): Promise<DataFrame>;
-  // async localCheckpoint(eager: boolean): Promise<DataFrame>;
-  // async localCheckpoint(eager?: boolean, storageLevel?: StorageLevel): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a checkpointed version of this DataFrame. Checkpointing can be used to truncate the
+   * logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to files inside the checkpoint
+   * directory set with `spark.sql.checkpoint.location`.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @group basic
+   */
+  async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, false, eager)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
 
-  // async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
-  //   throw new Error("Not implemented"); // TODO
-  // }
+  /**
+   * Returns a locally checkpointed version of this DataFrame. Checkpointing can be used to truncate
+   * the logical plan of this DataFrame, which is especially useful in iterative algorithms where the
+   * plan may grow exponentially. It will be saved to a local temporary directory.
+   *
+   * This is a local checkpoint and is less reliable than a regular checkpoint because it is stored
+   * in executor storage and may be lost if executors fail.
+   *
+   * @param eager
+   *   Whether to checkpoint this DataFrame immediately (default is true).
+   *   If false, the checkpoint will be performed when the DataFrame is first materialized.
+   * @param storageLevel
+   *   The storage level to use for the local checkpoint. If not specified, the default storage level is used.
+   * @group basic
+   */
+  async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
+    const plan = this.spark.planFromCommandBuilder(b =>
+      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
+    );
+    await this.spark.client.execute(plan.plan);
+    return this;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
 
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
@@ -172,6 +207,19 @@ export class DataFrame {
 
   get writeStream(): DataStreamWriter {
     return new DataStreamWriter(this);
+  /**
+   * Create a write builder for writing to a table using V2 API
+   */
+  writeTo(tableName: string): DataFrameWriterV2 {
+    return new DataFrameWriterV2(tableName, this);
+  }
+
+  get stat(): DataFrameStatFunctions {
+    return new DataFrameStatFunctions(this);
+  }
+
+  get na(): DataFrameNaFunctions {
+    return new DataFrameNaFunctions(this);
   }
 
   async collect(): Promise<Row[]> {
@@ -411,6 +459,209 @@ export class DataFrame {
   }
 
   /**
+   * Join with another DataFrame.
+   *
+   * Behaves as an INNER JOIN and resolves columns by name (not by position).
+   *
+   * @param right Right side of the join operation.
+   * @param usingColumn Name of the column to join on. This column must exist on both sides.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumn: string): DataFrame;
+  /**
+   * Inner join with another DataFrame, using the given join expression.
+   *
+   * @param right Right side of the join.
+   * @param joinExprs Join expression.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, joinExprs: Column): DataFrame;
+  /**
+   * Join with another DataFrame, using the given join expression. The following performs a full
+   * outer join between `df1` and `df2`.
+   *
+   * @param right Right side of the join.
+   * @param joinExprs Join expression.
+   * @param joinType Type of join to perform. Default `inner`. Must be one of:
+   *   `inner`, `cross`, `outer`, `full`, `fullouter`, `full_outer`, `left`, `leftouter`,
+   *   `left_outer`, `right`, `rightouter`, `right_outer`, `semi`, `leftsemi`, `left_semi`,
+   *   `anti`, `leftanti`, `left_anti`.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, joinExprs: Column, joinType: string): DataFrame;
+  /**
+   * Inner join with another DataFrame using the list of columns to join on.
+   *
+   * @param right Right side of the join.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumns: string[]): DataFrame;
+  /**
+   * Join with another DataFrame using the list of columns to join on.
+   *
+   * @param right Right side of the join.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   * @param joinType Type of join to perform. Default `inner`. Must be one of:
+   *   `inner`, `cross`, `outer`, `full`, `fullouter`, `full_outer`, `left`, `leftouter`,
+   *   `left_outer`, `right`, `rightouter`, `right_outer`, `semi`, `leftsemi`, `left_semi`,
+   *   `anti`, `leftanti`, `left_anti`.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumns: string[], joinType: string): DataFrame;
+  join(right: DataFrame, on: string | string[] | Column, joinType?: string): DataFrame {
+    if (typeof on === "string") {
+      // Single column name
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, undefined, joinType, [on])
+      );
+    } else if (Array.isArray(on)) {
+      // Array of column names
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, undefined, joinType, on)
+      );
+    } else {
+      // Column expression
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, on.expr, joinType, undefined)
+      );
+    }
+  }
+
+  /**
+   * Explicit cartesian join with another DataFrame.
+   *
+   * @param right Right side of the join operation.
+   *
+   * @note Cartesian joins are very expensive without an extra filter that can be pushed down.
+   *
+   * @group untypedrel
+   */
+  crossJoin(right: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => 
+      b.withJoin(this.plan.relation, right.plan.relation, undefined, "cross", undefined)
+    );
+  }
+
+  /**
+   * Perform an as-of join between this DataFrame and another DataFrame.
+   *
+   * This is similar to a left-join except that we match on nearest key rather than equal keys.
+   * For each row in the left DataFrame, we find the closest match in the right DataFrame
+   * based on the as-of column(s) and join condition.
+   *
+   * @param right Right side of the join.
+   * @param leftAsOf Column to join on from the left DataFrame.
+   * @param rightAsOf Column to join on from the right DataFrame.
+   * @param joinExprs Optional additional join expression.
+   * @param joinType Type of join to perform. Default `inner`.
+   * @param tolerance Optional tolerance for inexact matches.
+   * @param allowExactMatches Whether to allow exact matches. Default true.
+   * @param direction Direction of search. One of: `backward`, `forward`, `nearest`. Default `backward`.
+   *
+   * @group untypedrel
+   */
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    joinExprs?: Column,
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame;
+  /**
+   * Perform an as-of join between this DataFrame and another DataFrame using column names.
+   *
+   * @param right Right side of the join.
+   * @param leftAsOf Column name to join on from the left DataFrame.
+   * @param rightAsOf Column name to join on from the right DataFrame.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   * @param joinType Type of join to perform. Default `inner`.
+   * @param tolerance Optional tolerance for inexact matches.
+   * @param allowExactMatches Whether to allow exact matches. Default true.
+   * @param direction Direction of search. One of: `backward`, `forward`, `nearest`. Default `backward`.
+   *
+   * @group untypedrel
+   */
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    usingColumns?: string[],
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame;
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    joinExprsOrUsing?: Column | string[],
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame {
+    if (Array.isArray(joinExprsOrUsing)) {
+      return this.toNewDataFrame(b => 
+        b.withAsOfJoin(
+          this.plan.relation, 
+          right.plan.relation, 
+          leftAsOf.expr, 
+          rightAsOf.expr,
+          undefined,
+          joinExprsOrUsing,
+          joinType,
+          tolerance?.expr,
+          allowExactMatches,
+          direction
+        )
+      );
+    } else {
+      return this.toNewDataFrame(b => 
+        b.withAsOfJoin(
+          this.plan.relation, 
+          right.plan.relation, 
+          leftAsOf.expr, 
+          rightAsOf.expr,
+          joinExprsOrUsing?.expr,
+          undefined,
+          joinType,
+          tolerance?.expr,
+          allowExactMatches,
+          direction
+        )
+      );
+    }
+  }
+
+  /**
+   * Perform a lateral join between this DataFrame and another DataFrame.
+   *
+   * Lateral joins allow the right side to reference columns from the left side.
+   * This is useful for operations like exploding arrays or applying table-valued functions.
+   *
+   * @param right Right side of the join (typically a table-valued function or explode).
+   * @param joinType Type of join to perform. Must be one of: `inner`, `left`, `cross`. Default `inner`.
+   * @param condition Optional join condition.
+   *
+   * @group untypedrel
+   */
+  lateralJoin(right: DataFrame, joinType?: string, condition?: Column): DataFrame {
+    return this.toNewDataFrame(b => 
+      b.withLateralJoin(this.plan.relation, right.plan.relation, joinType, condition?.expr)
+    );
+  }
+
+  /**
    * Unpivot a DataFrame from wide format to long format, optionally leaving identifier columns
    * set. This is the reverse to `groupBy(...).pivot(...).agg(...)`, except for the aggregation,
    * which cannot be reversed.
@@ -561,9 +812,9 @@ export class DataFrame {
 
   /**
    * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION DISTINCT` in SQL.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * To do a SQL-style union that keeps duplicates, use [[unionAll]].
    *
    * Also as standard in SQL, this function resolves columns by position (not by name):
    *
@@ -590,17 +841,31 @@ export class DataFrame {
    * @since 2.0.0
    */
   union(other: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", false));
+  }
+
+  /**
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
+   * This is equivalent to `UNION ALL` in SQL.
+   *
+   * To do a SQL-style set union (that does deduplication of elements), use [[union]].
+   *
+   * Also as standard in SQL, this function resolves columns by position (not by name).
+   *
+   * @group typedrel
+   */
+  unionAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true));
   }
 
   /**
-   * Returns a new Dataset containing union of rows in this Dataset and another Dataset. This is
-   * an alias for `union`.
+   * Returns a new Dataset containing union of rows in this Dataset and another Dataset.
    *
-   * This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union (that does
-   * deduplication of elements), use this function followed by a [[distinct]].
+   * Unlike [[union]], this function resolves columns by name (not by position).
+   * This is equivalent to `UNION ALL` in SQL with column name matching.
    *
-   * Also as standard in SQL, this function resolves columns by position (not by name).
+   * When the parameter `allowMissingColumns` is true, the set of column names
+   * in this and `other` Dataset can differ; missing columns will be filled with null.
    *
    * @group typedrel
    */
@@ -659,6 +924,127 @@ export class DataFrame {
    */
   exceptAll(other: DataFrame): DataFrame {
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "except", true));
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  repartition(numPartitions: number): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions.
+   * The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions,
+   * using `numPartitions` partitions. The resulting DataFrame is hash partitioned.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartition(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartition(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    if (typeof numPartitionsOrExpr === 'number') {
+      if (partitionExprs.length === 0) {
+        // repartition(numPartitions)
+        return this.toNewDataFrame(b => b.withRepartition(numPartitionsOrExpr, true, this.plan.relation));
+      } else {
+        // repartition(numPartitions, ...partitionExprs)
+        const exprs = partitionExprs.map(col => col.expr);
+        return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+      }
+    } else {
+      // repartition(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => col.expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
+  }
+
+  /**
+   * Returns a new DataFrame that has exactly `numPartitions` partitions, when
+   * the fewer partitions are requested. If a larger number of partitions is requested,
+   * it will stay at the current number of partitions. Similar to coalesce defined on an `RDD`,
+   * this operation results in a narrow dependency, e.g. if you go from 1000 partitions to 100
+   * partitions, there will not be a shuffle, instead each of the 100 new partitions will claim 10
+   * of the current partitions. If a larger number of partitions is requested, it will stay at the
+   * current number of partitions.
+   * 
+   * However, if you're doing a drastic coalesce, e.g. to numPartitions = 1, this may result
+   * in your computation taking place on fewer nodes than you like (e.g. one node in the case of
+   * numPartitions = 1). To avoid this, you can call repartition(). This will add a shuffle step,
+   * but means the current upstream partitions will be executed in parallel (per whatever
+   * the current partitioning is).
+   * 
+   * @param numPartitions The target number of partitions. Must be positive.
+   * @group typedrel
+   */
+  coalesce(numPartitions: number): DataFrame {
+    return this.toNewDataFrame(b => b.withRepartition(numPartitions, false, this.plan.relation));
+  }
+
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions. The resulting
+   * DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(...partitionExprs: Column[]): DataFrame;
+  /**
+   * Returns a new DataFrame partitioned by the given partitioning expressions into
+   * `numPartitions`. The resulting DataFrame is range partitioned.
+   * 
+   * At least one partition-by expression must be specified. When no explicit sort order is
+   * specified, "ascending nulls first" is assumed. Note, the rows are not sorted in each
+   * partition of the resulting DataFrame.
+   * 
+   * This operation requires a shuffle, making it a wide transformation.
+   * 
+   * @param numPartitions The target number of partitions
+   * @param partitionExprs Column expressions to partition by
+   * @group typedrel
+   */
+  repartitionByRange(numPartitions: number, ...partitionExprs: Column[]): DataFrame;
+  repartitionByRange(numPartitionsOrExpr: number | Column, ...partitionExprs: Column[]): DataFrame {
+    // Helper to convert column to sort order (asc by default if not already sorted)
+    const toSortCol = (col: Column): Column => {
+      // Check if column already has a SortOrder expression
+      const expr = col.expr;
+      if (expr.exprType.case === "sortOrder") {
+        return col;
+      }
+      // Default to ascending nulls first for range partitioning
+      return col.asc;
+    };
+
+    if (typeof numPartitionsOrExpr === 'number') {
+      // repartitionByRange(numPartitions, ...partitionExprs)
+      const exprs = partitionExprs.map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, numPartitionsOrExpr, this.plan.relation));
+    } else {
+      // repartitionByRange(...partitionExprs)
+      const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => toSortCol(col).expr);
+      return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
+    }
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
