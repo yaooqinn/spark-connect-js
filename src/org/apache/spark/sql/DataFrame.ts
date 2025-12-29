@@ -144,6 +144,11 @@ export class DataFrame {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
+
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
   }
@@ -443,6 +448,209 @@ export class DataFrame {
 
   groupingSets(groupingSets: Column[][], ...cols: Column[]): RelationalGroupedDataset {
     return new RelationalGroupedDataset(this, cols, GroupType.GROUPING_SETS, undefined, groupingSets);
+  }
+
+  /**
+   * Join with another DataFrame.
+   *
+   * Behaves as an INNER JOIN and resolves columns by name (not by position).
+   *
+   * @param right Right side of the join operation.
+   * @param usingColumn Name of the column to join on. This column must exist on both sides.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumn: string): DataFrame;
+  /**
+   * Inner join with another DataFrame, using the given join expression.
+   *
+   * @param right Right side of the join.
+   * @param joinExprs Join expression.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, joinExprs: Column): DataFrame;
+  /**
+   * Join with another DataFrame, using the given join expression. The following performs a full
+   * outer join between `df1` and `df2`.
+   *
+   * @param right Right side of the join.
+   * @param joinExprs Join expression.
+   * @param joinType Type of join to perform. Default `inner`. Must be one of:
+   *   `inner`, `cross`, `outer`, `full`, `fullouter`, `full_outer`, `left`, `leftouter`,
+   *   `left_outer`, `right`, `rightouter`, `right_outer`, `semi`, `leftsemi`, `left_semi`,
+   *   `anti`, `leftanti`, `left_anti`.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, joinExprs: Column, joinType: string): DataFrame;
+  /**
+   * Inner join with another DataFrame using the list of columns to join on.
+   *
+   * @param right Right side of the join.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumns: string[]): DataFrame;
+  /**
+   * Join with another DataFrame using the list of columns to join on.
+   *
+   * @param right Right side of the join.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   * @param joinType Type of join to perform. Default `inner`. Must be one of:
+   *   `inner`, `cross`, `outer`, `full`, `fullouter`, `full_outer`, `left`, `leftouter`,
+   *   `left_outer`, `right`, `rightouter`, `right_outer`, `semi`, `leftsemi`, `left_semi`,
+   *   `anti`, `leftanti`, `left_anti`.
+   *
+   * @group untypedrel
+   */
+  join(right: DataFrame, usingColumns: string[], joinType: string): DataFrame;
+  join(right: DataFrame, on: string | string[] | Column, joinType?: string): DataFrame {
+    if (typeof on === "string") {
+      // Single column name
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, undefined, joinType, [on])
+      );
+    } else if (Array.isArray(on)) {
+      // Array of column names
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, undefined, joinType, on)
+      );
+    } else {
+      // Column expression
+      return this.toNewDataFrame(b => 
+        b.withJoin(this.plan.relation, right.plan.relation, on.expr, joinType, undefined)
+      );
+    }
+  }
+
+  /**
+   * Explicit cartesian join with another DataFrame.
+   *
+   * @param right Right side of the join operation.
+   *
+   * @note Cartesian joins are very expensive without an extra filter that can be pushed down.
+   *
+   * @group untypedrel
+   */
+  crossJoin(right: DataFrame): DataFrame {
+    return this.toNewDataFrame(b => 
+      b.withJoin(this.plan.relation, right.plan.relation, undefined, "cross", undefined)
+    );
+  }
+
+  /**
+   * Perform an as-of join between this DataFrame and another DataFrame.
+   *
+   * This is similar to a left-join except that we match on nearest key rather than equal keys.
+   * For each row in the left DataFrame, we find the closest match in the right DataFrame
+   * based on the as-of column(s) and join condition.
+   *
+   * @param right Right side of the join.
+   * @param leftAsOf Column to join on from the left DataFrame.
+   * @param rightAsOf Column to join on from the right DataFrame.
+   * @param joinExprs Optional additional join expression.
+   * @param joinType Type of join to perform. Default `inner`.
+   * @param tolerance Optional tolerance for inexact matches.
+   * @param allowExactMatches Whether to allow exact matches. Default true.
+   * @param direction Direction of search. One of: `backward`, `forward`, `nearest`. Default `backward`.
+   *
+   * @group untypedrel
+   */
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    joinExprs?: Column,
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame;
+  /**
+   * Perform an as-of join between this DataFrame and another DataFrame using column names.
+   *
+   * @param right Right side of the join.
+   * @param leftAsOf Column name to join on from the left DataFrame.
+   * @param rightAsOf Column name to join on from the right DataFrame.
+   * @param usingColumns Names of columns to join on. These columns must exist on both sides.
+   * @param joinType Type of join to perform. Default `inner`.
+   * @param tolerance Optional tolerance for inexact matches.
+   * @param allowExactMatches Whether to allow exact matches. Default true.
+   * @param direction Direction of search. One of: `backward`, `forward`, `nearest`. Default `backward`.
+   *
+   * @group untypedrel
+   */
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    usingColumns?: string[],
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame;
+  asOfJoin(
+    right: DataFrame, 
+    leftAsOf: Column, 
+    rightAsOf: Column, 
+    joinExprsOrUsing?: Column | string[],
+    joinType?: string,
+    tolerance?: Column,
+    allowExactMatches?: boolean,
+    direction?: string
+  ): DataFrame {
+    if (Array.isArray(joinExprsOrUsing)) {
+      return this.toNewDataFrame(b => 
+        b.withAsOfJoin(
+          this.plan.relation, 
+          right.plan.relation, 
+          leftAsOf.expr, 
+          rightAsOf.expr,
+          undefined,
+          joinExprsOrUsing,
+          joinType,
+          tolerance?.expr,
+          allowExactMatches,
+          direction
+        )
+      );
+    } else {
+      return this.toNewDataFrame(b => 
+        b.withAsOfJoin(
+          this.plan.relation, 
+          right.plan.relation, 
+          leftAsOf.expr, 
+          rightAsOf.expr,
+          joinExprsOrUsing?.expr,
+          undefined,
+          joinType,
+          tolerance?.expr,
+          allowExactMatches,
+          direction
+        )
+      );
+    }
+  }
+
+  /**
+   * Perform a lateral join between this DataFrame and another DataFrame.
+   *
+   * Lateral joins allow the right side to reference columns from the left side.
+   * This is useful for operations like exploding arrays or applying table-valued functions.
+   *
+   * @param right Right side of the join (typically a table-valued function or explode).
+   * @param joinType Type of join to perform. Must be one of: `inner`, `left`, `cross`. Default `inner`.
+   * @param condition Optional join condition.
+   *
+   * @group untypedrel
+   */
+  lateralJoin(right: DataFrame, joinType?: string, condition?: Column): DataFrame {
+    return this.toNewDataFrame(b => 
+      b.withLateralJoin(this.plan.relation, right.plan.relation, joinType, condition?.expr)
+    );
   }
 
   /**

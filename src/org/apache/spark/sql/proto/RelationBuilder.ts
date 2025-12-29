@@ -18,7 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate, FilterSchema, HintSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, RepartitionByExpressionSchema, RepartitionSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, AsOfJoinSchema, FilterSchema, HintSchema, JoinSchema, LateralJoinSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, RepartitionByExpressionSchema, RepartitionSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
 import { DataTypes } from "../types";
@@ -26,7 +26,7 @@ import { StructType } from "../types/StructType";
 import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
-import { toSetOpTypePB } from "./ProtoUtils";
+import { toJoinTypePB, toLateralJoinTypePB, toSetOpTypePB } from "./ProtoUtils";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -177,13 +177,75 @@ export class RelationBuilder {
     return this;
   }
 
+  withJoin(
+      left?: Relation,
+      right?: Relation,
+      joinCondition?: Expression,
+      joinType?: string,
+      usingColumns?: string[]) {
+    const join = create(JoinSchema,
+      {
+        left: left,
+        right: right,
+        joinCondition: joinCondition,
+        joinType: toJoinTypePB(joinType),
+        usingColumns: usingColumns
+      });
+    this.relation.relType = { case: "join", value: join };
+    return this;
+  }
+
+  withAsOfJoin(
+      left?: Relation,
+      right?: Relation,
+      leftAsOf?: Expression,
+      rightAsOf?: Expression,
+      joinExpr?: Expression,
+      usingColumns?: string[],
+      joinType?: string,
+      tolerance?: Expression,
+      allowExactMatches?: boolean,
+      direction?: string) {
+    const asOfJoin = create(AsOfJoinSchema,
+      {
+        left: left,
+        right: right,
+        leftAsOf: leftAsOf,
+        rightAsOf: rightAsOf,
+        joinExpr: joinExpr,
+        usingColumns: usingColumns,
+        joinType: joinType || "inner",
+        tolerance: tolerance,
+        allowExactMatches: allowExactMatches !== undefined ? allowExactMatches : true,
+        direction: direction || "backward"
+      });
+    this.relation.relType = { case: "asOfJoin", value: asOfJoin };
+    return this;
+  }
+
+  withLateralJoin(
+      left?: Relation,
+      right?: Relation,
+      joinType?: string,
+      condition?: Expression) {
+    const lateralJoin = create(LateralJoinSchema,
+      {
+        left: left,
+        right: right,
+        joinType: toLateralJoinTypePB(joinType),
+        condition: condition
+      });
+    this.relation.relType = { case: "lateralJoin", value: lateralJoin };
+    return this;
+  }
+
   withRepartition(numPartitions: number, shuffle: boolean, input?: Relation) {
     const repartition = create(RepartitionSchema, {
       input: input,
       numPartitions: numPartitions,
       shuffle: shuffle
     });
-    this.relation.relType = { case: "repartition", value: repartition }
+    this.relation.relType = { case: "repartition", value: repartition };
     return this;
   }
 
@@ -193,31 +255,31 @@ export class RelationBuilder {
       partitionExprs: partitionExprs,
       numPartitions: numPartitions
     });
-    this.relation.relType = { case: "repartitionByExpression", value: repartitionByExpression }
+    this.relation.relType = { case: "repartitionByExpression", value: repartitionByExpression };
     return this;
   }
 
   withStatCov(col1: string, col2: string, input?: Relation) {
     const statCov = create(StatCovSchema, { input: input, col1: col1, col2: col2 });
-    this.relation.relType = { case: "cov", value: statCov }
+    this.relation.relType = { case: "cov", value: statCov };
     return this;
   }
 
   withStatCorr(col1: string, col2: string, method?: string, input?: Relation) {
     const statCorr = create(StatCorrSchema, { input: input, col1: col1, col2: col2, method: method });
-    this.relation.relType = { case: "corr", value: statCorr }
+    this.relation.relType = { case: "corr", value: statCorr };
     return this;
   }
 
   withStatCrosstab(col1: string, col2: string, input?: Relation) {
     const statCrosstab = create(StatCrosstabSchema, { input: input, col1: col1, col2: col2 });
-    this.relation.relType = { case: "crosstab", value: statCrosstab }
+    this.relation.relType = { case: "crosstab", value: statCrosstab };
     return this;
   }
 
   withStatFreqItems(cols: string[], support?: number, input?: Relation) {
     const statFreqItems = create(StatFreqItemsSchema, { input: input, cols: cols, support: support });
-    this.relation.relType = { case: "freqItems", value: statFreqItems }
+    this.relation.relType = { case: "freqItems", value: statFreqItems };
     return this;
   }
 
@@ -239,7 +301,7 @@ export class RelationBuilder {
       fractions: fractionsList,
       seed: seed !== undefined ? BigInt(seed) : undefined
     });
-    this.relation.relType = { case: "sampleBy", value: statSampleBy }
+    this.relation.relType = { case: "sampleBy", value: statSampleBy };
     return this;
   }
 
@@ -250,7 +312,7 @@ export class RelationBuilder {
       probabilities: probabilities,
       relativeError: relativeError
     });
-    this.relation.relType = { case: "approxQuantile", value: statApproxQuantile }
+    this.relation.relType = { case: "approxQuantile", value: statApproxQuantile };
     return this;
   }
 
