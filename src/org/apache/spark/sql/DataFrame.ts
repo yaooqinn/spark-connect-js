@@ -144,6 +144,11 @@ export class DataFrame {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async withWatermark(eventTime: string, delayThreshold: string): Promise<DataFrame> {
+    throw new Error("Not implemented"); // TODO
+  }
+
   async inputFiles(): Promise<string[]> {
     return this.analyze(b => b.withInputFiles(this.plan.plan)).then(r => r.inputFiles);
   }
