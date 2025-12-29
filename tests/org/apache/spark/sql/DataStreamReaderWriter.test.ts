@@ -31,26 +31,43 @@ test("SparkSession has readStream property", () => {
 });
 
 test("DataStreamReader format", () => {
-  const reader = mockSpark.readStream;
-  expect((reader as any).source).toBe(undefined);
   ["parquet", "json", "csv", "kafka", "rate"].forEach(format => {
+    const reader = mockSpark.readStream;
+    expect((reader as any).source).toBe(undefined);
     expect((reader.format(format) as any).source).toBe(format);
   });
 });
 
 test("DataStreamReader option", () => {
-  const reader = mockSpark.readStream;
+  let reader = mockSpark.readStream;
   expect((reader as any).extraOptions.size).toBe(0);
+  
+  reader = mockSpark.readStream;
   expect((reader.option("key", "value") as any).extraOptions.size).toBe(1);
   expect((reader as any).extraOptions.get("key")).toBe("value");
+  
+  reader = mockSpark.readStream;
+  reader.option("key", "value");
   expect((reader.option("key2", "value2") as any).extraOptions.size).toBe(2);
   expect((reader as any).extraOptions.get("key2")).toBe("value2");
+  
+  reader = mockSpark.readStream;
+  reader.option("key", "value").option("key2", "value2");
   expect((reader.option("key3", 1) as any).extraOptions.size).toBe(3);
   expect((reader as any).extraOptions.get("key3")).toBe("1");
+  
+  reader = mockSpark.readStream;
+  reader.option("key", "value").option("key2", "value2").option("key3", 1);
   expect((reader.option("key4", 1.1) as any).extraOptions.size).toBe(4);
   expect((reader as any).extraOptions.get("key4")).toBe("1.1");
+  
+  reader = mockSpark.readStream;
+  reader.option("key", "value").option("key2", "value2").option("key3", 1).option("key4", 1.1);
   expect((reader.option("key5", true) as any).extraOptions.size).toBe(5);
   expect((reader as any).extraOptions.get("key5")).toBe("true");
+  
+  reader = mockSpark.readStream;
+  reader.option("key", "value").option("key2", "value2").option("key3", 1).option("key4", 1.1).option("key5", true);
   expect((reader.options({ key6: "value6", key7: "2" }) as any).extraOptions.size).toBe(7);
   expect((reader as any).extraOptions.get("key6")).toBe("value6");
   expect((reader as any).extraOptions.get("key7")).toBe("2");
