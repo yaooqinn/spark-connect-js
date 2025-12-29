@@ -12,13 +12,28 @@ See [Browser Support Documentation](docs/BROWSER_SUPPORT.md) for detailed setup 
 
 ## Quick Start
 
-### Installation
+### 1. Set up gRPC-Web Proxy (Required)
+
+Create `envoy-config.yaml` (see [docs/envoy-config.yaml](docs/envoy-config.yaml)) and run:
+
+```bash
+# Install Envoy (if not already installed)
+# On macOS: brew install envoy
+# On Linux: see https://www.envoyproxy.io/docs/envoy/latest/start/install
+
+# Start Envoy proxy
+envoy -c docs/envoy-config.yaml
+```
+
+This starts a proxy on port 8080 that forwards to your Spark Connect server on port 15002.
+
+### 2. Installation
 
 ```bash
 npm install spark-connect
 ```
 
-### Browser Usage
+### 3. Browser Usage
 
 Build the browser bundle:
 
@@ -56,6 +71,10 @@ await df.show();
 const df2 = spark.range(10).filter('id > 5');
 await df2.collect();
 ```
+
+### 4. Try the Browser Example
+
+Open [docs/browser-example.html](docs/browser-example.html) in your browser for an interactive example.
 
 ## Key Changes from Previous Versions
 
