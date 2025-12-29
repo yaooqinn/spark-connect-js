@@ -18,6 +18,7 @@
 import { DataFrameWriter } from './DataFrameWriter';
 import { DataFrameWriterV2 } from './DataFrameWriterV2';
 import { DataFrameStatFunctions } from './DataFrameStatFunctions';
+import { DataFrameNaFunctions } from './DataFrameNaFunctions';
 import { Row } from './Row';
 import { SparkResult } from './SparkResult';
 import { SparkSession } from './SparkSession';
@@ -212,6 +213,10 @@ export class DataFrame {
 
   get stat(): DataFrameStatFunctions {
     return new DataFrameStatFunctions(this);
+  }
+
+  get na(): DataFrameNaFunctions {
+    return new DataFrameNaFunctions(this);
   }
 
   async collect(): Promise<Row[]> {
