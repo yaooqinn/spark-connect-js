@@ -409,13 +409,18 @@ function parseValueForReplace(val: string): number | boolean | string {
   if (val === 'true') return true;
   if (val === 'false') return false;
   
-  // Try to parse as number - ensure the entire string is a valid number
+  // Try to parse as number
   const trimmed = val.trim();
   if (trimmed !== '') {
     const num = Number(trimmed);
-    // Check if the parsed number converts back to the same string
-    if (!isNaN(num) && String(num) === trimmed) {
-      return num;
+    // Check if it's a valid number and not NaN
+    if (!isNaN(num) && isFinite(num)) {
+      // Verify it's a valid numeric string by checking various edge cases
+      // This allows for formats like: 1, 1.0, 1.5, 1e10, -1, +1, etc.
+      const isValidNumber = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(trimmed);
+      if (isValidNumber) {
+        return num;
+      }
     }
   }
   
