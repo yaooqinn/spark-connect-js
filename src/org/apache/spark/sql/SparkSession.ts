@@ -25,6 +25,7 @@ import { ClientBuilder } from './grpc/client_builder';
 import { PlanIdGenerator } from '../../../../utils';
 import { logger } from '../logger';
 import { DataFrameReader } from './DataFrameReader';
+import { DataStreamReader } from './DataStreamReader';
 import { createLocalRelation, createLocalRelationFromArrowTable } from './proto/ProtoUtils';
 import { StructType } from './types/StructType';
 import { Table } from 'apache-arrow';
@@ -89,6 +90,10 @@ export class SparkSession {
 
   public get read(): DataFrameReader {
     return new DataFrameReader(this);
+  }
+
+  public get readStream(): DataStreamReader {
+    return new DataStreamReader(this);
   }
 
   public createDataFrame(data: Row[], schema: StructType): DataFrame {
