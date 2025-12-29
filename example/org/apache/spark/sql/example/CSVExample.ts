@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { rm } from "fs";
 import { SparkSession } from "../../../../../../src/org/apache/spark/sql/SparkSession";
 import { lit } from "../../../../../../src/org/apache/spark/sql/functions";
 
@@ -32,7 +31,8 @@ async function runExample(): Promise<void> {
     const df3 = spark.read.parquet(__dirname + "/data/tmp");
     await df3.collect().then(rows => rows.forEach(r => console.log(r.toJSON())));
   } finally {
-    rm(__dirname + "/data/tmp", { recursive: true }, () => {});
+    // Note: File cleanup should be handled server-side or manually
+    console.log("Temporary files created at: " + __dirname + "/data/tmp");
   }
   // await spark.stop();
 }

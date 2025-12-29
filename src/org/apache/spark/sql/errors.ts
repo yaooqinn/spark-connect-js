@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as grpc from '@grpc/grpc-js';
+import { grpc } from '@grpc/grpc-web';
 
 abstract class SparkThrowable extends Error {
   constructor(
@@ -36,13 +36,25 @@ abstract class SparkThrowable extends Error {
   }
 }
 
-export function fromStatus(err: grpc.StatusObject & Error | grpc.StatusObject): Error {
-  const statusDetails = err.metadata.get("grpc-status-details-bin").toString();
-  let msg = err.details;
+export function fromStatus(err: grpc.Error | grpc.Status | Error): Error {
+  // Handle gRPC-Web error/status objects
+  let msg = '';
+  let metadata: any = {};
+  
+  if ('message' in err) {
+    msg = err.message;
+  }
+  
+  if ('metadata' in err) {
+    metadata = err.metadata || {};
+  }
+
+  const statusDetails = metadata['grpc-status-details-bin']?.toString() || '';
   const conditionMatch = msg.match(/\[([A-Z_.]+)\]/);
   const condition = conditionMatch ? conditionMatch[1] : "_LEGACY_ERROR_TEMP_00000";
   const sqlStateMatch = msg.match(/SQLSTATE:\s*([0-9A-Z]+)/);
   const sqlState = sqlStateMatch ? sqlStateMatch[1] : "00000";
+  
   if (conditionMatch) {
     msg = msg.replace(conditionMatch[0], "").trim();
   }
