@@ -415,8 +415,11 @@ function parseValueForReplace(val: string): number | boolean | string {
     const num = Number(trimmed);
     // Check if it's a valid number and not NaN
     if (!isNaN(num) && isFinite(num)) {
-      // Verify it's a valid numeric string by checking various edge cases
-      // This allows for formats like: 1, 1.0, 1.5, 1e10, -1, +1, etc.
+      // Validate numeric string format using regex
+      // Matches: integers (1, -1), decimals (1.0, .5), scientific notation (1e10, 1.5e-3)
+      // Pattern breakdown: [+-]? = optional sign
+      //                    (\d+\.?\d*|\.\d+) = number with optional decimal (123, 1.5, .5)
+      //                    ([eE][+-]?\d+)? = optional scientific notation (e10, E-3)
       const isValidNumber = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(trimmed);
       if (isValidNumber) {
         return num;

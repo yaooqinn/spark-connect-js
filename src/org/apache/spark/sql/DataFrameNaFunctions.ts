@@ -160,6 +160,9 @@ export class DataFrameNaFunctions {
       const replacementMap: { [key: string]: number | string | boolean | null } = {};
       
       // Create a single-entry map for the replacement
+      // Note: Converting fromValue to string for the map key is intentional.
+      // The parseValueForReplace function in RelationBuilder will parse it back
+      // to the correct type (number/boolean/string) when building the protobuf message.
       const key = String(fromValue);
       replacementMap[key] = toValue;
       
