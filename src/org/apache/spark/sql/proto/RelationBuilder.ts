@@ -405,14 +405,20 @@ export class RelationBuilder {
 }
 
 function parseValueForReplace(val: string): number | boolean | string {
-  // Try to parse as number
-  const num = Number(val);
-  if (!isNaN(num) && val.trim() !== '') {
-    return num;
-  }
-  // Try to parse as boolean
+  // Try to parse as boolean first (most strict)
   if (val === 'true') return true;
   if (val === 'false') return false;
+  
+  // Try to parse as number - ensure the entire string is a valid number
+  const trimmed = val.trim();
+  if (trimmed !== '') {
+    const num = Number(trimmed);
+    // Check if the parsed number converts back to the same string
+    if (!isNaN(num) && String(num) === trimmed) {
+      return num;
+    }
+  }
+  
   // Keep as string
   return val;
 }

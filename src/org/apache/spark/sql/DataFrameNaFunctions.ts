@@ -121,41 +121,41 @@ export class DataFrameNaFunctions {
   /**
    * Returns a new DataFrame replacing a value with another value.
    *
-   * @param to
-   *   Value to replace with. Must be a number, string, or boolean.
    * @param from
    *   Value to be replaced. Must be a number, string, or boolean.
+   * @param to
+   *   Value to replace with. Must be a number, string, or boolean.
    * @param cols
    *   Optional list of column names to consider. If not specified, all compatible columns are considered.
    * @return DataFrame with values replaced
    */
-  replace(to: number | string | boolean, from: number | string | boolean, cols?: string[]): DataFrame;
+  replace(from: number | string | boolean, to: number | string | boolean, cols?: string[]): DataFrame;
   /**
    * Returns a new DataFrame replacing values using a map.
    *
-   * @param to
-   *   Map of values to replacement values.
+   * @param replacementMap
+   *   Map of old values to new replacement values.
    * @param cols
    *   Optional list of column names to consider. If not specified, all compatible columns are considered.
    * @return DataFrame with values replaced
    */
-  replace(to: { [key: string]: number | string | boolean | null }, cols?: string[]): DataFrame;
+  replace(replacementMap: { [key: string]: number | string | boolean | null }, cols?: string[]): DataFrame;
   replace(
-    to: number | string | boolean | { [key: string]: number | string | boolean | null },
-    fromOrCols?: number | string | boolean | string[],
+    fromOrMap: number | string | boolean | { [key: string]: number | string | boolean | null },
+    toOrCols?: number | string | boolean | string[],
     cols?: string[]
   ): DataFrame {
-    if (typeof to === 'object' && !Array.isArray(to)) {
+    if (typeof fromOrMap === 'object' && !Array.isArray(fromOrMap)) {
       // replace(replacementMap, cols?)
-      const replacementMap = to as { [key: string]: number | string | boolean | null };
-      const columnNames = Array.isArray(fromOrCols) ? fromOrCols : undefined;
+      const replacementMap = fromOrMap as { [key: string]: number | string | boolean | null };
+      const columnNames = Array.isArray(toOrCols) ? toOrCols : undefined;
       return this.df.spark.relationBuilderToDF(b =>
         b.withNAReplace(columnNames, replacementMap, this.df.plan.relation)
       );
     } else {
-      // replace(to, from, cols?)
-      const toValue = to as number | string | boolean;
-      const fromValue = fromOrCols as number | string | boolean;
+      // replace(from, to, cols?)
+      const fromValue = fromOrMap as number | string | boolean;
+      const toValue = toOrCols as number | string | boolean;
       const columnNames = cols;
       const replacementMap: { [key: string]: number | string | boolean | null } = {};
       

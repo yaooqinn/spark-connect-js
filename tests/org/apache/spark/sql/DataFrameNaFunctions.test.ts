@@ -170,7 +170,7 @@ describe('DataFrameNaFunctions', () => {
       const df = await spark.sql(
         "SELECT 1 as a, 2 as b UNION ALL SELECT 3 as a, 1 as b UNION ALL SELECT 1 as a, 4 as b"
       );
-      const result = df.na.replace(999, 1);
+      const result = df.na.replace(1, 999);
       const rows = await result.collect();
       expect(rows.length).toBe(3);
       // Check that 1 is replaced with 999
@@ -187,7 +187,7 @@ describe('DataFrameNaFunctions', () => {
       const df = await spark.sql(
         "SELECT 1 as a, 2 as b UNION ALL SELECT 3 as a, 1 as b"
       );
-      const result = df.na.replace(999, 1, ['b']);
+      const result = df.na.replace(1, 999, ['b']);
       const rows = await result.collect();
       expect(rows.length).toBe(2);
       // Only column b should have replacement
@@ -213,7 +213,7 @@ describe('DataFrameNaFunctions', () => {
       const df = await spark.sql(
         "SELECT 'old' as col1, 'value' as col2 UNION ALL SELECT 'new' as col1, 'old' as col2"
       );
-      const result = df.na.replace('new', 'old');
+      const result = df.na.replace('old', 'new');
       const rows = await result.collect();
       expect(rows.length).toBe(2);
       // Check string replacement
@@ -255,7 +255,7 @@ describe('DataFrameNaFunctions', () => {
       const df = await spark.sql(
         "SELECT 1 as a, 2 as b UNION ALL SELECT null as a, 3 as b UNION ALL SELECT 1 as a, null as b"
       );
-      const result = df.na.fill(0).na.replace(100, 1);
+      const result = df.na.fill(0).na.replace(1, 100);
       const rows = await result.collect();
       expect(rows.length).toBe(3);
     });
