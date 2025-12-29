@@ -16,7 +16,7 @@
  */
 
 import { ClientBuilder, Configuration } from "./client_builder";
-import { grpc } from '@grpc/grpc-web';
+import * as grpcWeb from 'grpc-web';
 import * as b from '../../../../../gen/spark/connect/base_pb'; // proto import: "spark/connect/base.proto"
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import { logger } from '../../logger';
@@ -27,7 +27,7 @@ import { AnalyzePlanRequestBuilder } from "../proto/AnalyzePlanRequestBuilder";
 
 export class Client {
   conf_: Configuration;
-  client_: grpc.AbstractClientBase;
+  client_: grpcWeb.GrpcWebClientBase;
   session_id_: string;
   user_context_: b.UserContext;
   user_agent_: string = "spark-connect-js"; // TODO: What shall I set here?
@@ -35,10 +35,8 @@ export class Client {
 
   constructor(conf: Configuration) {
     this.conf_ = conf;
-    const protocol = conf.get_is_ssl_enabled() ? 'https' : 'http';
-    const host = `${protocol}://${conf.get_host()}:${conf.get_port()}`;
     
-    this.client_ = new grpc.GrpcWebClientBase({
+    this.client_ = new grpcWeb.GrpcWebClientBase({
       format: 'binary'
     });
     
@@ -81,20 +79,21 @@ export class Client {
       deser: (resp: Uint8Array) => RespType): Promise<RespType> {
     logger.debug("Sending unary request by", method, req);
     return new Promise((resolve, reject) => {
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'unary',
+        function() {} as any,
+        function() {} as any,
+        ser,
+        deser
+      );
+
       this.client_.rpcCall(
         this.api(method),
         req,
         this.createMetadata(),
-        {
-          methodDescriptor: {
-            name: method,
-            requestType: {} as any,
-            responseType: {} as any,
-            requestSerializeFn: ser,
-            responseDeserializeFn: deser,
-          }
-        } as any,
-        (err: grpc.Error | null, resp?: RespType) => {
+        methodDescriptor,
+        (err: grpcWeb.RpcError | null, resp?: RespType) => {
           if (err) {
             const handledErr = fromStatus(err);
             logger.debug("Errored calling", method + ": ", handledErr);
@@ -119,19 +118,20 @@ export class Client {
       deser: (resp: Uint8Array) => RespType): Promise<RespType> {
     logger.debug("Sending stream request by", method, req);
     return new Promise((resolve, reject) => {
-      const stream = this.client_.serverStreaming(
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'server_streaming',
+        function() {} as any,
+        function() {} as any,
+        ser,
+        deser
+      ) as grpcWeb.MethodDescriptor<ReqType, RespType>;
+
+      const stream = this.client_.serverStreaming<ReqType, RespType>(
         this.api(method),
         req,
         this.createMetadata(),
-        {
-          methodDescriptor: {
-            name: method,
-            requestType: {} as any,
-            responseType: {} as any,
-            requestSerializeFn: ser,
-            responseDeserializeFn: deser,
-          }
-        } as any
+        methodDescriptor
       );
 
       stream.on('data', (data: RespType) => {
@@ -139,7 +139,7 @@ export class Client {
         resolve(data);
       });
 
-      stream.on('error', (err: grpc.Error) => {
+      stream.on('error', (err: grpcWeb.RpcError) => {
         const handledErr = fromStatus(err);
         logger.error("Errored calling", method, handledErr);
         reject(handledErr);
@@ -206,19 +206,20 @@ export class Client {
     logger.debug("Sending stream request by", method, req.plan?.opType.value);
     
     return new Promise((resolve, reject) => {
-      const stream = this.client_.serverStreaming(
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'server_streaming',
+        function() {} as any,
+        function() {} as any,
+        this.serializer(b.ExecutePlanRequestSchema),
+        this.deserializer(b.ExecutePlanResponseSchema)
+      ) as grpcWeb.MethodDescriptor<b.ExecutePlanRequest, b.ExecutePlanResponse>;
+
+      const stream = this.client_.serverStreaming<b.ExecutePlanRequest, b.ExecutePlanResponse>(
         this.api(method),
         req,
         this.createMetadata(),
-        {
-          methodDescriptor: {
-            name: method,
-            requestType: {} as any,
-            responseType: {} as any,
-            requestSerializeFn: this.serializer(b.ExecutePlanRequestSchema),
-            responseDeserializeFn: this.deserializer(b.ExecutePlanResponseSchema),
-          }
-        } as any
+        methodDescriptor
       );
 
       const results: b.ExecutePlanResponse[] = [];
@@ -227,14 +228,14 @@ export class Client {
         results.push(data);
       });
       
-      stream.on('error', (err: grpc.Error) => {
+      stream.on('error', (err: grpcWeb.RpcError) => {
         const handledErr = fromStatus(err);
         logger.error("Errored calling", method + ":", handledErr);
         reject(handledErr);
       });
 
-      stream.on('status', (status: grpc.Status) => {
-        if (status.code !== grpc.StatusCode.OK) {
+      stream.on('status', (status: grpcWeb.Status) => {
+        if (status.code !== grpcWeb.StatusCode.OK) {
           const handledErr = fromStatus(status as any);
           logger.error("Status received by", method, handledErr);
           reject(handledErr);

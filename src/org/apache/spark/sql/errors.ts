@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { grpc } from '@grpc/grpc-web';
+import * as grpcWeb from 'grpc-web';
 
 abstract class SparkThrowable extends Error {
   constructor(
@@ -36,7 +36,7 @@ abstract class SparkThrowable extends Error {
   }
 }
 
-export function fromStatus(err: grpc.Error | grpc.Status | Error): Error {
+export function fromStatus(err: grpcWeb.RpcError | grpcWeb.Status | Error): Error {
   // Handle gRPC-Web error/status objects
   let msg = '';
   let metadata: any = {};
