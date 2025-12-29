@@ -18,7 +18,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
 import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
-import { Aggregate, AsOfJoinSchema, FilterSchema, HintSchema, JoinSchema, LateralJoinSchema, LimitSchema, LocalRelation, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, RepartitionByExpressionSchema, RepartitionSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate, AsOfJoinSchema, FilterSchema, HintSchema, JoinSchema, LateralJoinSchema, LimitSchema, LocalRelation, NADropSchema, NAFillSchema, NAReplaceSchema, NAReplace_ReplacementSchema, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, RepartitionByExpressionSchema, RepartitionSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
 import { DataTypes } from "../types";
@@ -27,6 +27,7 @@ import { CaseInsensitiveMap } from "../util/CaseInsensitiveMap";
 import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { toJoinTypePB, toLateralJoinTypePB, toSetOpTypePB } from "./ProtoUtils";
+import { LiteralBuilder } from "./expression/LiteralBuilder";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -316,7 +317,116 @@ export class RelationBuilder {
     return this;
   }
 
+  withNAFill(cols: string[] | undefined, values: (number | string | boolean)[], input?: Relation) {
+    const literalValues = values.map(val => {
+      // NA operations only support bool, long, double, string types (not int)
+      const builder = new LiteralBuilder();
+      if (typeof val === 'number') {
+        // Always use double for numbers to avoid Integer type issues
+        builder.withDouble(val);
+      } else if (typeof val === 'string') {
+        builder.withString(val);
+      } else if (typeof val === 'boolean') {
+        builder.withBoolean(val);
+      } else {
+        throw new Error(`Unsupported value type: ${typeof val}`);
+      }
+      return builder.build();
+    });
+    const naFill = create(NAFillSchema, {
+      input: input,
+      cols: cols || [],
+      values: literalValues
+    });
+    this.relation.relType = { case: "fillNa", value: naFill };
+    return this;
+  }
+
+  withNADrop(cols: string[] | undefined, minNonNulls: number | undefined, input?: Relation) {
+    const naDrop = create(NADropSchema, {
+      input: input,
+      cols: cols || [],
+      minNonNulls: minNonNulls
+    });
+    this.relation.relType = { case: "dropNa", value: naDrop };
+    return this;
+  }
+
+  withNAReplace(cols: string[] | undefined, replacementMap: { [key: string]: number | string | boolean | null }, input?: Relation) {
+    const replacements = Object.entries(replacementMap).map(([oldVal, newVal]) => {
+      // Create old value literal - NA operations only support bool, long, double, string, null types
+      const oldBuilder = new LiteralBuilder();
+      if (oldVal === 'null') {
+        oldBuilder.withNull(DataTypes.NullType);
+      } else {
+        // Try to parse the old value
+        const parsed = parseValueForReplace(oldVal);
+        if (typeof parsed === 'number') {
+          oldBuilder.withDouble(parsed);
+        } else if (typeof parsed === 'string') {
+          oldBuilder.withString(parsed);
+        } else if (typeof parsed === 'boolean') {
+          oldBuilder.withBoolean(parsed);
+        }
+      }
+      
+      // Create new value literal
+      const newBuilder = new LiteralBuilder();
+      if (newVal === null) {
+        newBuilder.withNull(DataTypes.NullType);
+      } else if (typeof newVal === 'number') {
+        newBuilder.withDouble(newVal);
+      } else if (typeof newVal === 'string') {
+        newBuilder.withString(newVal);
+      } else if (typeof newVal === 'boolean') {
+        newBuilder.withBoolean(newVal);
+      } else {
+        throw new Error(`Unsupported new value type: ${typeof newVal}`);
+      }
+      
+      return create(NAReplace_ReplacementSchema, {
+        oldValue: oldBuilder.build(),
+        newValue: newBuilder.build()
+      });
+    });
+    
+    const naReplace = create(NAReplaceSchema, {
+      input: input,
+      cols: cols || [],
+      replacements: replacements
+    });
+    this.relation.relType = { case: "replace", value: naReplace };
+    return this;
+  }
+
   build(): Relation {
     return this.relation;
   }
+}
+
+function parseValueForReplace(val: string): number | boolean | string {
+  // Try to parse as boolean first (most strict)
+  if (val === 'true') return true;
+  if (val === 'false') return false;
+  
+  // Try to parse as number
+  const trimmed = val.trim();
+  if (trimmed !== '') {
+    const num = Number(trimmed);
+    // Check if it's a valid number and not NaN
+    if (!isNaN(num) && isFinite(num)) {
+      // Validate numeric string format using regex
+      // Matches: integers (1, -1), decimals (1.0, .5), scientific notation (1e10, 1.5e-3)
+      // Pattern breakdown: [+-]? = optional sign
+      //                    (\d+\.?\d*|\.\d+) = number with optional decimal (123, 1.5, .5)
+      //                    ([eE][+-]?\d+)? = optional scientific notation (e10, E-3)
+      const isValidNumber = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(trimmed);
+      if (isValidNumber) {
+        return num;
+      }
+    }
+  }
+  
+  // Keep as string
+  return val;
 }
