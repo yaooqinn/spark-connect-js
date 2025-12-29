@@ -96,7 +96,7 @@ test("join - left semi join", async () => {
   const rows = await df1.join(df2, joinExpr, "semi").collect();
   expect(rows.length).toBe(1);
   // Semi join only returns columns from left side
-  expect(rows[0].length()).toBe(1);
+  expect(rows[0].length).toBe(1);
 });
 
 test("join - left anti join", async () => {
