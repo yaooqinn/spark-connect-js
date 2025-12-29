@@ -33,6 +33,7 @@ import { Column } from './Column';
 import { expr } from './functions';
 import { RelationalGroupedDataset } from './RelationalGroupedDataset';
 import { GroupType } from './proto/aggregate/GroupType';
+import { CommonInlineUserDefinedFunction } from '../../../../gen/spark/connect/expressions_pb';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -1042,6 +1043,57 @@ export class DataFrame {
       const exprs = [numPartitionsOrExpr, ...partitionExprs].map(col => toSortCol(col).expr);
       return this.toNewDataFrame(b => b.withRepartitionByExpression(exprs, undefined, this.plan.relation));
     }
+  }
+
+  /**
+   * Apply a function to each partition of the DataFrame.
+   * 
+   * This method applies a user-defined function to each partition of the DataFrame.
+   * The function should take an iterator of rows and return an iterator of rows.
+   * 
+   * Note: JavaScript function serialization is challenging. This implementation uses
+   * a Python UDF bridge approach where the function must be pre-serialized Python code.
+   * 
+   * @param func CommonInlineUserDefinedFunction containing the serialized function
+   * @returns A new DataFrame with the function applied to each partition
+   * @group typedrel
+   */
+  mapPartitions(func: CommonInlineUserDefinedFunction): DataFrame {
+    return this.toNewDataFrame(b => b.withMapPartitions(func, this.plan.relation!));
+  }
+
+  /**
+   * Co-group two DataFrames and apply a function to each group.
+   * 
+   * This method groups two DataFrames by the specified columns and applies a user-defined
+   * function to each group pair. The function receives the group key and iterators for
+   * rows from both DataFrames.
+   * 
+   * Note: JavaScript function serialization is challenging. This implementation uses
+   * a Python UDF bridge approach where the function must be pre-serialized Python code.
+   * 
+   * @param other The other DataFrame to co-group with
+   * @param groupingCols Columns to group by
+   * @param func CommonInlineUserDefinedFunction containing the serialized function
+   * @returns A new DataFrame with the function applied to each co-group
+   * @group typedrel
+   */
+  coGroupMap(
+    other: DataFrame,
+    groupingCols: Column[],
+    func: CommonInlineUserDefinedFunction
+  ): DataFrame {
+    const inputGroupingExprs = groupingCols.map(col => col.expr);
+    const otherGroupingExprs = groupingCols.map(col => col.expr);
+    return this.toNewDataFrame(b =>
+      b.withCoGroupMap(
+        this.plan.relation!,
+        inputGroupingExprs,
+        other.plan.relation!,
+        otherGroupingExprs,
+        func
+      )
+    );
   }
 
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {

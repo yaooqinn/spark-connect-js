@@ -22,6 +22,7 @@ import { GroupType } from "./proto/aggregate/GroupType";
 import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+import { CommonInlineUserDefinedFunction } from "../../../../gen/spark/connect/expressions_pb";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
   avg: f.avg,
@@ -195,5 +196,29 @@ export class RelationalGroupedDataset {
       pivotProto,
       this.groupingSets
     );
+  }
+
+  /**
+   * Apply a function to each group of the DataFrame.
+   * 
+   * This method applies a user-defined function to each group. The function receives
+   * the group key and an iterator of rows for that group, and should return an iterator
+   * of rows.
+   * 
+   * Note: JavaScript function serialization is challenging. This implementation uses
+   * a Python UDF bridge approach where the function must be pre-serialized Python code.
+   * 
+   * @param func CommonInlineUserDefinedFunction containing the serialized function
+   * @returns A new DataFrame with the function applied to each group
+   * @group typedrel
+   */
+  groupMap(func: CommonInlineUserDefinedFunction): DataFrame {
+    const groupingExprs = typeof this.groupingExprs[0] === "string"
+      ? this.groupingExprs.map((c) => this.df.col(c as string).expr)
+      : this.groupingExprs.map((c) => (c as Column).expr);
+
+    return this.df.spark.relationBuilderToDF((rb) => {
+      return rb.withGroupMap(groupingExprs, func, this.df.plan.relation!);
+    });
   }
 }
