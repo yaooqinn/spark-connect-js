@@ -129,7 +129,8 @@ def join_groups(key, left_rows, right_rows):
       .build();
     
     // Create the coGroupMap result
-    const result = df1.coGroupMap(df2, [col('id')], udf);
+    // Group both DataFrames by their respective 'id' columns
+    const result = df1.coGroupMap(df2, [col('id')], [col('id')], udf);
     
     // Verify that the plan contains coGroupMap relation
     expect(result.plan.relation).toBeDefined();

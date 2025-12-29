@@ -1073,18 +1073,20 @@ export class DataFrame {
    * a Python UDF bridge approach where the function must be pre-serialized Python code.
    * 
    * @param other The other DataFrame to co-group with
-   * @param groupingCols Columns to group by
+   * @param thisGroupingCols Columns to group by for this DataFrame
+   * @param otherGroupingCols Columns to group by for the other DataFrame
    * @param func CommonInlineUserDefinedFunction containing the serialized function
    * @returns A new DataFrame with the function applied to each co-group
    * @group typedrel
    */
   coGroupMap(
     other: DataFrame,
-    groupingCols: Column[],
+    thisGroupingCols: Column[],
+    otherGroupingCols: Column[],
     func: CommonInlineUserDefinedFunction
   ): DataFrame {
-    const inputGroupingExprs = groupingCols.map(col => col.expr);
-    const otherGroupingExprs = groupingCols.map(col => col.expr);
+    const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
+    const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
     return this.toNewDataFrame(b =>
       b.withCoGroupMap(
         this.plan.relation!,
