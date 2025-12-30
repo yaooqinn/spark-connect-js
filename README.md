@@ -8,6 +8,12 @@ An <b><red>experimental</red></b> client for [Spark Connect](https://spark.apach
 - [ ] Support Retry / Reattachable execution
 - [ ] Support Checkpoint for DataFrame
 - [ ] Support DataFrameNaFunctions
+- [ ] Support User-Defined Functions (UDF)
+  - [ ] UDF registration via `spark.udf.register()`
+  - [ ] Inline UDFs via `udf()` function
+  - [x] Java UDF registration via `spark.udf.registerJava()`
+  - [ ] UDAF (User-Defined Aggregate Functions)
+  - [ ] UDTF (User-Defined Table Functions)
 - [x] Support DataFrame Join 
 - [ ] Support UserDefinedType
   - [ ] UserDefinedType declaration

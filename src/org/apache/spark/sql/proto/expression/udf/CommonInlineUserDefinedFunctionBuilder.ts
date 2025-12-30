@@ -44,7 +44,7 @@ export class CommonInlineUserDefinedFunctionBuilder {
     return this;
   }
 
-  withJavaUDF(className: string, outputType: DataType, aggregate: boolean): CommonInlineUserDefinedFunctionBuilder {
+  withJavaUDF(className: string, outputType: DataType | undefined, aggregate: boolean): CommonInlineUserDefinedFunctionBuilder {
     this.udf.function = { case: "javaUdf", value: javaUDF(className, outputType, aggregate) };
     return this;
   }

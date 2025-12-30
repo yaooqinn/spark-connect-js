@@ -17,10 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Create checkpoint directory
-mkdir -p /tmp/spark-checkpoint
-
-/opt/spark/sbin/start-connect-server.sh \
-  --conf spark.checkpoint.dir=/tmp/spark-checkpoint
-
-tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out
+cd "$(dirname "$0")"
+sbt package
+cp target/scala-2.13/spark-js-test-udfs_2.13-1.0.jar ../spark-js-test-udfs.jar

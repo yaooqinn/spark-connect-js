@@ -17,9 +17,11 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Command, CommandSchema, SqlCommandSchema, CheckpointCommandSchema, WriteOperationV2, WriteOperation } from "../../../../../gen/spark/connect/commands_pb";
+import { CommonInlineUserDefinedFunction } from "../../../../../gen/spark/connect/expressions_pb";
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 import { StorageLevel } from "../../storage/StorageLevel";
 import { createStorageLevelPB } from "./ProtoUtils";
+import { CommonInlineUserDefinedFunctionBuilder } from "./expression/udf/CommonInlineUserDefinedFunctionBuilder";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -27,6 +29,21 @@ export class CommandBuilder {
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
     this.command.commandType = { case: "sqlCommand", value: sqlCmd };
+    return this;
+  }
+
+  withRegisterFunction(udf: CommonInlineUserDefinedFunction) {
+    this.command.commandType = { case: "registerFunction", value: udf };
+    return this;
+  }
+
+  withRegisterFunctionBuilder(
+      functionName: string,
+      deterministic: boolean,
+      f: (b: CommonInlineUserDefinedFunctionBuilder) => void) {
+    const builder = new CommonInlineUserDefinedFunctionBuilder(functionName, deterministic);
+    f(builder);
+    this.command.commandType = { case: "registerFunction", value: builder.build() };
     return this;
   }
 

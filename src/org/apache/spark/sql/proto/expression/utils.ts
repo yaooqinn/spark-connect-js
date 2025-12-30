@@ -49,11 +49,11 @@ export function scalarScalaUdf(
 
 export function javaUDF(
     className: string,
-    outputType: DataType,
+    outputType: DataType | undefined,
     aggregate: boolean): JavaUDF {
   return create(JavaUDFSchema, {
       className: className,
-      outputType: DataTypes.toProtoType(outputType),
+      outputType: outputType ? DataTypes.toProtoType(outputType) : undefined,
       aggregate: aggregate
   });
 }
