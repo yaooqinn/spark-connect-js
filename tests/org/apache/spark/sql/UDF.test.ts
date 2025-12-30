@@ -36,7 +36,7 @@ describe('Java UDF Tests', () => {
     const spark = await sharedSpark;
     
     // Register StringLengthTest Java UDF without specifying return type (let server decide)
-    await spark.udf.registerJava('strLenSumAuto', 'test.org.apache.spark.sql.JavaUDFSuite$StringLengthTest');
+    await spark.udf.registerJava('strLenSumAuto', 'test.org.apache.spark.sql.JavaUDFSuite.StringLengthTest');
     
     // Test that the UDF was registered successfully by using it in SQL
     const df = await spark.sql("SELECT strLenSumAuto('test', 'case') as result");
