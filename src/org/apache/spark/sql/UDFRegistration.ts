@@ -18,7 +18,6 @@
 import { SparkSession } from './SparkSession';
 import { DataType } from './types/data_types';
 import { CommandBuilder } from './proto/CommandBuilder';
-import { DataTypes } from './types/DataTypes';
 
 /**
  * Functions for registering user-defined functions. Use `SparkSession.udf` to access this.
@@ -47,12 +46,7 @@ export class UDFRegistration {
     // Register the UDF via command builder
     const cmd = new CommandBuilder()
       .withRegisterFunctionBuilder(name, true, (builder) => {
-        if (returnType) {
-          builder.withJavaUDF(className, returnType, false);
-        } else {
-          // Let server decide the return type by not specifying it explicitly
-          builder.withJavaUDF(className, DataTypes.NullType, false);
-        }
+        builder.withJavaUDF(className, returnType, false);
       })
       .build();
     await this.spark.execute(cmd);
