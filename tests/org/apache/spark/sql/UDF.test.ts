@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { sharedSpark, timeoutOrSatisfied } from '../../../../helpers';
+import { sharedSpark } from '../../../../helpers';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
 
 describe('Java UDF Tests', () => {
@@ -26,14 +26,10 @@ describe('Java UDF Tests', () => {
     await spark.udf.registerJava('bytesToString', 'org.apache.spark.api.python.BytesToString', DataTypes.StringType);
     
     // Test that the UDF was registered successfully by using it in SQL
-    await timeoutOrSatisfied(
-      spark.sql("SELECT bytesToString(cast('test' as binary)) as result").then(df => {
-        return df.collect().then(rows => {
-          expect(rows.length).toBe(1);
-          expect(rows[0].getString(0)).toBe('test');
-        });
-      })
-    );
+    const df = await spark.sql("SELECT bytesToString(cast('test' as binary)) as result");
+    const rows = await df.collect();
+    expect(rows.length).toBe(1);
+    expect(rows[0].getString(0)).toBe('test');
   });
 
   test('register and use Java UDF without return type', async () => {
@@ -43,13 +39,9 @@ describe('Java UDF Tests', () => {
     await spark.udf.registerJava('bytesToStringAuto', 'org.apache.spark.api.python.BytesToString');
     
     // Test that the UDF was registered successfully by using it in SQL
-    await timeoutOrSatisfied(
-      spark.sql("SELECT bytesToStringAuto(cast('hello' as binary)) as result").then(df => {
-        return df.collect().then(rows => {
-          expect(rows.length).toBe(1);
-          expect(rows[0].getString(0)).toBe('hello');
-        });
-      })
-    );
+    const df = await spark.sql("SELECT bytesToStringAuto(cast('hello' as binary)) as result");
+    const rows = await df.collect();
+    expect(rows.length).toBe(1);
+    expect(rows[0].getString(0)).toBe('hello');
   });
 });
