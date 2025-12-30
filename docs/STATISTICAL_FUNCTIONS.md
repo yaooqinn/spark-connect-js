@@ -76,7 +76,7 @@ await freqDfWithSupport.show();
 Returns a stratified sample without replacement based on the fraction given on each stratum.
 
 ```javascript
-import { col } from 'spark-connect';
+import { col } from 'spark.js';
 
 const df = await spark.sql(`
   SELECT * FROM values 
