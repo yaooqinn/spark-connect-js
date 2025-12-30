@@ -1044,6 +1044,97 @@ export class DataFrame {
     }
   }
 
+  /**
+   * Apply a function to each partition of the DataFrame.
+   * 
+   * This method applies a user-defined function to each partition of the DataFrame.
+   * The function should take an iterator of rows and return an iterator of rows.
+   * 
+   * @param pythonCode Python code as a string defining the partition processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.11')
+   * @returns A new DataFrame with the function applied to each partition
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def process_partition(partition):
+   *     for row in partition:
+   *         yield (row.id * 2, row.value)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('id', DataTypes.IntegerType, false),
+   *   DataTypes.createStructField('value', DataTypes.StringType, false),
+   * ]);
+   * const result = df.mapPartitions(pythonCode, schema);
+   * ```
+   */
+  mapPartitions(
+    pythonCode: string,
+    outputSchema: StructType,
+    pythonVersion: string = '3.11'
+  ): DataFrame {
+    return this.toNewDataFrame(b => 
+      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation!, pythonVersion)
+    );
+  }
+
+  /**
+   * Co-group two DataFrames and apply a function to each group.
+   * 
+   * This method groups two DataFrames by the specified columns and applies a user-defined
+   * function to each group pair. The function receives the group key and iterators for
+   * rows from both DataFrames.
+   * 
+   * @param other The other DataFrame to co-group with
+   * @param thisGroupingCols Columns to group by for this DataFrame
+   * @param otherGroupingCols Columns to group by for the other DataFrame
+   * @param pythonCode Python code as a string defining the co-group processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.11')
+   * @returns A new DataFrame with the function applied to each co-group
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def cogroup_func(key, left_rows, right_rows):
+   *     for l in left_rows:
+   *         for r in right_rows:
+   *             yield (key.id, l.value, r.value)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('id', DataTypes.IntegerType, false),
+   *   DataTypes.createStructField('left_value', DataTypes.StringType, false),
+   *   DataTypes.createStructField('right_value', DataTypes.StringType, false),
+   * ]);
+   * const result = df1.coGroupMap(df2, [col('id')], [col('id')], pythonCode, schema);
+   * ```
+   */
+  coGroupMap(
+    other: DataFrame,
+    thisGroupingCols: Column[],
+    otherGroupingCols: Column[],
+    pythonCode: string,
+    outputSchema: StructType,
+    pythonVersion: string = '3.11'
+  ): DataFrame {
+    const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
+    const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
+    return this.toNewDataFrame(b =>
+      b.withCoGroupMap(
+        this.plan.relation!,
+        inputGroupingExprs,
+        other.plan.relation!,
+        otherGroupingExprs,
+        pythonCode,
+        outputSchema,
+        pythonVersion
+      )
+    );
+  }
+
   private async collectResult(plan: LogicalPlan = this.plan): Promise<SparkResult> {
     return this.spark.client.execute(plan.plan).then(resps => {
       return new SparkResult(resps[Symbol.iterator]());

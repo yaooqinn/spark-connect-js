@@ -22,6 +22,7 @@ import { GroupType } from "./proto/aggregate/GroupType";
 import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
+import { StructType } from "./types/StructType";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
   avg: f.avg,
@@ -195,5 +196,46 @@ export class RelationalGroupedDataset {
       pivotProto,
       this.groupingSets
     );
+  }
+
+  /**
+   * Apply a function to each group of the DataFrame.
+   * 
+   * This method applies a user-defined function to each group. The function receives
+   * the group key and an iterator of rows for that group, and should return an iterator
+   * of rows.
+   * 
+   * @param pythonCode Python code as a string defining the group processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.11')
+   * @returns A new DataFrame with the function applied to each group
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def group_func(key, rows):
+   *     total = sum(row.value for row in rows)
+   *     yield (key.category, total)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('category', DataTypes.StringType, false),
+   *   DataTypes.createStructField('total', DataTypes.IntegerType, false),
+   * ]);
+   * const result = df.groupBy('category').groupMap(pythonCode, schema);
+   * ```
+   */
+  groupMap(
+    pythonCode: string,
+    outputSchema: StructType,
+    pythonVersion: string = '3.11'
+  ): DataFrame {
+    const groupingExprs = typeof this.groupingExprs[0] === "string"
+      ? this.groupingExprs.map((c) => this.df.col(c as string).expr)
+      : this.groupingExprs.map((c) => (c as Column).expr);
+
+    return this.df.spark.relationBuilderToDF((rb) => {
+      return rb.withGroupMap(groupingExprs, pythonCode, outputSchema, this.df.plan.relation!, pythonVersion);
+    });
   }
 }
