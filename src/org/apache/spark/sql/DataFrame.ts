@@ -33,7 +33,6 @@ import { Column } from './Column';
 import { expr } from './functions';
 import { RelationalGroupedDataset } from './RelationalGroupedDataset';
 import { GroupType } from './proto/aggregate/GroupType';
-import { CommonInlineUserDefinedFunction } from '../../../../gen/spark/connect/expressions_pb';
 import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 
 export class DataFrame {
@@ -1072,46 +1071,20 @@ export class DataFrame {
    * const result = df.mapPartitions(pythonCode, schema);
    * ```
    */
-  mapPartitions(pythonCode: string, outputSchema: StructType, pythonVersion?: string): DataFrame;
-  /**
-   * Apply a function to each partition of the DataFrame.
-   * 
-   * This method applies a user-defined function to each partition of the DataFrame.
-   * The function should take an iterator of rows and return an iterator of rows.
-   * 
-   * Note: JavaScript function serialization is challenging. This implementation uses
-   * a Python UDF bridge approach where the function must be pre-serialized Python code.
-   * 
-   * @param func CommonInlineUserDefinedFunction containing the serialized function
-   * @returns A new DataFrame with the function applied to each partition
-   * @group typedrel
-   */
-  mapPartitions(func: CommonInlineUserDefinedFunction): DataFrame;
   mapPartitions(
-    funcOrCode: CommonInlineUserDefinedFunction | string,
-    outputSchema?: StructType,
+    pythonCode: string,
+    outputSchema: StructType,
     pythonVersion: string = '3.8'
   ): DataFrame {
-    let func: CommonInlineUserDefinedFunction;
-    
-    if (typeof funcOrCode === 'string') {
-      // User-friendly API: accept Python code string and schema
-      if (!outputSchema) {
-        throw new Error('outputSchema is required when providing Python code as a string');
-      }
-      func = new CommonInlineUserDefinedFunctionBuilder('map_partition_udf', true)
-        .withPythonUDF(
-          outputSchema,
-          200, // MAP_ITER eval type for mapPartitions
-          new TextEncoder().encode(funcOrCode),
-          pythonVersion,
-          []
-        )
-        .build();
-    } else {
-      // Advanced API: accept pre-built CommonInlineUserDefinedFunction
-      func = funcOrCode;
-    }
+    const func = new CommonInlineUserDefinedFunctionBuilder('map_partition_udf', true)
+      .withPythonUDF(
+        outputSchema,
+        200, // MAP_ITER eval type for mapPartitions
+        new TextEncoder().encode(pythonCode),
+        pythonVersion,
+        []
+      )
+      .build();
     
     return this.toNewDataFrame(b => b.withMapPartitions(func, this.plan.relation!));
   }
@@ -1154,59 +1127,17 @@ export class DataFrame {
     otherGroupingCols: Column[],
     pythonCode: string,
     outputSchema: StructType,
-    pythonVersion?: string
-  ): DataFrame;
-  /**
-   * Co-group two DataFrames and apply a function to each group.
-   * 
-   * This method groups two DataFrames by the specified columns and applies a user-defined
-   * function to each group pair. The function receives the group key and iterators for
-   * rows from both DataFrames.
-   * 
-   * Note: JavaScript function serialization is challenging. This implementation uses
-   * a Python UDF bridge approach where the function must be pre-serialized Python code.
-   * 
-   * @param other The other DataFrame to co-group with
-   * @param thisGroupingCols Columns to group by for this DataFrame
-   * @param otherGroupingCols Columns to group by for the other DataFrame
-   * @param func CommonInlineUserDefinedFunction containing the serialized function
-   * @returns A new DataFrame with the function applied to each co-group
-   * @group typedrel
-   */
-  coGroupMap(
-    other: DataFrame,
-    thisGroupingCols: Column[],
-    otherGroupingCols: Column[],
-    func: CommonInlineUserDefinedFunction
-  ): DataFrame;
-  coGroupMap(
-    other: DataFrame,
-    thisGroupingCols: Column[],
-    otherGroupingCols: Column[],
-    funcOrCode: CommonInlineUserDefinedFunction | string,
-    outputSchema?: StructType,
     pythonVersion: string = '3.8'
   ): DataFrame {
-    let func: CommonInlineUserDefinedFunction;
-    
-    if (typeof funcOrCode === 'string') {
-      // User-friendly API: accept Python code string and schema
-      if (!outputSchema) {
-        throw new Error('outputSchema is required when providing Python code as a string');
-      }
-      func = new CommonInlineUserDefinedFunctionBuilder('cogroup_map_udf', true)
-        .withPythonUDF(
-          outputSchema,
-          200, // MAP_ITER eval type for coGroupMap
-          new TextEncoder().encode(funcOrCode),
-          pythonVersion,
-          []
-        )
-        .build();
-    } else {
-      // Advanced API: accept pre-built CommonInlineUserDefinedFunction
-      func = funcOrCode;
-    }
+    const func = new CommonInlineUserDefinedFunctionBuilder('cogroup_map_udf', true)
+      .withPythonUDF(
+        outputSchema,
+        200, // MAP_ITER eval type for coGroupMap
+        new TextEncoder().encode(pythonCode),
+        pythonVersion,
+        []
+      )
+      .build();
     
     const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
     const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
