@@ -20,6 +20,8 @@
 # Create checkpoint directory
 mkdir -p /tmp/spark-checkpoint
 
-/opt/spark/sbin/start-connect-server.sh --conf spark.checkpoint.dir=/tmp/spark-checkpoint
+/opt/spark/sbin/start-connect-server.sh \
+  --conf spark.checkpoint.dir=/tmp/spark-checkpoint \
+  --packages org.apache.spark:spark-sql_2.13-tests:4.1.0
 
 tail -f /opt/spark/logs/spark-root-org.apache.spark.sql.connect.service.SparkConnectServer-1-localhost.out

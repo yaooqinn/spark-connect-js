@@ -22,26 +22,26 @@ describe('Java UDF Tests', () => {
   test('register and use Java UDF with return type', async () => {
     const spark = await sharedSpark;
     
-    // Register BytesToString Java UDF - converts byte array to String
-    await spark.udf.registerJava('bytesToString', 'org.apache.spark.api.python.BytesToString', DataTypes.StringType);
+    // Register StringLengthTest Java UDF - calculates sum of lengths of two strings
+    await spark.udf.registerJava('strLenSum', 'test.org.apache.spark.sql.JavaUDFSuite$StringLengthTest', DataTypes.IntegerType);
     
     // Test that the UDF was registered successfully by using it in SQL
-    const df = await spark.sql("SELECT bytesToString(cast('test' as binary)) as result");
+    const df = await spark.sql("SELECT strLenSum('hello', 'world') as result");
     const rows = await df.collect();
     expect(rows.length).toBe(1);
-    expect(rows[0].getString(0)).toBe('test');
+    expect(rows[0].getInt(0)).toBe(10); // 5 + 5 = 10
   });
 
   test('register and use Java UDF without return type', async () => {
     const spark = await sharedSpark;
     
-    // Register BytesToString Java UDF without specifying return type (let server decide)
-    await spark.udf.registerJava('bytesToStringAuto', 'org.apache.spark.api.python.BytesToString');
+    // Register StringLengthTest Java UDF without specifying return type (let server decide)
+    await spark.udf.registerJava('strLenSumAuto', 'test.org.apache.spark.sql.JavaUDFSuite$StringLengthTest');
     
     // Test that the UDF was registered successfully by using it in SQL
-    const df = await spark.sql("SELECT bytesToStringAuto(cast('hello' as binary)) as result");
+    const df = await spark.sql("SELECT strLenSumAuto('test', 'case') as result");
     const rows = await df.collect();
     expect(rows.length).toBe(1);
-    expect(rows[0].getString(0)).toBe('hello');
+    expect(rows[0].getInt(0)).toBe(8); // 4 + 4 = 8
   });
 });
