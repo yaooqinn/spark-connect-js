@@ -51,8 +51,8 @@ export class UDFRegistration {
     if (returnType) {
       udfBuilder.withJavaUDF(className, returnType, false);
     } else {
-      // Let server decide the return type
-      udfBuilder.withJavaUDF(className, DataTypes.NullType, false);
+      // Let server decide the return type by not specifying it explicitly
+      udfBuilder.withJavaUDF(className, undefined, false);
     }
     
     const udf = udfBuilder.build();
