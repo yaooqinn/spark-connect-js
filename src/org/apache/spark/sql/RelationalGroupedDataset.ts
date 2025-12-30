@@ -23,6 +23,8 @@ import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
 import { CommonInlineUserDefinedFunction } from "../../../../gen/spark/connect/expressions_pb";
+import { CommonInlineUserDefinedFunctionBuilder } from "./proto/expression/udf/CommonInlineUserDefinedFunctionBuilder";
+import { StructType } from "./types/StructType";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
   avg: f.avg,
@@ -205,6 +207,34 @@ export class RelationalGroupedDataset {
    * the group key and an iterator of rows for that group, and should return an iterator
    * of rows.
    * 
+   * @param pythonCode Python code as a string defining the group processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.8')
+   * @returns A new DataFrame with the function applied to each group
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def group_func(key, rows):
+   *     total = sum(row.value for row in rows)
+   *     yield (key.category, total)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('category', DataTypes.StringType, false),
+   *   DataTypes.createStructField('total', DataTypes.IntegerType, false),
+   * ]);
+   * const result = df.groupBy('category').groupMap(pythonCode, schema);
+   * ```
+   */
+  groupMap(pythonCode: string, outputSchema: StructType, pythonVersion?: string): DataFrame;
+  /**
+   * Apply a function to each group of the DataFrame.
+   * 
+   * This method applies a user-defined function to each group. The function receives
+   * the group key and an iterator of rows for that group, and should return an iterator
+   * of rows.
+   * 
    * Note: JavaScript function serialization is challenging. This implementation uses
    * a Python UDF bridge approach where the function must be pre-serialized Python code.
    * 
@@ -212,7 +242,33 @@ export class RelationalGroupedDataset {
    * @returns A new DataFrame with the function applied to each group
    * @group typedrel
    */
-  groupMap(func: CommonInlineUserDefinedFunction): DataFrame {
+  groupMap(func: CommonInlineUserDefinedFunction): DataFrame;
+  groupMap(
+    funcOrCode: CommonInlineUserDefinedFunction | string,
+    outputSchema?: StructType,
+    pythonVersion: string = '3.8'
+  ): DataFrame {
+    let func: CommonInlineUserDefinedFunction;
+    
+    if (typeof funcOrCode === 'string') {
+      // User-friendly API: accept Python code string and schema
+      if (!outputSchema) {
+        throw new Error('outputSchema is required when providing Python code as a string');
+      }
+      func = new CommonInlineUserDefinedFunctionBuilder('group_map_udf', true)
+        .withPythonUDF(
+          outputSchema,
+          200, // MAP_ITER eval type for groupMap
+          new TextEncoder().encode(funcOrCode),
+          pythonVersion,
+          []
+        )
+        .build();
+    } else {
+      // Advanced API: accept pre-built CommonInlineUserDefinedFunction
+      func = funcOrCode;
+    }
+    
     const groupingExprs = typeof this.groupingExprs[0] === "string"
       ? this.groupingExprs.map((c) => this.df.col(c as string).expr)
       : this.groupingExprs.map((c) => (c as Column).expr);

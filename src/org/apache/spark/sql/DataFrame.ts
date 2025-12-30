@@ -34,6 +34,7 @@ import { expr } from './functions';
 import { RelationalGroupedDataset } from './RelationalGroupedDataset';
 import { GroupType } from './proto/aggregate/GroupType';
 import { CommonInlineUserDefinedFunction } from '../../../../gen/spark/connect/expressions_pb';
+import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -1051,6 +1052,33 @@ export class DataFrame {
    * This method applies a user-defined function to each partition of the DataFrame.
    * The function should take an iterator of rows and return an iterator of rows.
    * 
+   * @param pythonCode Python code as a string defining the partition processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.8')
+   * @returns A new DataFrame with the function applied to each partition
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def process_partition(partition):
+   *     for row in partition:
+   *         yield (row.id * 2, row.value)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('id', DataTypes.IntegerType, false),
+   *   DataTypes.createStructField('value', DataTypes.StringType, false),
+   * ]);
+   * const result = df.mapPartitions(pythonCode, schema);
+   * ```
+   */
+  mapPartitions(pythonCode: string, outputSchema: StructType, pythonVersion?: string): DataFrame;
+  /**
+   * Apply a function to each partition of the DataFrame.
+   * 
+   * This method applies a user-defined function to each partition of the DataFrame.
+   * The function should take an iterator of rows and return an iterator of rows.
+   * 
    * Note: JavaScript function serialization is challenging. This implementation uses
    * a Python UDF bridge approach where the function must be pre-serialized Python code.
    * 
@@ -1058,10 +1086,76 @@ export class DataFrame {
    * @returns A new DataFrame with the function applied to each partition
    * @group typedrel
    */
-  mapPartitions(func: CommonInlineUserDefinedFunction): DataFrame {
+  mapPartitions(func: CommonInlineUserDefinedFunction): DataFrame;
+  mapPartitions(
+    funcOrCode: CommonInlineUserDefinedFunction | string,
+    outputSchema?: StructType,
+    pythonVersion: string = '3.8'
+  ): DataFrame {
+    let func: CommonInlineUserDefinedFunction;
+    
+    if (typeof funcOrCode === 'string') {
+      // User-friendly API: accept Python code string and schema
+      if (!outputSchema) {
+        throw new Error('outputSchema is required when providing Python code as a string');
+      }
+      func = new CommonInlineUserDefinedFunctionBuilder('map_partition_udf', true)
+        .withPythonUDF(
+          outputSchema,
+          200, // MAP_ITER eval type for mapPartitions
+          new TextEncoder().encode(funcOrCode),
+          pythonVersion,
+          []
+        )
+        .build();
+    } else {
+      // Advanced API: accept pre-built CommonInlineUserDefinedFunction
+      func = funcOrCode;
+    }
+    
     return this.toNewDataFrame(b => b.withMapPartitions(func, this.plan.relation!));
   }
 
+  /**
+   * Co-group two DataFrames and apply a function to each group.
+   * 
+   * This method groups two DataFrames by the specified columns and applies a user-defined
+   * function to each group pair. The function receives the group key and iterators for
+   * rows from both DataFrames.
+   * 
+   * @param other The other DataFrame to co-group with
+   * @param thisGroupingCols Columns to group by for this DataFrame
+   * @param otherGroupingCols Columns to group by for the other DataFrame
+   * @param pythonCode Python code as a string defining the co-group processing function
+   * @param outputSchema The output schema for the transformed DataFrame
+   * @param pythonVersion Python version (default: '3.8')
+   * @returns A new DataFrame with the function applied to each co-group
+   * @group typedrel
+   * 
+   * @example
+   * ```typescript
+   * const pythonCode = `
+   * def cogroup_func(key, left_rows, right_rows):
+   *     for l in left_rows:
+   *         for r in right_rows:
+   *             yield (key.id, l.value, r.value)
+   * `;
+   * const schema = DataTypes.createStructType([
+   *   DataTypes.createStructField('id', DataTypes.IntegerType, false),
+   *   DataTypes.createStructField('left_value', DataTypes.StringType, false),
+   *   DataTypes.createStructField('right_value', DataTypes.StringType, false),
+   * ]);
+   * const result = df1.coGroupMap(df2, [col('id')], [col('id')], pythonCode, schema);
+   * ```
+   */
+  coGroupMap(
+    other: DataFrame,
+    thisGroupingCols: Column[],
+    otherGroupingCols: Column[],
+    pythonCode: string,
+    outputSchema: StructType,
+    pythonVersion?: string
+  ): DataFrame;
   /**
    * Co-group two DataFrames and apply a function to each group.
    * 
@@ -1084,7 +1178,36 @@ export class DataFrame {
     thisGroupingCols: Column[],
     otherGroupingCols: Column[],
     func: CommonInlineUserDefinedFunction
+  ): DataFrame;
+  coGroupMap(
+    other: DataFrame,
+    thisGroupingCols: Column[],
+    otherGroupingCols: Column[],
+    funcOrCode: CommonInlineUserDefinedFunction | string,
+    outputSchema?: StructType,
+    pythonVersion: string = '3.8'
   ): DataFrame {
+    let func: CommonInlineUserDefinedFunction;
+    
+    if (typeof funcOrCode === 'string') {
+      // User-friendly API: accept Python code string and schema
+      if (!outputSchema) {
+        throw new Error('outputSchema is required when providing Python code as a string');
+      }
+      func = new CommonInlineUserDefinedFunctionBuilder('cogroup_map_udf', true)
+        .withPythonUDF(
+          outputSchema,
+          200, // MAP_ITER eval type for coGroupMap
+          new TextEncoder().encode(funcOrCode),
+          pythonVersion,
+          []
+        )
+        .build();
+    } else {
+      // Advanced API: accept pre-built CommonInlineUserDefinedFunction
+      func = funcOrCode;
+    }
+    
     const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
     const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
     return this.toNewDataFrame(b =>
