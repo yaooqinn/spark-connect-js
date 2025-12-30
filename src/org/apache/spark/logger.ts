@@ -15,12 +15,6 @@
  * limitations under the License.
  */
 
-import log4js from 'log4js';
-import fs from 'fs';
-import path from 'path';
-
-let logger: Logger;
-
 interface Logger {
   trace: (message?: any, ...optionalParams: any[]) => void;
   debug: (message?: any, ...optionalParams: any[]) => void;
@@ -30,46 +24,34 @@ interface Logger {
   fatal: (message?: any, ...optionalParams: any[]) => void;
 }
 
-const configFilePath = path.join(process.cwd(), 'log4js.json');
+class ConsoleLogger implements Logger {
+  private prefix = '[spark-connect]';
 
-const defaultConfig = {
-  appenders: {
-    stdout: { type: "stdout", layout: { type: "colored" } },
-    file: {
-      type: 'file',
-      filename: 'logs/tspark-connect',
-      pattern: '-yyyy-MM-dd.log',
-      alwaysIncludePattern: true,
-      layout: { type: "pattern", pattern: "%d{yyyy-MM-dd hh:mm:ss.SSS} [%p] %c - %m%n" }
-    }
-  },
-  categories: {
-    default: { appenders: ['stdout', 'file'], level: 'debug' }
+  trace(message?: any, ...optionalParams: any[]): void {
+    console.debug(this.prefix, '[TRACE]', message, ...optionalParams);
   }
-};
 
-const configureLogger = async () => {
-  if (fs.existsSync(configFilePath)) {
-    try {
-      const customConfig = await import(configFilePath);
-      log4js.configure(customConfig);
-      console.info('Log4js configured using the provided configuration file.');
-    } catch (error) {
-      console.error('Failed to load log4js configuration from file:', error);
-      log4js.configure(defaultConfig);
-      console.warn('Falling back to default Log4js configuration.');
-    }
-  } else {
-    log4js.configure(defaultConfig);
-    console.info('Using default Log4js configuration.');
+  debug(message?: any, ...optionalParams: any[]): void {
+    console.debug(this.prefix, '[DEBUG]', message, ...optionalParams);
   }
-};
 
-const initializeLogger = () => {
-  configureLogger();
-  logger = log4js.getLogger();
-};
+  info(message?: any, ...optionalParams: any[]): void {
+    console.info(this.prefix, '[INFO]', message, ...optionalParams);
+  }
 
-initializeLogger();
+  warn(message?: any, ...optionalParams: any[]): void {
+    console.warn(this.prefix, '[WARN]', message, ...optionalParams);
+  }
+
+  error(message?: any, ...optionalParams: any[]): void {
+    console.error(this.prefix, '[ERROR]', message, ...optionalParams);
+  }
+
+  fatal(message?: any, ...optionalParams: any[]): void {
+    console.error(this.prefix, '[FATAL]', message, ...optionalParams);
+  }
+}
+
+const logger = new ConsoleLogger();
 
 export { logger };

@@ -16,7 +16,7 @@
  */
 
 import { ClientBuilder, Configuration } from "./client_builder";
-import * as grpc from '@grpc/grpc-js';
+import * as grpcWeb from 'grpc-web';
 import * as b from '../../../../../gen/spark/connect/base_pb'; // proto import: "spark/connect/base.proto"
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import { logger } from '../../logger';
@@ -27,15 +27,19 @@ import { AnalyzePlanRequestBuilder } from "../proto/AnalyzePlanRequestBuilder";
 
 export class Client {
   conf_: Configuration;
-  client_: grpc.Client;
+  client_: grpcWeb.GrpcWebClientBase;
   session_id_: string;
   user_context_: b.UserContext;
   user_agent_: string = "spark-connect-js"; // TODO: What shall I set here?
-  metadata_: grpc.Metadata;
+  metadata_: Record<string, string>;
 
   constructor(conf: Configuration) {
     this.conf_ = conf;
-    this.client_ = this.conf_.new_client();
+    
+    this.client_ = new grpcWeb.GrpcWebClientBase({
+      format: 'binary'
+    });
+    
     this.session_id_ = this.conf_.get_session_id();
     this.user_context_ = this.conf_.get_user_context();
     this.metadata_ = this.conf_.get_metadata();
@@ -47,35 +51,53 @@ export class Client {
 
   close(): void {
     try {
-        this.client_.close();
+        // grpc-web clients don't need explicit closing
+        logger.debug("Client closed");
     } catch (e) {
         console.error("Failed to close the underlying grpc client", e);
     }
   }
 
   private api(method: string): string {
-    return `/spark.connect.SparkConnectService/${method}`;
+    const protocol = this.conf_.get_is_ssl_enabled() ? 'https' : 'http';
+    const host = `${protocol}://${this.conf_.get_host()}:${this.conf_.get_port()}`;
+    return `${host}/spark.connect.SparkConnectService/${method}`;
+  }
+
+  private createMetadata(): {[key: string]: string} {
+    const metadata: {[key: string]: string} = {};
+    for (const [key, value] of Object.entries(this.metadata_)) {
+      metadata[key] = value;
+    }
+    return metadata;
   }
 
   private runServiceCall<ReqType, RespType>(
       method: string,
       req: ReqType,
-      ser: (req: ReqType) => Buffer,
-      deser: (resp: Buffer) => RespType): Promise<RespType> {
-    logger.debug("Sending unnary request by", method, req);
+      ser: (req: ReqType) => Uint8Array,
+      deser: (resp: Uint8Array) => RespType): Promise<RespType> {
+    logger.debug("Sending unary request by", method, req);
     return new Promise((resolve, reject) => {
-      this.client_.makeUnaryRequest<ReqType, RespType>(
-        this.api(method),
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'unary',
+        function() {} as any,
+        function() {} as any,
         ser,
-        deser,
+        deser
+      );
+
+      this.client_.rpcCall(
+        this.api(method),
         req,
-        this.metadata_,
-        {}, // call options
-        (err: grpc.ServiceError | null, resp?: RespType) => {
+        this.createMetadata(),
+        methodDescriptor,
+        (err: grpcWeb.RpcError | null, resp?: RespType) => {
           if (err) {
-            const handledErrr = fromStatus(err);
-            logger.debug("Errored calling", method + ": ", handledErrr);
-            reject(handledErrr);
+            const handledErr = fromStatus(err);
+            logger.debug("Errored calling", method + ": ", handledErr);
+            reject(handledErr);
           } else if (resp) {
             logger.debug("Received response by", method + ": ", resp);
             resolve(resp);
@@ -85,48 +107,58 @@ export class Client {
             reject(new Error(msg));
           }
         }
-      )
+      );
     });
   }
 
   private runServerStreamCall<ReqType, RespType>(
       method: string,
       req: ReqType,
-      ser: (req: ReqType) => Buffer,
-      deser: (resp: Buffer) => RespType): Promise<RespType> {
+      ser: (req: ReqType) => Uint8Array,
+      deser: (resp: Uint8Array) => RespType): Promise<RespType> {
     logger.debug("Sending stream request by", method, req);
     return new Promise((resolve, reject) => {
-      this.client_.makeServerStreamRequest<ReqType, RespType>(
-        this.api(method),
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'server_streaming',
+        function() {} as any,
+        function() {} as any,
         ser,
-        deser,
+        deser
+      ) as grpcWeb.MethodDescriptor<ReqType, RespType>;
+
+      const stream = this.client_.serverStreaming<ReqType, RespType>(
+        this.api(method),
         req,
-        this.metadata_,
-        {}
-      ).on("data", (data: RespType) => {
-          logger.debug("Received data from", method, data);
-          resolve(data);
-        }
-      ).on("error", (err: any) => {
-          const handledErrr = fromStatus(err);
-          logger.error("Errored calling", method, handledErrr);
-          reject(handledErrr);
-        }
-      ).on("end", () => {
-          logger.debug("End of", method);
-        }
+        this.createMetadata(),
+        methodDescriptor
       );
+
+      stream.on('data', (data: RespType) => {
+        logger.debug("Received data from", method, data);
+        resolve(data);
+      });
+
+      stream.on('error', (err: grpcWeb.RpcError) => {
+        const handledErr = fromStatus(err);
+        logger.error("Errored calling", method, handledErr);
+        reject(handledErr);
+      });
+
+      stream.on('end', () => {
+        logger.debug("End of", method);
+      });
     });
   }
 
   private serializer<Desc extends DescMessage>(desc: Desc) {
     return (msg: MessageShape<Desc>) => {
-       return Buffer.from(toBinary(desc, msg));
+       return toBinary(desc, msg);
     }
   }
 
   private deserializer<Desc extends DescMessage>(desc: Desc) {
-    return (buf: Buffer) => {
+    return (buf: Uint8Array) => {
       return fromBinary(desc, buf);
     }
   }
@@ -172,30 +204,39 @@ export class Client {
 
     const method = "ExecutePlan";
     logger.debug("Sending stream request by", method, req.plan?.opType.value);
-    // TODO: Etract this into a helper function
+    
     return new Promise((resolve, reject) => {
-      const call = this.client_.makeServerStreamRequest<b.ExecutePlanRequest, b.ExecutePlanResponse>(
-        this.api(method),
+      const methodDescriptor = new grpcWeb.MethodDescriptor(
+        method,
+        'server_streaming',
+        function() {} as any,
+        function() {} as any,
         this.serializer(b.ExecutePlanRequestSchema),
-        this.deserializer(b.ExecutePlanResponseSchema),
+        this.deserializer(b.ExecutePlanResponseSchema)
+      ) as grpcWeb.MethodDescriptor<b.ExecutePlanRequest, b.ExecutePlanResponse>;
+
+      const stream = this.client_.serverStreaming<b.ExecutePlanRequest, b.ExecutePlanResponse>(
+        this.api(method),
         req,
-        this.metadata_,
-        {}
-      )
+        this.createMetadata(),
+        methodDescriptor
+      );
+
       const results: b.ExecutePlanResponse[] = [];
-      call.on("data", (data: b.ExecutePlanResponse) => {
+      
+      stream.on('data', (data: b.ExecutePlanResponse) => {
         results.push(data);
       });
       
-      call.on("error", (err: any) => {
+      stream.on('error', (err: grpcWeb.RpcError) => {
         const handledErr = fromStatus(err);
         logger.error("Errored calling", method + ":", handledErr);
         reject(handledErr);
       });
 
-      call.on("status", (status: grpc.StatusObject) => {
-        if (status.code !== grpc.status.OK) {
-          const handledErr = fromStatus(status);
+      stream.on('status', (status: grpcWeb.Status) => {
+        if (status.code !== grpcWeb.StatusCode.OK) {
+          const handledErr = fromStatus(status as any);
           logger.error("Status received by", method, handledErr);
           reject(handledErr);
         } else {
@@ -203,7 +244,7 @@ export class Client {
         }
       });
 
-      call.on("end", () => {
+      stream.on('end', () => {
         logger.debug(`End of`, method, req.plan?.opType.value, `Forwarding ${results.length} responses`);
         resolve(results)
       });

@@ -16,8 +16,6 @@
  */
 
 import { create } from '@bufbuild/protobuf';
-import * as grpc from '@grpc/grpc-js';
-import { ChannelCredentials, Interceptor } from '@grpc/grpc-js';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { UserContext, UserContextSchema } from '../../../../../gen/spark/connect/base_pb';
 import { Client } from './Client';
@@ -80,11 +78,8 @@ export class Configuration {
   private _port: number;
   private _token: string | null;
   private _is_ssl_enabled: boolean = false;
-  private _metadata: grpc.Metadata;
+  private _metadata: Record<string, string>;
   private _use_reattachable_execute: boolean;
-  private _interceptors: Interceptor[] = [
-    
-  ];
   private _session_id : string | null;
   private _max_message_size: number; 
   private _max_recursion_limit: number;
@@ -96,9 +91,8 @@ export class Configuration {
     port: number = 15002,
     token: string | null = null,
     is_ssl_enabled: boolean = false,
-    metadata: grpc.Metadata = new grpc.Metadata(),
+    metadata: Record<string, string> = {},
     use_reattachable_execute: boolean = true,
-    interceptors: Interceptor[] = [],
     session_id: string | null = null,
     max_message_size: number = 128 * 1024 * 1024,
     max_recursion_limit: number = 1024) {
@@ -110,7 +104,6 @@ export class Configuration {
     this._is_ssl_enabled = is_ssl_enabled;
     this._metadata = metadata;
     this._use_reattachable_execute = use_reattachable_execute;
-    this._interceptors = this._interceptors.concat(interceptors);
     this._session_id = session_id;
     this._max_message_size = max_message_size;
     this._max_recursion_limit = max_recursion_limit;
@@ -156,10 +149,10 @@ export class Configuration {
   }
 
   set_metadata(key: string, value: string): void {
-    this._metadata.set(key, value);
+    this._metadata[key] = value;
   }
 
-  get_metadata(): grpc.Metadata {
+  get_metadata(): Record<string, string> {
     return this._metadata
   }
 
@@ -171,22 +164,19 @@ export class Configuration {
     return uc;
   }
 
-  credentials(): ChannelCredentials {
-    if (this._is_ssl_enabled) {
-        if (this._token) {
-            return ChannelCredentials.createSsl(Buffer.from(this._token));
-        } else {
-            return ChannelCredentials.createSsl();
-        }
-    } else {
-        return ChannelCredentials.createInsecure();
-    }
+  get_host(): string {
+    return this._host;
   }
 
-  new_client(): grpc.Client {
-    const address = `${this._host}:${this._port}`;
-    const client = new grpc.Client(address, this.credentials(), {});
-    // console.log("Client created: ", client);
-    return client;
+  get_port(): number {
+    return this._port;
+  }
+
+  get_is_ssl_enabled(): boolean {
+    return this._is_ssl_enabled;
+  }
+
+  get_token(): string | null {
+    return this._token;
   }
 }

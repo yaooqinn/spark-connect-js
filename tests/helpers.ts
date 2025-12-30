@@ -16,23 +16,15 @@
  */
 
 import { SparkSession } from "../src/org/apache/spark/sql/SparkSession";
-import { dir, setGracefulCleanup } from "tmp";
-import { promisify } from "util";
-import { rm } from "fs";
 import { logger } from "../src/org/apache/spark/logger";
-import os from "os";
-
-// Clean up the temporary directory
-setGracefulCleanup();
-
-const createTempDir = promisify(dir);
 
 export const sharedSpark = SparkSession.builder()
   .remote(`sc://localhost:15002/;user_id=${currentUser()};user_name=${currentUser()}`)
   .getOrCreate();
 
 export function currentUser(): string {
-  return process.env.USER || os.userInfo().username;
+  // For browser compatibility, use a default user
+  return "testuser";
 }
 
 export function delay(ms: number) {
@@ -62,16 +54,11 @@ export async function withTable(
 }
 
 export async function withTempDir(fn: (dir: string) => Promise<any>): Promise<void> {
-  return await createTempDir().then(async (dir) => {
-    try {
-      await fn(dir);
-    } finally {
-      // Clean up the temporary directory
-      rm(dir, { recursive: true }, (err) => {
-        if (err) {
-          logger.error(`Failed to remove ${dir}: ${err}`);
-        }
-      });
-    }
-  });
+  // For browser environments, use in-memory paths or skip file-based tests
+  const tempDir = `/tmp/spark-test-${Date.now()}`;
+  try {
+    await fn(tempDir);
+  } finally {
+    logger.warn(`Temporary directory cleanup not available in browser: ${tempDir}`);
+  }
 }

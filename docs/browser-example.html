@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark Connect Browser Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .success {
+            color: #388e3c;
+        }
+        .info {
+            color: #1976d2;
+        }
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Spark Connect Browser Example</h1>
+        
+        <div class="note">
+            <strong>Note:</strong> Make sure you have a gRPC-Web proxy (like Envoy) running that forwards requests to your Spark Connect server.
+            See <a href="docs/BROWSER_SUPPORT.md">BROWSER_SUPPORT.md</a> for setup instructions.
+        </div>
+
+        <div class="section">
+            <label for="proxyUrl">gRPC-Web Proxy URL:</label>
+            <input type="text" id="proxyUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
+        </div>
+
+        <div class="section">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" value="browser_user" placeholder="your_user_id">
+        </div>
+
+        <div class="section">
+            <label for="sqlQuery">SQL Query:</label>
+            <input type="text" id="sqlQuery" value="SELECT 1 as id, 'Hello from browser!' as message" placeholder="SELECT * FROM table">
+        </div>
+
+        <button onclick="connectAndQuery()" id="executeBtn">Connect and Execute Query</button>
+
+        <div id="output" class="info">Click "Connect and Execute Query" to start...</div>
+    </div>
+
+    <!-- Include the bundled spark-connect library -->
+    <!-- 
+        Note: You need to build the library first using: npm run build
+        This will create dist/spark-connect.js
+    -->
+    <script src="dist/spark-connect.js"></script>
+    
+    <script>
+        async function connectAndQuery() {
+            const output = document.getElementById('output');
+            const button = document.getElementById('executeBtn');
+            const proxyUrl = document.getElementById('proxyUrl').value;
+            const userId = document.getElementById('userId').value;
+            const sqlQuery = document.getElementById('sqlQuery').value;
+
+            // Disable button during execution
+            button.disabled = true;
+            output.className = 'info';
+            output.textContent = 'Connecting to Spark Connect server...\n';
+
+            try {
+                // Extract host and port from proxy URL
+                const url = new URL(proxyUrl);
+                const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+                const useSSL = url.protocol === 'https:';
+
+                // Build connection string
+                const connectionString = `sc://${url.hostname}:${port}/;user_id=${userId};use_ssl=${useSSL}`;
+                
+                output.textContent += `Connection string: ${connectionString}\n\n`;
+
+                // Create Spark session using the bundled library
+                // The library is exposed as SparkConnect global variable
+                const spark = SparkConnect.SparkSession.builder()
+                    .remote(connectionString)
+                    .getOrCreate();
+
+                output.textContent += `✓ Connected successfully!\n`;
+                output.textContent += `Executing query: ${sqlQuery}\n\n`;
+
+                // Execute SQL query
+                const df = spark.sql(sqlQuery);
+                
+                output.textContent += `Fetching results...\n`;
+                
+                // Collect results
+                const rows = await df.collect();
+                
+                output.className = 'success';
+                output.textContent += `\n✓ Query executed successfully!\n`;
+                output.textContent += `\nResults (${rows.length} rows):\n`;
+                output.textContent += '='.repeat(60) + '\n';
+                
+                rows.forEach((row, index) => {
+                    output.textContent += `Row ${index + 1}: ${JSON.stringify(row.toJSON(), null, 2)}\n`;
+                });
+
+            } catch (error) {
+                output.className = 'error';
+                output.textContent += `\n✗ Error occurred:\n`;
+                output.textContent += error.message + '\n\n';
+                
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    output.textContent += 'Possible causes:\n';
+                    output.textContent += '1. gRPC-Web proxy is not running\n';
+                    output.textContent += '2. Proxy URL is incorrect\n';
+                    output.textContent += '3. CORS is not properly configured on the proxy\n';
+                    output.textContent += '4. Spark Connect server is not reachable from the proxy\n\n';
+                    output.textContent += 'See docs/BROWSER_SUPPORT.md for troubleshooting steps.\n';
+                }
+                
+                console.error('Full error:', error);
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+            }
+        }
+
+        // Log to output when page loads
+        window.addEventListener('load', () => {
+            const output = document.getElementById('output');
+            output.textContent = '✓ Page loaded successfully!\n\n';
+            output.textContent += 'Ready to connect to Spark.\n';
+            output.textContent += 'Configure your settings above and click "Connect and Execute Query".\n';
+        });
+    </script>
+</body>
+</html>
