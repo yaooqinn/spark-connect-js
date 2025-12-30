@@ -54,13 +54,23 @@ describe('UDF Tests', () => {
     );
   });
 
-  test('register Java UDF', async () => {
+  test('register Java UDF with return type', async () => {
     const spark = await sharedSpark;
     
-    // Register a Java UDF (this would require a Java class to exist on the server)
+    // Register a Java UDF with explicit return type
     // This test just ensures the API works without errors
     await expect(
-      spark.udf.registerJavaFunction('javaUdf', 'com.example.MyUDF', DataTypes.IntegerType)
+      spark.udf.registerJava('javaUdf', 'com.example.MyUDF', DataTypes.IntegerType)
+    ).resolves.not.toThrow();
+  });
+
+  test('register Java UDF without return type', async () => {
+    const spark = await sharedSpark;
+    
+    // Register a Java UDF without return type (let server decide)
+    // This test just ensures the API works without errors
+    await expect(
+      spark.udf.registerJava('javaUdfAuto', 'com.example.MyAutoUDF')
     ).resolves.not.toThrow();
   });
 

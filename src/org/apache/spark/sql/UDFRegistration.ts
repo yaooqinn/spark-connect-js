@@ -68,21 +68,28 @@ export class UDFRegistration {
    * 
    * @param name - The name of the UDF
    * @param className - The fully qualified Java class name
-   * @param returnType - Optional return type of the UDF
+   * @param returnType - Optional return type of the UDF. If undefined, the server will determine the type.
    * @returns void
    * 
    * @example
    * ```typescript
-   * spark.udf.registerJavaFunction("javaUdf", "com.example.MyUDF", DataTypes.IntegerType);
+   * spark.udf.registerJava("javaUdf", "com.example.MyUDF", DataTypes.IntegerType);
+   * // Or let server decide the return type:
+   * spark.udf.registerJava("javaUdf", "com.example.MyUDF");
    * ```
    */
-  async registerJavaFunction(name: string, className: string, returnType?: DataType): Promise<void> {
-    const dataType = returnType || DataTypes.NullType;
-    
+  async registerJava(name: string, className: string, returnType?: DataType): Promise<void> {
     // Create Java UDF using the builder
-    const udf = new CommonInlineUserDefinedFunctionBuilder(name, true)
-      .withJavaUDF(className, dataType, false)
-      .build();
+    const udfBuilder = new CommonInlineUserDefinedFunctionBuilder(name, true);
+    
+    if (returnType) {
+      udfBuilder.withJavaUDF(className, returnType, false);
+    } else {
+      // Let server decide the return type
+      udfBuilder.withJavaUDF(className, DataTypes.NullType, false);
+    }
+    
+    const udf = udfBuilder.build();
 
     // Register the UDF via command
     const cmd = new CommandBuilder().withRegisterFunction(udf).build();

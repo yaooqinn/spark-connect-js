@@ -32,7 +32,11 @@ df.select(doubleUdf(col("value")));
 
 ### Register Java UDFs
 ```typescript
-await spark.udf.registerJavaFunction("javaUdf", "com.example.MyUDF", DataTypes.IntegerType);
+// With explicit return type
+await spark.udf.registerJava("javaUdf", "com.example.MyUDF", DataTypes.IntegerType);
+
+// Let server decide return type
+await spark.udf.registerJava("javaUdf", "com.example.MyUDF");
 ```
 
 # Roadmaps
