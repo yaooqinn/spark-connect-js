@@ -19,6 +19,15 @@ FROM apache/spark:4.1.0-scala2.13-java21-r-ubuntu
 
 USER root
 
+# Copy UDF source and compile it
+COPY ./udf/src/main/scala/org/apache/spark/sql/test/StringConcat.scala /tmp/udf/
+WORKDIR /tmp/udf
+RUN scalac -classpath "/opt/spark/jars/*" StringConcat.scala && \
+    jar cf spark-js-test-udfs.jar org/apache/spark/sql/test/*.class && \
+    mv spark-js-test-udfs.jar /opt/spark/jars/ && \
+    rm -rf /tmp/udf
+WORKDIR /opt/spark
+
 COPY ./entrypoint.sh /opt/spark-js/entrypoint.sh
 
 EXPOSE 4040 15002

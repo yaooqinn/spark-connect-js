@@ -22,26 +22,26 @@ describe('Java UDF Tests', () => {
   test('register and use Java UDF with return type', async () => {
     const spark = await sharedSpark;
     
-    // Register StringLengthTest Java UDF - calculates sum of lengths of two strings
-    await spark.udf.registerJava('strLenSum', 'org.apache.spark.sql.JavaUDFSuite.StringLengthTest', DataTypes.IntegerType);
+    // Register StringConcat Java UDF - concatenates two strings
+    await spark.udf.registerJava('strConcat', 'org.apache.spark.sql.test.StringConcat', DataTypes.StringType);
     
     // Test that the UDF was registered successfully by using it in SQL
-    const df = await spark.sql("SELECT strLenSum('hello', 'world') as result");
+    const df = await spark.sql("SELECT strConcat('hello', 'world') as result");
     const rows = await df.collect();
     expect(rows.length).toBe(1);
-    expect(rows[0].getInt(0)).toBe(10); // 5 + 5 = 10
+    expect(rows[0].getString(0)).toBe('helloworld');
   });
 
   test('register and use Java UDF without return type', async () => {
     const spark = await sharedSpark;
     
-    // Register StringLengthTest Java UDF without specifying return type (let server decide)
-    await spark.udf.registerJava('strLenSumAuto', 'org.apache.spark.sql.JavaUDFSuite.StringLengthTest');
+    // Register StringConcat Java UDF without specifying return type (let server decide)
+    await spark.udf.registerJava('strConcatAuto', 'org.apache.spark.sql.test.StringConcat');
     
     // Test that the UDF was registered successfully by using it in SQL
-    const df = await spark.sql("SELECT strLenSumAuto('test', 'case') as result");
+    const df = await spark.sql("SELECT strConcatAuto('foo', 'bar') as result");
     const rows = await df.collect();
     expect(rows.length).toBe(1);
-    expect(rows[0].getInt(0)).toBe(8); // 4 + 4 = 8
+    expect(rows[0].getString(0)).toBe('foobar');
   });
 });
