@@ -17,7 +17,6 @@
 
 import { SparkSession } from './SparkSession';
 import { DataType } from './types/data_types';
-import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
 import { DataTypes } from './types/DataTypes';
 
@@ -45,20 +44,17 @@ export class UDFRegistration {
    * ```
    */
   async registerJava(name: string, className: string, returnType?: DataType): Promise<void> {
-    // Create Java UDF using the builder
-    const udfBuilder = new CommonInlineUserDefinedFunctionBuilder(name, true);
-    
-    if (returnType) {
-      udfBuilder.withJavaUDF(className, returnType, false);
-    } else {
-      // Let server decide the return type by not specifying it explicitly
-      udfBuilder.withJavaUDF(className, undefined, false);
-    }
-    
-    const udf = udfBuilder.build();
-
-    // Register the UDF via command
-    const cmd = new CommandBuilder().withRegisterFunction(udf).build();
+    // Register the UDF via command builder
+    const cmd = new CommandBuilder()
+      .withRegisterFunctionBuilder(name, true, (builder) => {
+        if (returnType) {
+          builder.withJavaUDF(className, returnType, false);
+        } else {
+          // Let server decide the return type by not specifying it explicitly
+          builder.withJavaUDF(className, DataTypes.NullType, false);
+        }
+      })
+      .build();
     await this.spark.execute(cmd);
   }
 }

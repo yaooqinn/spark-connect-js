@@ -21,6 +21,7 @@ import { CommonInlineUserDefinedFunction } from "../../../../../gen/spark/connec
 import { Relation } from "../../../../../gen/spark/connect/relations_pb";
 import { StorageLevel } from "../../storage/StorageLevel";
 import { createStorageLevelPB } from "./ProtoUtils";
+import { CommonInlineUserDefinedFunctionBuilder } from "./expression/udf/CommonInlineUserDefinedFunctionBuilder";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
@@ -33,6 +34,16 @@ export class CommandBuilder {
 
   withRegisterFunction(udf: CommonInlineUserDefinedFunction) {
     this.command.commandType = { case: "registerFunction", value: udf };
+    return this;
+  }
+
+  withRegisterFunctionBuilder(
+      functionName: string,
+      deterministic: boolean,
+      f: (b: CommonInlineUserDefinedFunctionBuilder) => void) {
+    const builder = new CommonInlineUserDefinedFunctionBuilder(functionName, deterministic);
+    f(builder);
+    this.command.commandType = { case: "registerFunction", value: builder.build() };
     return this;
   }
 
