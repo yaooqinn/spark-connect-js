@@ -33,7 +33,6 @@ import { Column } from './Column';
 import { expr } from './functions';
 import { RelationalGroupedDataset } from './RelationalGroupedDataset';
 import { GroupType } from './proto/aggregate/GroupType';
-import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
@@ -1053,7 +1052,7 @@ export class DataFrame {
    * 
    * @param pythonCode Python code as a string defining the partition processing function
    * @param outputSchema The output schema for the transformed DataFrame
-   * @param pythonVersion Python version (default: '3.8')
+   * @param pythonVersion Python version (default: '3.11')
    * @returns A new DataFrame with the function applied to each partition
    * @group typedrel
    * 
@@ -1074,19 +1073,11 @@ export class DataFrame {
   mapPartitions(
     pythonCode: string,
     outputSchema: StructType,
-    pythonVersion: string = '3.8'
+    pythonVersion: string = '3.11'
   ): DataFrame {
-    const func = new CommonInlineUserDefinedFunctionBuilder('map_partition_udf', true)
-      .withPythonUDF(
-        outputSchema,
-        200, // MAP_ITER eval type for mapPartitions
-        new TextEncoder().encode(pythonCode),
-        pythonVersion,
-        []
-      )
-      .build();
-    
-    return this.toNewDataFrame(b => b.withMapPartitions(func, this.plan.relation!));
+    return this.toNewDataFrame(b => 
+      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation!, pythonVersion)
+    );
   }
 
   /**
@@ -1101,7 +1092,7 @@ export class DataFrame {
    * @param otherGroupingCols Columns to group by for the other DataFrame
    * @param pythonCode Python code as a string defining the co-group processing function
    * @param outputSchema The output schema for the transformed DataFrame
-   * @param pythonVersion Python version (default: '3.8')
+   * @param pythonVersion Python version (default: '3.11')
    * @returns A new DataFrame with the function applied to each co-group
    * @group typedrel
    * 
@@ -1127,18 +1118,8 @@ export class DataFrame {
     otherGroupingCols: Column[],
     pythonCode: string,
     outputSchema: StructType,
-    pythonVersion: string = '3.8'
+    pythonVersion: string = '3.11'
   ): DataFrame {
-    const func = new CommonInlineUserDefinedFunctionBuilder('cogroup_map_udf', true)
-      .withPythonUDF(
-        outputSchema,
-        200, // MAP_ITER eval type for coGroupMap
-        new TextEncoder().encode(pythonCode),
-        pythonVersion,
-        []
-      )
-      .build();
-    
     const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
     const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
     return this.toNewDataFrame(b =>
@@ -1147,7 +1128,9 @@ export class DataFrame {
         inputGroupingExprs,
         other.plan.relation!,
         otherGroupingExprs,
-        func
+        pythonCode,
+        outputSchema,
+        pythonVersion
       )
     );
   }

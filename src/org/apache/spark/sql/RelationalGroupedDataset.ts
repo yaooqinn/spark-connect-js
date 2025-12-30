@@ -22,7 +22,6 @@ import { GroupType } from "./proto/aggregate/GroupType";
 import { toPivotPB, toGroupingSetsPB } from "./proto/expression/utils";
 import { toGroupTypePB } from "./proto/ProtoUtils";
 import { Aggregate_Pivot } from "../../../../gen/spark/connect/relations_pb";
-import { CommonInlineUserDefinedFunctionBuilder } from "./proto/expression/udf/CommonInlineUserDefinedFunctionBuilder";
 import { StructType } from "./types/StructType";
 
 const supportedAggFunctions: Record<string, (c: Column) => Column> = {
@@ -208,7 +207,7 @@ export class RelationalGroupedDataset {
    * 
    * @param pythonCode Python code as a string defining the group processing function
    * @param outputSchema The output schema for the transformed DataFrame
-   * @param pythonVersion Python version (default: '3.8')
+   * @param pythonVersion Python version (default: '3.11')
    * @returns A new DataFrame with the function applied to each group
    * @group typedrel
    * 
@@ -229,24 +228,14 @@ export class RelationalGroupedDataset {
   groupMap(
     pythonCode: string,
     outputSchema: StructType,
-    pythonVersion: string = '3.8'
+    pythonVersion: string = '3.11'
   ): DataFrame {
-    const func = new CommonInlineUserDefinedFunctionBuilder('group_map_udf', true)
-      .withPythonUDF(
-        outputSchema,
-        200, // MAP_ITER eval type for groupMap
-        new TextEncoder().encode(pythonCode),
-        pythonVersion,
-        []
-      )
-      .build();
-    
     const groupingExprs = typeof this.groupingExprs[0] === "string"
       ? this.groupingExprs.map((c) => this.df.col(c as string).expr)
       : this.groupingExprs.map((c) => (c as Column).expr);
 
     return this.df.spark.relationBuilderToDF((rb) => {
-      return rb.withGroupMap(groupingExprs, func, this.df.plan.relation!);
+      return rb.withGroupMap(groupingExprs, pythonCode, outputSchema, this.df.plan.relation!, pythonVersion);
     });
   }
 }

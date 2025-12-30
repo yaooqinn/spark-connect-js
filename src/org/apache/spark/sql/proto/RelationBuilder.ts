@@ -17,7 +17,7 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Catalog } from "../../../../../gen/spark/connect/catalog_pb";
-import { CommonInlineUserDefinedFunction, Expression } from "../../../../../gen/spark/connect/expressions_pb";
+import { Expression } from "../../../../../gen/spark/connect/expressions_pb";
 import { Aggregate, AsOfJoinSchema, CoGroupMapSchema, FilterSchema, GroupMapSchema, HintSchema, JoinSchema, LateralJoinSchema, LimitSchema, LocalRelation, MapPartitionsSchema, NADropSchema, NAFillSchema, NAReplaceSchema, NAReplace_ReplacementSchema, OffsetSchema, ProjectSchema, RangeSchema, Read, Read_DataSourceSchema, Read_NamedTableSchema, ReadSchema, Relation, RelationCommon, RelationSchema, RepartitionByExpressionSchema, RepartitionSchema, SetOperationSchema, ShowStringSchema, StatApproxQuantileSchema, StatCorrSchema, StatCovSchema, StatCrosstabSchema, StatFreqItemsSchema, StatSampleBy_FractionSchema, StatSampleBySchema, TailSchema, ToDFSchema, ToSchemaSchema, TransposeSchema, Unpivot_ValuesSchema, UnpivotSchema } from "../../../../../gen/spark/connect/relations_pb";
 import { Column } from "../Column";
 import { lit } from "../functions";
@@ -28,6 +28,7 @@ import { AggregateBuilder } from "./aggregate/AggregateBuilder";
 import { CatalogBuilder } from "./CatalogBuilder";
 import { toJoinTypePB, toLateralJoinTypePB, toSetOpTypePB } from "./ProtoUtils";
 import { LiteralBuilder } from "./expression/LiteralBuilder";
+import { CommonInlineUserDefinedFunctionBuilder } from "./expression/udf/CommonInlineUserDefinedFunctionBuilder";
 
 export class RelationBuilder {
   private relation: Relation = create(RelationSchema, {});
@@ -399,7 +400,21 @@ export class RelationBuilder {
     return this;
   }
 
-  withMapPartitions(func: CommonInlineUserDefinedFunction, input?: Relation) {
+  withMapPartitions(
+    pythonCode: string,
+    outputSchema: StructType,
+    input?: Relation,
+    pythonVersion: string = '3.11'
+  ) {
+    const func = new CommonInlineUserDefinedFunctionBuilder('map_partition_udf', true)
+      .withPythonUDF(
+        outputSchema,
+        200, // MAP_ITER eval type for mapPartitions
+        new TextEncoder().encode(pythonCode),
+        pythonVersion,
+        []
+      )
+      .build();
     const mapPartitions = create(MapPartitionsSchema, { input: input, func: func });
     this.relation.relType = { case: "mapPartitions", value: mapPartitions };
     return this;
@@ -407,9 +422,20 @@ export class RelationBuilder {
 
   withGroupMap(
     groupingExpressions: Expression[],
-    func: CommonInlineUserDefinedFunction,
-    input?: Relation
+    pythonCode: string,
+    outputSchema: StructType,
+    input?: Relation,
+    pythonVersion: string = '3.11'
   ) {
+    const func = new CommonInlineUserDefinedFunctionBuilder('group_map_udf', true)
+      .withPythonUDF(
+        outputSchema,
+        200, // MAP_ITER eval type for groupMap
+        new TextEncoder().encode(pythonCode),
+        pythonVersion,
+        []
+      )
+      .build();
     const groupMap = create(GroupMapSchema, {
       input: input,
       groupingExpressions: groupingExpressions,
@@ -424,8 +450,19 @@ export class RelationBuilder {
     inputGroupingExpressions: Expression[],
     other: Relation,
     otherGroupingExpressions: Expression[],
-    func: CommonInlineUserDefinedFunction
+    pythonCode: string,
+    outputSchema: StructType,
+    pythonVersion: string = '3.11'
   ) {
+    const func = new CommonInlineUserDefinedFunctionBuilder('cogroup_map_udf', true)
+      .withPythonUDF(
+        outputSchema,
+        200, // MAP_ITER eval type for coGroupMap
+        new TextEncoder().encode(pythonCode),
+        pythonVersion,
+        []
+      )
+      .build();
     const coGroupMap = create(CoGroupMapSchema, {
       input: input,
       inputGroupingExpressions: inputGroupingExpressions,
