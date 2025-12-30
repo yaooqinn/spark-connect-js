@@ -23,7 +23,7 @@ describe('Java UDF Tests', () => {
     const spark = await sharedSpark;
     
     // Register StringLengthTest Java UDF - calculates sum of lengths of two strings
-    await spark.udf.registerJava('strLenSum', 'test.org.apache.spark.sql.JavaUDFSuite$StringLengthTest', DataTypes.IntegerType);
+    await spark.udf.registerJava('strLenSum', 'test.org.apache.spark.sql.JavaUDFSuite.StringLengthTest', DataTypes.IntegerType);
     
     // Test that the UDF was registered successfully by using it in SQL
     const df = await spark.sql("SELECT strLenSum('hello', 'world') as result");
