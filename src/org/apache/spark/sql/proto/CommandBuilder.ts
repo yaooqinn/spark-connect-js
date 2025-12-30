@@ -18,10 +18,13 @@
 import { create } from "@bufbuild/protobuf";
 import { Command, CommandSchema, SqlCommandSchema } from "../../../../../gen/spark/connect/commands_pb";
 import { CommonInlineUserDefinedFunction } from "../../../../../gen/spark/connect/expressions_pb";
+import { Command, CommandSchema, SqlCommandSchema, CheckpointCommandSchema, WriteOperationV2, WriteOperation } from "../../../../../gen/spark/connect/commands_pb";
+import { Relation } from "../../../../../gen/spark/connect/relations_pb";
+import { StorageLevel } from "../../storage/StorageLevel";
+import { createStorageLevelPB } from "./ProtoUtils";
 
 export class CommandBuilder {
   private command: Command = create(CommandSchema, {});
-  constructor() {}
 
   withSqlCommand(sql: string) {
     const sqlCmd = create(SqlCommandSchema, { sql: sql });
@@ -31,6 +34,26 @@ export class CommandBuilder {
 
   withRegisterFunction(udf: CommonInlineUserDefinedFunction) {
     this.command.commandType = { case: "registerFunction", value: udf };
+  withWriteOperation(writeOp: WriteOperation) {
+    this.command.commandType = { case: "writeOperation", value: writeOp };
+    return this;
+  }
+
+  withWriteOperationV2(writeOp: WriteOperationV2) {
+    this.command.commandType = { case: "writeOperationV2", value: writeOp };
+    return this;
+  }
+
+  withCheckpointCommand(relation: Relation, local: boolean, eager: boolean, storageLevel?: StorageLevel) {
+    const storageLevelPB = storageLevel ? createStorageLevelPB(storageLevel) : undefined;
+    
+    const checkpointCmd = create(CheckpointCommandSchema, {
+      relation: relation,
+      local: local,
+      eager: eager,
+      storageLevel: storageLevelPB
+    });
+    this.command.commandType = { case: "checkpointCommand", value: checkpointCmd };
     return this;
   }
 

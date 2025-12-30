@@ -17,7 +17,7 @@
 
 import { create } from "@bufbuild/protobuf";
 import { Table as ArrowTable, tableToIPC } from "apache-arrow";
-import { Aggregate_GroupType, LocalRelation, LocalRelationSchema, SetOperation_SetOpType } from "../../../../../gen/spark/connect/relations_pb";
+import { Aggregate_GroupType, Join_JoinType, LateralJoin_JoinType, LocalRelation, LocalRelationSchema, SetOperation_SetOpType } from "../../../../../gen/spark/connect/relations_pb";
 import { StructType } from "../types/StructType";
 import { StorageLevel } from "../../storage/StorageLevel";
 import { StorageLevelSchema, StorageLevel as StorageLevelPB } from "../../../../../gen/spark/connect/common_pb";
@@ -72,5 +72,52 @@ export function toSetOpTypePB(setOpType?: string): SetOperation_SetOpType {
       return SetOperation_SetOpType.EXCEPT;
     default:
       throw new Error(`Unsupported set operation type: ${setOpType}`);
+  }
+}
+
+export function toJoinTypePB(joinType?: string): Join_JoinType {
+  switch (joinType?.toLowerCase()) {
+    case "inner":
+      return Join_JoinType.INNER;
+    case "outer":
+    case "full":
+    case "fullouter":
+    case "full_outer":
+      return Join_JoinType.FULL_OUTER;
+    case "left":
+    case "leftouter":
+    case "left_outer":
+      return Join_JoinType.LEFT_OUTER;
+    case "right":
+    case "rightouter":
+    case "right_outer":
+      return Join_JoinType.RIGHT_OUTER;
+    case "semi":
+    case "leftsemi":
+    case "left_semi":
+      return Join_JoinType.LEFT_SEMI;
+    case "anti":
+    case "leftanti":
+    case "left_anti":
+      return Join_JoinType.LEFT_ANTI;
+    case "cross":
+      return Join_JoinType.CROSS;
+    default:
+      return Join_JoinType.INNER;
+  }
+}
+
+export function toLateralJoinTypePB(joinType?: string): LateralJoin_JoinType {
+  switch (joinType?.toLowerCase()) {
+    case "inner":
+      return LateralJoin_JoinType.INNER;
+    case "left":
+    case "leftouter":
+    case "left_outer":
+      return LateralJoin_JoinType.LEFT_OUTER;
+    case "cross":
+      return LateralJoin_JoinType.CROSS;
+    default:
+      return LateralJoin_JoinType.INNER;
   }
 }

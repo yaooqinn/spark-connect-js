@@ -101,3 +101,103 @@ test("tanspose", async () => {
   });
 });
 
+test("advanced aggregate helpers", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+  const grouped = df.groupBy("name");
+
+  await grouped.avg("goals").where("name = 'Ronaldo'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(1.25, 3);
+  });
+
+  await grouped.min("goals").where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBe(0);
+  });
+
+  await grouped.stddevSamp("goals").where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(0.81649, 4);
+  });
+
+  await grouped.varPop("goals").where("name = 'Ronaldo'").head().then((row) => {
+    expect(Number(row[1])).toBeCloseTo(0.1875, 4);
+  });
+});
+
+test("agg with map", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  await df.groupBy("name").agg({ goals: "max", game: "min" }).where("name = 'Messi'").head().then((row) => {
+    expect(Number(row[1])).toBe(2);
+    expect(Number(row[2])).toBe(1);
+  });
+});
+test("pivot with explicit values", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  // Pivot with explicit values
+  const pivoted = df.groupBy("name").pivot("game", [1, 2, 3, 4]).sum("goals");
+  const rows = await pivoted.collect();
+
+  // Should have one row per name
+  expect(rows.length).toBe(2);
+
+  // Check the structure - should have name and 4 game columns
+  const columns = await pivoted.columns();
+  expect(columns.length).toBe(5); // name + 4 game columns
+  expect(columns[0]).toBe("name");
+});
+
+test("pivot without explicit values", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  // Pivot without values - Spark will compute distinct values
+  const pivoted = df.groupBy("name").pivot("game").sum("goals");
+  const rows = await pivoted.collect();
+
+  // Should have one row per name
+  expect(rows.length).toBe(2);
+
+  // Check that we got columns for each game
+  const columns = await pivoted.columns();
+  expect(columns.length).toBe(5); // name + 4 game columns
+});
+
+test("pivot with Column object", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  // Pivot using Column object instead of string
+  const pivoted = df.groupBy("name").pivot(col("game"), [1, 2]).sum("goals");
+  const rows = await pivoted.collect();
+
+  expect(rows.length).toBe(2);
+
+  const columns = await pivoted.columns();
+  expect(columns.length).toBe(3); // name + 2 game columns
+});
+
+test("pivot error on non-groupBy", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  // Pivot should fail on rollup
+  const rollup = df.rollup("name");
+  expect(() => rollup.pivot("game")).toThrow("pivot can only be applied after groupBy");
+
+  // Pivot should fail on cube
+  const cube = df.cube("name");
+  expect(() => cube.pivot("game")).toThrow("pivot can only be applied after groupBy");
+});
+
+test("pivot error on double pivot", async () => {
+  const spark = await sharedSpark;
+  const df = spark.createDataFrame(testRows, testSchema);
+
+  // Pivot should fail when applied twice
+  const grouped = df.groupBy("name").pivot("game", [1, 2]);
+  expect(() => grouped.pivot("game")).toThrow("pivot cannot be applied on a pivot");
+});
+

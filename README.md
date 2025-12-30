@@ -51,6 +51,7 @@ await spark.udf.registerJava("javaUdf", "com.example.MyUDF");
   - [x] Java UDF registration
   - [ ] UDAF (User-Defined Aggregate Functions)
   - [ ] UDTF (User-Defined Table Functions)
+- [x] Support DataFrame Join 
 - [ ] Support UserDefinedType
   - [ ] UserDefinedType declaration
   - [ ] UserDefinedType & Proto bidi-converions
