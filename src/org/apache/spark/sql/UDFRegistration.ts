@@ -35,7 +35,7 @@ export class UDFRegistration {
    * @param name - The name of the UDF
    * @param className - The fully qualified Java class name
    * @param returnType - Optional return type of the UDF. If undefined, the server will determine the type.
-   * @returns void
+   * @returns Promise<void>
    * 
    * @example
    * ```typescript

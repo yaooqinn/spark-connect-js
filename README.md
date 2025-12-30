@@ -8,7 +8,6 @@ An <b><red>experimental</red></b> client for [Spark Connect](https://spark.apach
 - [ ] Support Retry / Reattachable execution
 - [ ] Support Checkpoint for DataFrame
 - [ ] Support DataFrameNaFunctions
-- [ ] Support DataFrame Join 
 - [ ] Support User-Defined Functions (UDF)
   - [ ] UDF registration via `spark.udf.register()`
   - [ ] Inline UDFs via `udf()` function
