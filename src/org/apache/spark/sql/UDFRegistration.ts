@@ -19,7 +19,6 @@ import { SparkSession } from './SparkSession';
 import { DataType } from './types/data_types';
 import { CommonInlineUserDefinedFunctionBuilder } from './proto/expression/udf/CommonInlineUserDefinedFunctionBuilder';
 import { CommandBuilder } from './proto/CommandBuilder';
-import { parseDataType, serializeFunctionToPython, PYTHON_UDF_EVAL_TYPE_SQL, DEFAULT_PYTHON_VERSION } from './util/udf_utils';
 import { DataTypes } from './types/DataTypes';
 
 /**
@@ -29,39 +28,6 @@ import { DataTypes } from './types/DataTypes';
  */
 export class UDFRegistration {
   constructor(private spark: SparkSession) {}
-
-  /**
-   * Register a Python user-defined function.
-   * 
-   * @param name - The name of the UDF
-   * @param func - The JavaScript function to be converted to a Python UDF
-   * @param returnType - The return type of the UDF (DataType or string)
-   * @returns void
-   * 
-   * @example
-   * ```typescript
-   * spark.udf.register("myUdf", (x: number) => x * 2, "int");
-   * const result = await spark.sql("SELECT myUdf(id) FROM range(10)");
-   * ```
-   */
-  async register(name: string, func: (...args: any[]) => any, returnType: DataType | string): Promise<void> {
-    const dataType = typeof returnType === 'string' 
-      ? parseDataType(returnType) 
-      : returnType;
-    
-    // Serialize the JavaScript function to Python code
-    const pythonCode = serializeFunctionToPython(func);
-    const command = Buffer.from(pythonCode, 'utf-8');
-
-    // Create UDF using the builder
-    const udf = new CommonInlineUserDefinedFunctionBuilder(name, true)
-      .withPythonUDF(dataType, PYTHON_UDF_EVAL_TYPE_SQL, command, DEFAULT_PYTHON_VERSION, [])
-      .build();
-
-    // Register the UDF via command
-    const cmd = new CommandBuilder().withRegisterFunction(udf).build();
-    await this.spark.execute(cmd);
-  }
 
   /**
    * Register a Java user-defined function.

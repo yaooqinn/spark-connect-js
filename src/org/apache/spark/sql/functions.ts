@@ -1,9 +1,6 @@
 import { Column } from "./Column";
 import { toLiteralBuilder } from "./proto/expression/utils";
 import { randomInt } from "./util/helpers";
-import { DataType } from "./types/data_types";
-import { CommonInlineUserDefinedFunctionBuilder } from "./proto/expression/udf/CommonInlineUserDefinedFunctionBuilder";
-import { parseDataType, serializeFunctionToPython, PYTHON_UDF_EVAL_TYPE_SQL, DEFAULT_PYTHON_VERSION, UDF_NAME_RANDOM_MAX } from "./util/udf_utils";
 
 // TODOs:
 // 1. broadcast
@@ -780,50 +777,4 @@ export function rint(column: Column): Column {
  */
 export function expr(expr: string): Column {
   return new Column(b => b.withExpressionString(expr));
-}
-
-/**
- * Creates a user-defined function (UDF) that can be used in DataFrame operations.
- * 
- * This function creates an inline UDF that serializes the JavaScript function to Python
- * and executes it on the Spark cluster.
- * 
- * @param func - The JavaScript function to be converted to a UDF
- * @param returnType - The return type of the UDF (DataType or string like "int", "string", etc.)
- * @returns A function that takes Column arguments and returns a Column
- * 
- * @example
- * ```typescript
- * import { udf, col } from 'spark-connect-js';
- * 
- * // Create a UDF that doubles a number
- * const doubleUdf = udf((x: number) => x * 2, "int");
- * 
- * // Use it in a DataFrame
- * df.select(doubleUdf(col("value")));
- * ```
- * 
- * @group udf_funcs
- */
-export function udf(func: (...args: any[]) => any, returnType: DataType | string): (...args: Column[]) => Column {
-  return (...args: Column[]) => {
-    const dataType = typeof returnType === 'string' 
-      ? parseDataType(returnType) 
-      : returnType;
-    
-    // Serialize the JavaScript function to Python code
-    const pythonCode = serializeFunctionToPython(func);
-    const command = Buffer.from(pythonCode, 'utf-8');
-
-    // Generate a unique name for the UDF to avoid naming conflicts
-    const uniqueName = `udf_${randomInt(0, UDF_NAME_RANDOM_MAX)}`;
-
-    // Create UDF expression
-    const udfBuilder = new CommonInlineUserDefinedFunctionBuilder(uniqueName, true)
-      .withPythonUDF(dataType, PYTHON_UDF_EVAL_TYPE_SQL, command, DEFAULT_PYTHON_VERSION, [])
-      .withArguments(args.map(arg => arg.expr));
-
-    // Return Column wrapping the UDF
-    return new Column(b => b.withCommonInlineUserDefinedFunction(udfBuilder.build()));
-  };
 }
