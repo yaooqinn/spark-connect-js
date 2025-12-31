@@ -27,6 +27,23 @@ export function column(colName: string): Column {
   return col(colName);
 }
 
+/**
+ * Creates a Column of literal value.
+ * 
+ * @remarks
+ * The literal value can be of various types including primitives, dates, and Column instances.
+ * If a Column is passed, it will be returned as-is.
+ * 
+ * @param v - The literal value (string, number, boolean, bigint, Date, null, or Column)
+ * @returns A Column representing the literal value
+ * 
+ * @example
+ * ```typescript
+ * df.select(lit(5), lit("hello"), lit(true), lit(new Date()))
+ * ```
+ * 
+ * @group normal_funcs
+ */
 export function lit(v: any): Column {
   if (v instanceof Column) {
     return v;
@@ -35,10 +52,26 @@ export function lit(v: any): Column {
   }
 }
 
+/**
+ * Creates a Column of integer literal value.
+ * 
+ * @param v - The integer value
+ * @returns A Column representing the integer literal
+ * 
+ * @group normal_funcs
+ */
 export function int(v: number): Column {
   return new Column(b => b.withLiteralBuilder(l => l.withInt(v)));
 }
 
+/**
+ * Creates a Column of long literal value (64-bit integer).
+ * 
+ * @param v - The long value as number or bigint
+ * @returns A Column representing the long literal
+ * 
+ * @group normal_funcs
+ */
 export function long(v: number | bigint): Column {
   return new Column(b => b.withLiteralBuilder(l => l.withLong(v)));
 }
@@ -601,8 +634,43 @@ export function dense_rank(column: Column): Column {
   return Column.fn("dense_rank", column, false);
 }
 
+/**
+ * Window function: returns the value that is `offset` rows before the current row.
+ * 
+ * @param column - The column name or Column to compute lag for
+ * @param offset - The number of rows to look back
+ * @returns A Column representing the lag value
+ * 
+ * @example
+ * ```typescript
+ * df.select(lag(col("value"), 1))
+ * ```
+ * 
+ * @group window_funcs
+ */
 export function lag(column: string | Column, offset: number): Column;
+/**
+ * Window function: returns the value that is `offset` rows before the current row, with default value.
+ * 
+ * @param column - The column name or Column to compute lag for
+ * @param offset - The number of rows to look back
+ * @param defaultValue - Default value when the offset is beyond the window
+ * @returns A Column representing the lag value
+ * 
+ * @group window_funcs
+ */
 export function lag(column: string | Column, offset: number, defaultValue: any): Column;
+/**
+ * Window function: returns the value that is `offset` rows before the current row, with default value and null handling.
+ * 
+ * @param column - The column name or Column to compute lag for
+ * @param offset - The number of rows to look back
+ * @param defaultValue - Default value when the offset is beyond the window
+ * @param ignoreNulls - Whether to skip null values
+ * @returns A Column representing the lag value
+ * 
+ * @group window_funcs
+ */
 export function lag(column: string | Column, offset: number, defaultValue: any, ignoreNulls: boolean): Column;
 export function lag(column: string | Column, offset: number, defaultValue?: any, ignoreNulls?: boolean): Column {
   if (defaultValue === undefined) {
@@ -614,8 +682,43 @@ export function lag(column: string | Column, offset: number, defaultValue?: any,
   }
 }
 
+/**
+ * Window function: returns the value that is `offset` rows after the current row.
+ * 
+ * @param column - The column name or Column to compute lead for
+ * @param offset - The number of rows to look ahead
+ * @returns A Column representing the lead value
+ * 
+ * @example
+ * ```typescript
+ * df.select(lead(col("value"), 1))
+ * ```
+ * 
+ * @group window_funcs
+ */
 export function lead(column: string | Column, offset: number): Column;
+/**
+ * Window function: returns the value that is `offset` rows after the current row, with default value.
+ * 
+ * @param column - The column name or Column to compute lead for
+ * @param offset - The number of rows to look ahead
+ * @param defaultValue - Default value when the offset is beyond the window
+ * @returns A Column representing the lead value
+ * 
+ * @group window_funcs
+ */
 export function lead(column: string | Column, offset: number, defaultValue: any): Column;
+/**
+ * Window function: returns the value that is `offset` rows after the current row, with default value and null handling.
+ * 
+ * @param column - The column name or Column to compute lead for
+ * @param offset - The number of rows to look ahead
+ * @param defaultValue - Default value when the offset is beyond the window
+ * @param ignoreNulls - Whether to skip null values
+ * @returns A Column representing the lead value
+ * 
+ * @group window_funcs
+ */
 export function lead(column: string | Column, offset: number, defaultValue: any, ignoreNulls: boolean): Column;
 export function lead(column: string | Column, offset: number, defaultValue?: any, ignoreNulls?: boolean): Column {
   if (defaultValue === undefined) {
