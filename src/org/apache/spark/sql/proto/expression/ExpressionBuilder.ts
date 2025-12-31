@@ -16,6 +16,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
+import { anyPack } from "@bufbuild/protobuf/wkt";
 import { 
   CallFunctionSchema, 
   CommonInlineUserDefinedFunction, 
@@ -41,8 +42,10 @@ import {
   MergeAction_Assignment, 
   MergeActionSchema, 
   NamedArgumentExpressionSchema, 
+  SubqueryExpressionSchema,
   TypedAggregateExpressionSchema 
 } from "../../../../../../gen/spark/connect/expressions_pb";
+import { Relation, RelationSchema } from "../../../../../../gen/spark/connect/relations_pb";
 import { DataTypes } from "../../types";
 import { DataType } from "../../types/data_types";
 import { LiteralBuilder } from "./LiteralBuilder";
@@ -226,6 +229,14 @@ export class ExpressionBuilder {
 
   withCommonInlineUserDefinedFunction(udf: CommonInlineUserDefinedFunction) {
     this.expression.exprType = { case: "commonInlineUserDefinedFunction", value: udf };
+    return this;
+  }
+
+  withSubqueryExpression(relation: Relation) {
+    const subquery = create(SubqueryExpressionSchema, {
+      plan: anyPack(RelationSchema, relation)
+    });
+    this.expression.exprType = { case: "subqueryExpression", value: subquery };
     return this;
   }
 
