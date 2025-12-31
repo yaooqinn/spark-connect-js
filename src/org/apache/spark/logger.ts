@@ -53,6 +53,7 @@ const configureLogger = async () => {
     try {
       const customConfig = await import(configFilePath);
       log4js.configure(customConfig);
+      // eslint-disable-next-line no-console
       console.info('Log4js configured using the provided configuration file.');
     } catch (error) {
       console.error('Failed to load log4js configuration from file:', error);
@@ -61,6 +62,7 @@ const configureLogger = async () => {
     }
   } else {
     log4js.configure(defaultConfig);
+    // eslint-disable-next-line no-console
     console.info('Using default Log4js configuration.');
   }
 };

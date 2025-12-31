@@ -128,6 +128,7 @@ export class DataFrame {
   }
 
   async printSchema(level: number = 0): Promise<void> {
+    // eslint-disable-next-line no-console
     return this.printSchema0(b => b.withTreeString(this.plan.plan, level)).then(console.log);
   }
   /** @ignore */
@@ -139,6 +140,7 @@ export class DataFrame {
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
+    // eslint-disable-next-line no-console
     return this.explain0(b => b.withExplain(this.plan.plan, mode)).then(console.log);
   }
   /** @ignore */
@@ -503,6 +505,7 @@ export class DataFrame {
       builder.withShowString(numRows, truncateValue, vertical, this.plan.relation);
     });
     return this.withResult(res => {
+      // eslint-disable-next-line no-console
       console.log(res.toArray()[0].getString(0));
     }, plan);
   }
