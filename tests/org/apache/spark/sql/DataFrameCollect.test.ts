@@ -32,7 +32,6 @@ test("null", async () => {
   const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].isNullAt(0)).toBe(true);
   expect(rows2[0].get(0)).toBe(null);
-  expect(rows2[0].get(0)).toBe(null);
 });
 
 test("boolean", async () => {
@@ -74,7 +73,6 @@ test("byte", async () => {
   expect(rows2[0].getAs<number>(1)).toBe(127);
   expect(rows2[0].get(1)).toBe(127);
 });
-
 
 test("short", async () => {
   const spark = await sharedSpark;
@@ -171,7 +169,6 @@ test("float", async () => {
   expect(rows2[0].getAs<number>(1)).toBeCloseTo(1.0e-8, 10);
   expect(rows2[0].get(1)).toBeCloseTo(1.0e-8, 10);
 });
-
 
 test("double", async () => {
   const spark = await sharedSpark;
@@ -270,9 +267,7 @@ test("binary", async () => {
   const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].getBinary(0)).toStrictEqual(buffer1);
   expect(rows2[0].get(0)).toStrictEqual(uint8Array1);
-  expect(rows2[0].get(0)).toStrictEqual(uint8Array1);
   expect(rows2[0].getBinary(1)).toStrictEqual(buffer2);
-  expect(rows2[0].get(1)).toStrictEqual(uint8Array2);
   expect(rows2[0].get(1)).toStrictEqual(uint8Array2);
 });
 
@@ -362,10 +357,7 @@ test("boolean array", async () => {
   const df = await spark.sql("SELECT array(true, false, true) a, array(false, true, false) `b.c`, array(array(true, false, true), array(false, true, false)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(booleanArray);
-    expect(rows[0].get(0)).toStrictEqual(booleanArray);
     expect(rows[0].get(1)).toStrictEqual(booleanArray2);
-    expect(rows[0].get(1)).toStrictEqual(booleanArray2);
-    expect(rows[0].get(2)).toStrictEqual([booleanArray, booleanArray2]);
     expect(rows[0].get(2)).toStrictEqual([booleanArray, booleanArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(booleanArrayType);
@@ -379,10 +371,7 @@ test("boolean array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(booleanArray);
-  expect(rows2[0].get(0)).toStrictEqual(booleanArray);
   expect(rows2[0].get(1)).toStrictEqual(booleanArray2);
-  expect(rows2[0].get(1)).toStrictEqual(booleanArray2);
-  expect(rows2[0].get(2)).toStrictEqual([booleanArray, booleanArray2]);
   expect(rows2[0].get(2)).toStrictEqual([booleanArray, booleanArray2]);
 });
 
@@ -395,10 +384,7 @@ test("byte array", async () => {
   const df = await spark.sql("SELECT array(1Y, 2Y, 3Y) a, array(4Y, 5Y, 6Y) `b.c`, array(array(1Y, 2Y, 3Y), array(4Y, 5Y, 6Y)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(byteArray);
-    expect(rows[0].get(0)).toStrictEqual(byteArray);
     expect(rows[0].get(1)).toStrictEqual(byteArray2);
-    expect(rows[0].get(1)).toStrictEqual(byteArray2);
-    expect(rows[0].get(2)).toStrictEqual([byteArray, byteArray2]);
     expect(rows[0].get(2)).toStrictEqual([byteArray, byteArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(byteArrayType);
@@ -412,10 +398,7 @@ test("byte array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(byteArray);
-  expect(rows2[0].get(0)).toStrictEqual(byteArray);
   expect(rows2[0].get(1)).toStrictEqual(byteArray2);
-  expect(rows2[0].get(1)).toStrictEqual(byteArray2);
-  expect(rows2[0].get(2)).toStrictEqual([byteArray, byteArray2]);
   expect(rows2[0].get(2)).toStrictEqual([byteArray, byteArray2]);
 });
 
@@ -428,10 +411,7 @@ test("short array", async () => {
   const df = await spark.sql("SELECT array(1S, 2S, 3S) a, array(4S, 5S, 6S) `b.c`, array(array(1S, 2S, 3S), array(4S, 5S, 6S)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(shortArray);
-    expect(rows[0].get(0)).toStrictEqual(shortArray);
     expect(rows[0].get(1)).toStrictEqual(shortArray2);
-    expect(rows[0].get(1)).toStrictEqual(shortArray2);
-    expect(rows[0].get(2)).toStrictEqual([shortArray, shortArray2]);
     expect(rows[0].get(2)).toStrictEqual([shortArray, shortArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(shortArrayType);
@@ -445,10 +425,7 @@ test("short array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(shortArray);
-  expect(rows2[0].get(0)).toStrictEqual(shortArray);
   expect(rows2[0].get(1)).toStrictEqual(shortArray2);
-  expect(rows2[0].get(1)).toStrictEqual(shortArray2);
-  expect(rows2[0].get(2)).toStrictEqual([shortArray, shortArray2]);
   expect(rows2[0].get(2)).toStrictEqual([shortArray, shortArray2]);
 });
 
@@ -461,10 +438,7 @@ test("integer array", async () => {
   const df = await spark.sql("SELECT array(1, 2, 3) a, array(4, 5, 6) `b.c`, array(array(1, 2, 3), array(4, 5, 6)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(intArray);
-    expect(rows[0].get(0)).toStrictEqual(intArray);
     expect(rows[0].get(1)).toStrictEqual(intArray2);
-    expect(rows[0].get(1)).toStrictEqual(intArray2);
-    expect(rows[0].get(2)).toStrictEqual([intArray, intArray2]);
     expect(rows[0].get(2)).toStrictEqual([intArray, intArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(intArrayType);
@@ -478,10 +452,7 @@ test("integer array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(intArray);
-  expect(rows2[0].get(0)).toStrictEqual(intArray);
   expect(rows2[0].get(1)).toStrictEqual(intArray2);
-  expect(rows2[0].get(1)).toStrictEqual(intArray2);
-  expect(rows2[0].get(2)).toStrictEqual([intArray, intArray2]);
   expect(rows2[0].get(2)).toStrictEqual([intArray, intArray2]);
 });
 
@@ -494,10 +465,7 @@ test("long array", async () => {
   const df = await spark.sql("SELECT array(1L, 2L, 3L) a, array(4L, 5L, 6L) `b.c`, array(array(1L, 2L, 3L), array(4L, 5L, 6L)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(longArray);
-    expect(rows[0].get(0)).toStrictEqual(longArray);
     expect(rows[0].get(1)).toStrictEqual(longArray2);
-    expect(rows[0].get(1)).toStrictEqual(longArray2);
-    expect(rows[0].get(2)).toStrictEqual([longArray, longArray2]);
     expect(rows[0].get(2)).toStrictEqual([longArray, longArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(longArrayType);
@@ -511,10 +479,7 @@ test("long array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(longArray);
-  expect(rows2[0].get(0)).toStrictEqual(longArray);
   expect(rows2[0].get(1)).toStrictEqual(longArray2);
-  expect(rows2[0].get(1)).toStrictEqual(longArray2);
-  expect(rows2[0].get(2)).toStrictEqual([longArray, longArray2]);
   expect(rows2[0].get(2)).toStrictEqual([longArray, longArray2]);
 });
 
@@ -527,10 +492,7 @@ test("float array", async () => {
   const df = await spark.sql("SELECT array(1.0f, 2.0f, 3.0f) a, array(4.0f, 5.0f, 6.0f) `b.c`, array(array(1.0f, 2.0f, 3.0f), array(4.0f, 5.0f, 6.0f)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(floatArray);
-    expect(rows[0].get(0)).toStrictEqual(floatArray);
     expect(rows[0].get(1)).toStrictEqual(floatArray2);
-    expect(rows[0].get(1)).toStrictEqual(floatArray2);
-    expect(rows[0].get(2)).toStrictEqual([floatArray, floatArray2]);
     expect(rows[0].get(2)).toStrictEqual([floatArray, floatArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(floatArrayType);
@@ -544,10 +506,7 @@ test("float array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(floatArray);
-  expect(rows2[0].get(0)).toStrictEqual(floatArray);
   expect(rows2[0].get(1)).toStrictEqual(floatArray2);
-  expect(rows2[0].get(1)).toStrictEqual(floatArray2);
-  expect(rows2[0].get(2)).toStrictEqual([floatArray, floatArray2]);
   expect(rows2[0].get(2)).toStrictEqual([floatArray, floatArray2]);
 });
 
@@ -560,10 +519,7 @@ test("double array", async () => {
   const df = await spark.sql("SELECT array(1.0d, 2.0d, 3.0d) a, array(4.0d, 5.0d, 6.0d) `b.c`, array(array(1.0d, 2.0d, 3.0d), array(4.0d, 5.0d, 6.0d)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(doubleArray);
-    expect(rows[0].get(0)).toStrictEqual(doubleArray);
     expect(rows[0].get(1)).toStrictEqual(doubleArray2);
-    expect(rows[0].get(1)).toStrictEqual(doubleArray2);
-    expect(rows[0].get(2)).toStrictEqual([doubleArray, doubleArray2]);
     expect(rows[0].get(2)).toStrictEqual([doubleArray, doubleArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(doubleArrayType);
@@ -577,13 +533,9 @@ test("double array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(doubleArray);
-  expect(rows2[0].get(0)).toStrictEqual(doubleArray);
   expect(rows2[0].get(1)).toStrictEqual(doubleArray2);
-  expect(rows2[0].get(1)).toStrictEqual(doubleArray2);
-  expect(rows2[0].get(2)).toStrictEqual([doubleArray, doubleArray2]);
   expect(rows2[0].get(2)).toStrictEqual([doubleArray, doubleArray2]);
 });
-
 
 test("decimal array", async () => {
   const decimalArray = [1.0, 2.0, 3.0];
@@ -627,10 +579,7 @@ test("string array", async () => {
   const df = await spark.sql("SELECT array('a', 'b', 'c') a, array('d', 'e', 'f') `b.c`, array(array('a', 'b', 'c'), array('d', 'e', 'f')) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(stringArray);
-    expect(rows[0].get(0)).toStrictEqual(stringArray);
     expect(rows[0].get(1)).toStrictEqual(stringArray2);
-    expect(rows[0].get(1)).toStrictEqual(stringArray2);
-    expect(rows[0].get(2)).toStrictEqual([stringArray, stringArray2]);
     expect(rows[0].get(2)).toStrictEqual([stringArray, stringArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(stringArrayType);
@@ -644,10 +593,7 @@ test("string array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(stringArray);
-  expect(rows2[0].get(0)).toStrictEqual(stringArray);
   expect(rows2[0].get(1)).toStrictEqual(stringArray2);
-  expect(rows2[0].get(1)).toStrictEqual(stringArray2);
-  expect(rows2[0].get(2)).toStrictEqual([stringArray, stringArray2]);
   expect(rows2[0].get(2)).toStrictEqual([stringArray, stringArray2]);
 });
 
@@ -775,10 +721,7 @@ test("map array", async () => {
   const df = await spark.sql("SELECT array(map('a', 1, 'b', 2, 'c', 3), map('d', 4, 'e', 5, 'f', 6)) a, array(map('d', 4, 'e', 5, 'f', 6), map('a', 1, 'b', 2, 'c', 3)) `b.c`, array(array(map('a', 1, 'b', 2, 'c', 3), map('d', 4, 'e', 5, 'f', 6)), array(map('d', 4, 'e', 5, 'f', 6), map('a', 1, 'b', 2, 'c', 3))) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(mapArray);
-    expect(rows[0].get(0)).toStrictEqual(mapArray);
     expect(rows[0].get(1)).toStrictEqual(mapArray2);
-    expect(rows[0].get(1)).toStrictEqual(mapArray2);
-    expect(rows[0].get(2)).toStrictEqual([mapArray, mapArray2]);
     expect(rows[0].get(2)).toStrictEqual([mapArray, mapArray2]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(mapArrayType);
@@ -792,23 +735,16 @@ test("map array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(mapArray);
-  expect(rows2[0].get(0)).toStrictEqual(mapArray);
   expect(rows2[0].get(1)).toStrictEqual(mapArray2);
-  expect(rows2[0].get(1)).toStrictEqual(mapArray2);
-  expect(rows2[0].get(2)).toStrictEqual([mapArray, mapArray2]);
   expect(rows2[0].get(2)).toStrictEqual([mapArray, mapArray2]);
 });
-
 
 test("null array", async () => {
   const spark = await sharedSpark;
   const df = await spark.sql("SELECT array(null, null) a, array(null, null) `b.c`, array(array(null, null), array(null, null)) d");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual([null, null]);
-    expect(rows[0].get(0)).toStrictEqual([null, null]);
     expect(rows[0].get(1)).toStrictEqual([null, null]);
-    expect(rows[0].get(1)).toStrictEqual([null, null]);
-    expect(rows[0].get(2)).toStrictEqual([[null, null], [null, null]]);
     expect(rows[0].get(2)).toStrictEqual([[null, null], [null, null]]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(DataTypes.createArrayType(DataTypes.NullType, true));
@@ -822,10 +758,7 @@ test("null array", async () => {
       expect(schema.fields[2].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual([null, null]);
-  expect(rows2[0].get(0)).toStrictEqual([null, null]);
   expect(rows2[0].get(1)).toStrictEqual([null, null]);
-  expect(rows2[0].get(1)).toStrictEqual([null, null]);
-  expect(rows2[0].get(2)).toStrictEqual([[null, null], [null, null]]);
   expect(rows2[0].get(2)).toStrictEqual([[null, null], [null, null]]);
 });
 
@@ -834,8 +767,6 @@ test("empty array", async () => {
   const df = await spark.sql("SELECT array() a,  array(array(), array()) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual([]);
-    expect(rows[0].get(0)).toStrictEqual([]);
-    expect(rows[0].get(1)).toStrictEqual([[], []]);
     expect(rows[0].get(1)).toStrictEqual([[], []]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(DataTypes.createArrayType(DataTypes.NullType, false));
@@ -846,8 +777,6 @@ test("empty array", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual([]);
-  expect(rows2[0].get(0)).toStrictEqual([]);
-  expect(rows2[0].get(1)).toStrictEqual([[], []]);
   expect(rows2[0].get(1)).toStrictEqual([[], []]);
 });
 
@@ -856,8 +785,6 @@ test("array with nulls", async () => {
   const df = await spark.sql("SELECT array(1, null, 3) a, array(null, 5, null) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual([1, null, 3]);
-    expect(rows[0].get(0)).toStrictEqual([1, null, 3]);
-    expect(rows[0].get(1)).toStrictEqual([null, 5, null]);
     expect(rows[0].get(1)).toStrictEqual([null, 5, null]);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(DataTypes.createArrayType(DataTypes.IntegerType, true));
@@ -868,8 +795,6 @@ test("array with nulls", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual([1, null, 3]);
-  expect(rows2[0].get(0)).toStrictEqual([1, null, 3]);
-  expect(rows2[0].get(1)).toStrictEqual([null, 5, null]);
   expect(rows2[0].get(1)).toStrictEqual([null, 5, null]);
 });
 
@@ -881,8 +806,6 @@ test("boolean/boolean map", async () => {
   const df = await spark.sql("SELECT map(TRUE, FALSE) a, map(FALSE, TRUE) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(booleanMap);
-    expect(rows[0].get(0)).toStrictEqual(booleanMap);
-    expect(rows[0].get(1)).toStrictEqual(booleanMap2);
     expect(rows[0].get(1)).toStrictEqual(booleanMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(booleanMapType);
@@ -893,8 +816,6 @@ test("boolean/boolean map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(booleanMap);
-  expect(rows2[0].get(0)).toStrictEqual(booleanMap);
-  expect(rows2[0].get(1)).toStrictEqual(booleanMap2);
   expect(rows2[0].get(1)).toStrictEqual(booleanMap2);
 });
 
@@ -906,8 +827,6 @@ test("byte/byte map", async () => {
   const df = await spark.sql("SELECT map(1Y, 2Y, 3Y, 4Y) a, map(5Y, 6Y, 7Y, 8Y) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(byteMap);
-    expect(rows[0].get(0)).toStrictEqual(byteMap);
-    expect(rows[0].get(1)).toStrictEqual(byteMap2);
     expect(rows[0].get(1)).toStrictEqual(byteMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(byteMapType);
@@ -918,8 +837,6 @@ test("byte/byte map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(byteMap);
-  expect(rows2[0].get(0)).toStrictEqual(byteMap);
-  expect(rows2[0].get(1)).toStrictEqual(byteMap2);
   expect(rows2[0].get(1)).toStrictEqual(byteMap2);
 });
 
@@ -931,8 +848,6 @@ test("short/short map", async () => {
   const df = await spark.sql("SELECT map(1S, 2S, 3S, 4S) a, map(5S, 6S, 7S, 8S) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(shortMap);
-    expect(rows[0].get(0)).toStrictEqual(shortMap);
-    expect(rows[0].get(1)).toStrictEqual(shortMap2);
     expect(rows[0].get(1)).toStrictEqual(shortMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(shortMapType);
@@ -943,8 +858,6 @@ test("short/short map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(shortMap);
-  expect(rows2[0].get(0)).toStrictEqual(shortMap);
-  expect(rows2[0].get(1)).toStrictEqual(shortMap2);
   expect(rows2[0].get(1)).toStrictEqual(shortMap2);
 });
 
@@ -956,8 +869,6 @@ test("int/int map", async () => {
   const df = await spark.sql("SELECT map(1, 2, 3, 4) a, map(5, 6, 7, 8) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(intMap);
-    expect(rows[0].get(0)).toStrictEqual(intMap);
-    expect(rows[0].get(1)).toStrictEqual(intMap2);
     expect(rows[0].get(1)).toStrictEqual(intMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(intMapType);
@@ -968,8 +879,6 @@ test("int/int map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(intMap);
-  expect(rows2[0].get(0)).toStrictEqual(intMap);
-  expect(rows2[0].get(1)).toStrictEqual(intMap2);
   expect(rows2[0].get(1)).toStrictEqual(intMap2);
 });
 
@@ -981,8 +890,6 @@ test("long/long map", async () => {
   const df = await spark.sql("SELECT map(1L, 2L, 3L, 4L) a, map(5L, 6L, 7L, 8L) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(longMap);
-    expect(rows[0].get(0)).toStrictEqual(longMap);
-    expect(rows[0].get(1)).toStrictEqual(longMap2);
     expect(rows[0].get(1)).toStrictEqual(longMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(longMapType);
@@ -993,8 +900,6 @@ test("long/long map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(longMap);
-  expect(rows2[0].get(0)).toStrictEqual(longMap);
-  expect(rows2[0].get(1)).toStrictEqual(longMap2);
   expect(rows2[0].get(1)).toStrictEqual(longMap2);
 });
 
@@ -1006,8 +911,6 @@ test("float/float map", async () => {
   const df = await spark.sql("SELECT map(1.0f, 2.0f, 3.0f, 4.0f) a, map(5.0f, 6.0f, 7.0f, 8.0f) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(floatMap);
-    expect(rows[0].get(0)).toStrictEqual(floatMap);
-    expect(rows[0].get(1)).toStrictEqual(floatMap2);
     expect(rows[0].get(1)).toStrictEqual(floatMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(floatMapType);
@@ -1018,11 +921,8 @@ test("float/float map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(floatMap);
-  expect(rows2[0].get(0)).toStrictEqual(floatMap);
-  expect(rows2[0].get(1)).toStrictEqual(floatMap2);
   expect(rows2[0].get(1)).toStrictEqual(floatMap2);
 });
-
 
 test("double/double map", async () => {
   const spark = await sharedSpark;
@@ -1032,8 +932,6 @@ test("double/double map", async () => {
   const df = await spark.sql("SELECT map(1.0d, 2.0d, 3.0d, 4.0d) a, map(5.0d, 6.0d, 7.0d, 8.0d) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(doubleMap);
-    expect(rows[0].get(0)).toStrictEqual(doubleMap);
-    expect(rows[0].get(1)).toStrictEqual(doubleMap2);
     expect(rows[0].get(1)).toStrictEqual(doubleMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(doubleMapType);
@@ -1044,8 +942,6 @@ test("double/double map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(doubleMap);
-  expect(rows2[0].get(0)).toStrictEqual(doubleMap);
-  expect(rows2[0].get(1)).toStrictEqual(doubleMap2);
   expect(rows2[0].get(1)).toStrictEqual(doubleMap2);
 });
 
@@ -1082,8 +978,6 @@ test("string/string map", async () => {
   const df = await spark.sql("SELECT map('a', 'b', 'c', 'd') a, map('e', 'f', 'g', 'h') b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(stringMap);
-    expect(rows[0].get(0)).toStrictEqual(stringMap);
-    expect(rows[0].get(1)).toStrictEqual(stringMap2);
     expect(rows[0].get(1)).toStrictEqual(stringMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(stringMapType);
@@ -1094,8 +988,6 @@ test("string/string map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(stringMap);
-  expect(rows2[0].get(0)).toStrictEqual(stringMap);
-  expect(rows2[0].get(1)).toStrictEqual(stringMap2);
   expect(rows2[0].get(1)).toStrictEqual(stringMap2);
 });
 
@@ -1111,8 +1003,6 @@ test("binary/binary map", async () => {
   const df = await spark.sql("SELECT map(cast('apache' as binary), cast('spark' as binary)) a, map(cast('spark' as binary), cast('apache' as binary)) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(binaryMap);
-    expect(rows[0].get(0)).toStrictEqual(binaryMap);
-    expect(rows[0].get(1)).toStrictEqual(binaryMap2);
     expect(rows[0].get(1)).toStrictEqual(binaryMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(binaryMapType);
@@ -1123,8 +1013,6 @@ test("binary/binary map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(binaryMap);
-  expect(rows2[0].get(0)).toStrictEqual(binaryMap);
-  expect(rows2[0].get(1)).toStrictEqual(binaryMap2);
   expect(rows2[0].get(1)).toStrictEqual(binaryMap2);
 });
 
@@ -1194,8 +1082,6 @@ test("array map", async () => {
   const df = await spark.sql("SELECT map(array(1, 2), array(3, 4)) a, map(array(5, 6), array(7, 8)) b");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(arrayMap);
-    expect(rows[0].get(0)).toStrictEqual(arrayMap);
-    expect(rows[0].get(1)).toStrictEqual(arrayMap2);
     expect(rows[0].get(1)).toStrictEqual(arrayMap2);
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(arrayMapType);
@@ -1206,8 +1092,6 @@ test("array map", async () => {
       expect(schema.fields[1].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
   expect(rows2[0].get(0)).toStrictEqual(arrayMap);
-  expect(rows2[0].get(0)).toStrictEqual(arrayMap);
-  expect(rows2[0].get(1)).toStrictEqual(arrayMap2);
   expect(rows2[0].get(1)).toStrictEqual(arrayMap2);
 });
 
@@ -1216,13 +1100,11 @@ test("map value with nulls", async () => {
   const df = await spark.sql("SELECT map(1, 2, 3, null) a");
   const rows = await df.collect();
     expect(rows[0].get(0)).toStrictEqual(new Map([[1, 2], [3, null]]));
-    expect(rows[0].get(0)).toStrictEqual(new Map([[1, 2], [3, null]]));
     const schema = await df.schema();
       expect(schema.fields[0].dataType).toStrictEqual(DataTypes.createMapType(DataTypes.IntegerType, DataTypes.IntegerType, true));
       expect(schema.fields[0].name).toBe("a");
       expect(schema.fields[0].nullable).toBe(false);
       const rows2 = await spark.createDataFrame(rows, schema).collect();
-  expect(rows2[0].get(0)).toStrictEqual(new Map([[1, 2], [3, null]]));
   expect(rows2[0].get(0)).toStrictEqual(new Map([[1, 2], [3, null]]));
 });
 
