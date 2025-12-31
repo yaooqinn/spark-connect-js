@@ -145,8 +145,11 @@ export class DataFrameWriterV2 {
     mode: string,
     condition?: Column | string
   ): Promise<ExecutePlanResponseHandler[]> {
+    if (!this.df_.plan.relation) {
+      throw new Error('DataFrame plan must have a relation for write operation');
+    }
     const builder = new WriteOperationV2Builder()
-      .withInput(this.df_.plan.relation!)
+      .withInput(this.df_.plan.relation)
       .withTableName(this.tableName_)
       .withOptions(Object.fromEntries(this.options_))
       .withTableProperties(Object.fromEntries(this.tableProperties_))

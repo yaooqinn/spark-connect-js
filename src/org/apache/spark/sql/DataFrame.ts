@@ -247,8 +247,11 @@ export class DataFrame {
    * @group basic
    */
   async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    if (!this.plan.relation) {
+      throw new Error('DataFrame plan must have a relation for checkpoint operation');
+    }
     const plan = this.spark.planFromCommandBuilder(b =>
-      b.withCheckpointCommand(this.plan.relation!, false, eager)
+      b.withCheckpointCommand(this.plan.relation, false, eager)
     );
     await this.spark.client.execute(plan.plan);
     return this;
@@ -270,8 +273,11 @@ export class DataFrame {
    * @group basic
    */
   async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
+    if (!this.plan.relation) {
+      throw new Error('DataFrame plan must have a relation for localCheckpoint operation');
+    }
     const plan = this.spark.planFromCommandBuilder(b =>
-      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
+      b.withCheckpointCommand(this.plan.relation, true, eager, storageLevel)
     );
     await this.spark.client.execute(plan.plan);
     return this;
@@ -1397,11 +1403,14 @@ export class DataFrame {
   ): DataFrame {
     const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
     const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
+    if (!this.plan.relation || !other.plan.relation) {
+      throw new Error('DataFrame plans must have relations for coGroupMap operation');
+    }
     return this.toNewDataFrame(b =>
       b.withCoGroupMap(
-        this.plan.relation!,
+        this.plan.relation,
         inputGroupingExprs,
-        other.plan.relation!,
+        other.plan.relation,
         otherGroupingExprs,
         pythonCode,
         outputSchema,

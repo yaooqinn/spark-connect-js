@@ -97,7 +97,11 @@ export const bigintToDecimalBigNum = (val: bigint) => {
 export function bigNumToNumber(bn: any, scale?: number) {
   const { buffer, byteOffset, byteLength, 'signed': signed } = bn;
   const words = new BigUint64Array(buffer, byteOffset, byteLength / 8);
-  const negative = signed && words.at(-1)! & (BigInt(1) << BigInt(63));
+  const lastWord = words.at(-1);
+  if (lastWord === undefined) {
+    throw new Error('Empty BigUint64Array in bigNumToNumber');
+  }
+  const negative = signed && lastWord & (BigInt(1) << BigInt(63));
   let number = BigInt(0);
   let i = 0;
   if (negative) {
