@@ -34,11 +34,57 @@ import { expr } from './functions';
 import { RelationalGroupedDataset } from './RelationalGroupedDataset';
 import { GroupType } from './proto/aggregate/GroupType';
 
+/**
+ * A distributed collection of data organized into named columns.
+ * 
+ * @remarks
+ * DataFrame is the primary abstraction in Spark SQL for working with structured data.
+ * It provides a domain-specific language for distributed data manipulation and supports
+ * a wide variety of operations including selecting, filtering, joining, and aggregating.
+ * 
+ * DataFrames are lazy - operations are not executed until an action (like collect, count, or show)
+ * is called. This allows Spark to optimize the execution plan.
+ * 
+ * @example
+ * ```typescript
+ * // Create a DataFrame from a table
+ * const df = spark.table("users");
+ * 
+ * // Select and filter
+ * const result = df.select("name", "age")
+ *                  .filter(col("age").gt(21));
+ * 
+ * // Show results
+ * await result.show();
+ * 
+ * // Perform aggregations
+ * const avgAge = await df.groupBy("department")
+ *                        .avg("age")
+ *                        .collect();
+ * ```
+ * 
+ * @group core
+ * @since 1.0.0
+ */
 export class DataFrame {
   private cachedSchema_: StructType | undefined = undefined;
 
   constructor(public readonly spark: SparkSession, public readonly plan: LogicalPlan) {}
 
+  /**
+   * Returns a new DataFrame with columns renamed.
+   * 
+   * @param cols - New column names. If empty, returns this DataFrame unchanged.
+   * @returns A new DataFrame with the specified column names
+   * 
+   * @example
+   * ```typescript
+   * // Rename columns
+   * const df2 = df.toDF("name", "age", "city");
+   * ```
+   * 
+   * @group dfops
+   */
   toDF(...cols: string[]): DataFrame {
     if (cols.length === 0) {
       return this;
@@ -47,6 +93,23 @@ export class DataFrame {
     }
   }
 
+  /**
+   * Returns a new DataFrame with the specified schema applied.
+   * 
+   * @param schema - The schema to apply to this DataFrame
+   * @returns A new DataFrame with the specified schema
+   * 
+   * @example
+   * ```typescript
+   * const newSchema = new StructType([
+   *   new StructField("name", DataTypes.StringType),
+   *   new StructField("age", DataTypes.IntegerType)
+   * ]);
+   * const df2 = df.to(newSchema);
+   * ```
+   * 
+   * @group dfops
+   */
   to(schema: StructType): DataFrame {
     return this.toNewDataFrame(b => b.withToSchema(schema, this.plan.relation));
   }
@@ -83,22 +146,91 @@ export class DataFrame {
     return this.analyze(f).then(r=> r.explain);
   }
 
+  /**
+   * Returns all column names and their data types as an array of tuples.
+   * 
+   * @returns A promise that resolves to an array of [columnName, dataType] tuples
+   * 
+   * @example
+   * ```typescript
+   * const types = await df.dtypes();
+   * // Returns: [["name", "string"], ["age", "integer"], ...]
+   * ```
+   * 
+   * @group basic
+   */
   async dtypes(): Promise<Array<[string, string]>> {
     return this.schema().then(s => s.fields.map(field => [field.name, field.dataType.toString()]));
   }
 
+  /**
+   * Returns all column names as an array.
+   * 
+   * @returns A promise that resolves to an array of column names
+   * 
+   * @example
+   * ```typescript
+   * const cols = await df.columns();
+   * // Returns: ["name", "age", "city"]
+   * ```
+   * 
+   * @group basic
+   */
   async columns(): Promise<string[]> {
     return this.schema().then(s => s.fieldNames());
   }
 
+  /**
+   * Returns true if this DataFrame contains zero rows.
+   * 
+   * @returns A promise that resolves to true if the DataFrame is empty, false otherwise
+   * 
+   * @example
+   * ```typescript
+   * const empty = await df.isEmpty();
+   * if (empty) {
+   *   console.log("No data found");
+   * }
+   * ```
+   * 
+   * @group basic
+   */
   async isEmpty(): Promise<boolean> {
     return this.head(1).then(rows => rows.length === 0);
   }
 
+  /**
+   * Returns true if the collect and take methods can be run locally without any Spark executors.
+   * 
+   * @returns A promise that resolves to true if operations can run locally
+   * 
+   * @example
+   * ```typescript
+   * const local = await df.isLocal();
+   * console.log(`Can run locally: ${local}`);
+   * ```
+   * 
+   * @group basic
+   */
   async isLocal(): Promise<boolean> {
     return this.analyze(b => b.withIsLocal(this.plan.plan)).then(r => r.isLocal);
   }
 
+  /**
+   * Returns true if this DataFrame contains one or more sources that continuously return data as it arrives.
+   * 
+   * @returns A promise that resolves to true if this is a streaming DataFrame
+   * 
+   * @example
+   * ```typescript
+   * const streaming = await df.isStreaming();
+   * if (streaming) {
+   *   console.log("This is a streaming DataFrame");
+   * }
+   * ```
+   * 
+   * @group streaming
+   */
   async isStreaming(): Promise<boolean> {
     return this.analyze(b => b.withIsStreaming(this.plan.plan)).then(r => r.isStreaming);
   }
@@ -219,17 +351,71 @@ export class DataFrame {
     return new DataFrameNaFunctions(this);
   }
 
+  /**
+   * Returns all rows in this DataFrame as an array of Row objects.
+   * 
+   * @returns A promise that resolves to an array of Row objects
+   * 
+   * @remarks
+   * This is an action that triggers execution of the DataFrame's computation.
+   * Use with caution on large datasets as it collects all data to the driver.
+   * 
+   * @example
+   * ```typescript
+   * const rows = await df.collect();
+   * rows.forEach(row => {
+   *   console.log(row.getString(0), row.getInt(1));
+   * });
+   * ```
+   * 
+   * @group action
+   */
   async collect(): Promise<Row[]> {
     return this.withResult(res => {
       return res.toArray();
     });
   }
 
+  /**
+   * Returns a new DataFrame by taking the first n rows.
+   * 
+   * @param n - The number of rows to take
+   * @returns A new DataFrame with at most n rows
+   * 
+   * @example
+   * ```typescript
+   * const top10 = df.limit(10);
+   * await top10.show();
+   * ```
+   * 
+   * @group dfops
+   */
   limit(n: number): DataFrame {
     return this.toNewDataFrame(b => b.withLimit(n, this.plan.relation));
   }
 
+  /**
+   * Returns the first row.
+   * 
+   * @returns A promise that resolves to the first Row
+   * 
+   * @group action
+   */
   async head(): Promise<Row>;
+  /**
+   * Returns the first n rows.
+   * 
+   * @param n - The number of rows to return
+   * @returns A promise that resolves to an array of Row objects
+   * 
+   * @example
+   * ```typescript
+   * const firstRow = await df.head();
+   * const first5 = await df.head(5);
+   * ```
+   * 
+   * @group action
+   */
   async head(n: number): Promise<Row[]>;
   async head(n?: number): Promise<Row[] | Row> {
     if (n) {
@@ -238,17 +424,59 @@ export class DataFrame {
       return this.limit(1).collect().then(rows => rows[0]);
     }
   }
+  /**
+   * Returns the first row. Alias for head().
+   * 
+   * @returns A promise that resolves to the first Row
+   * 
+   * @group action
+   */
   async first(): Promise<Row> {
     return this.head();
   }
+  /**
+   * Returns the first n rows. Alias for head(n).
+   * 
+   * @param n - The number of rows to return
+   * @returns A promise that resolves to an array of Row objects
+   * 
+   * @group action
+   */
   async take(n: number): Promise<Row[]> {
     return this.head(n);
   }
 
+  /**
+   * Returns a new DataFrame by skipping the first n rows.
+   * 
+   * @param n - The number of rows to skip
+   * @returns A new DataFrame with the first n rows removed
+   * 
+   * @example
+   * ```typescript
+   * const skipped = df.offset(100);
+   * await skipped.show();
+   * ```
+   * 
+   * @group dfops
+   */
   offset(n: number): DataFrame {
     return this.toNewDataFrame(b => b.withOffset(n, this.plan.relation));
   }
 
+  /**
+   * Returns the last n rows in the DataFrame.
+   * 
+   * @param n - The number of rows to return from the end
+   * @returns A promise that resolves to an array of Row objects
+   * 
+   * @example
+   * ```typescript
+   * const lastRows = await df.tail(10);
+   * ```
+   * 
+   * @group action
+   */
   tail(n: number): Promise<Row[]> {
     return this.toNewDataFrame(b => b.withTail(n, this.plan.relation)).collect();
   }
@@ -331,14 +559,61 @@ export class DataFrame {
     return new Column(b => b.withUnresolvedAttribute(colName, this.plan.planId, true));
   }
 
+  /**
+   * Filters rows using the given Column condition.
+   * 
+   * @param condition - A Column representing the filter condition
+   * @returns A new DataFrame with rows matching the condition
+   * 
+   * @group dfops
+   */
   filter(condition: Column): DataFrame;
+  /**
+   * Filters rows using the given SQL expression string.
+   * 
+   * @param conditionExpr - A SQL expression string representing the filter condition
+   * @returns A new DataFrame with rows matching the condition
+   * 
+   * @example
+   * ```typescript
+   * // Using Column
+   * const adults = df.filter(col("age").gt(18));
+   * 
+   * // Using SQL expression
+   * const adults2 = df.filter("age > 18");
+   * ```
+   * 
+   * @group dfops
+   */
   filter(conditionExpr: string): DataFrame;
   filter(condition: Column | string): DataFrame {
     const cond = typeof condition === "string" ? expr(condition) : condition;
     return this.toNewDataFrame(b => b.withFilter(cond.expr, this.plan.relation));
   }
 
+  /**
+   * Filters rows using the given Column condition. Alias for filter().
+   * 
+   * @param condition - A Column representing the filter condition
+   * @returns A new DataFrame with rows matching the condition
+   * 
+   * @group dfops
+   */
   where(condition: Column): DataFrame;
+  /**
+   * Filters rows using the given SQL expression string. Alias for filter().
+   * 
+   * @param conditionExpr - A SQL expression string representing the filter condition
+   * @returns A new DataFrame with rows matching the condition
+   * 
+   * @example
+   * ```typescript
+   * const result = df.where(col("status").equalTo("active"));
+   * const result2 = df.where("status = 'active'");
+   * ```
+   * 
+   * @group dfops
+   */
   where(conditionExpr: string): DataFrame;
   where(condition: Column | string): DataFrame {
     if (typeof condition === "string") {
