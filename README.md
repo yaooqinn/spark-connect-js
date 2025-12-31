@@ -26,9 +26,13 @@ An **experimental** client for [Apache Spark Connect](https://spark.apache.org/d
 
 ## Installation
 
-> **Note**: This package is currently experimental and not yet published to npm.
+Install from npm:
 
-For now, clone the repository to use it:
+```bash
+npm install spark.js
+```
+
+Or clone the repository for development:
 
 ```bash
 git clone https://github.com/yaooqinn/spark.js.git
@@ -36,19 +40,12 @@ cd spark.js
 npm install
 ```
 
-Import modules using relative paths from `src/`:
-
-```typescript
-import { SparkSession } from './src/org/apache/spark/sql/SparkSession';
-import { col, lit } from './src/org/apache/spark/sql/functions';
-```
-
 ## Quick Start
 
 Here's a minimal example to get started:
 
 ```typescript
-import { SparkSession } from './src/org/apache/spark/sql/SparkSession';
+import { SparkSession } from 'spark.js';
 
 async function main() {
   // Create a SparkSession connected to a Spark Connect server
@@ -79,7 +76,7 @@ main().catch(console.error);
 The `SparkSession` is the entry point for all Spark operations:
 
 ```typescript
-import { SparkSession } from './src/org/apache/spark/sql/SparkSession';
+import { SparkSession } from 'spark.js';
 
 // Connect to a remote Spark Connect server
 const spark = await SparkSession.builder()
@@ -121,7 +118,8 @@ const df = spark.read
 Perform transformations and actions on DataFrames:
 
 ```typescript
-import { col, lit } from './src/org/apache/spark/sql/functions';
+import { functions } from 'spark.js';
+const { col, lit } = functions;
 
 // Select columns
 const selected = df.select('name', 'age');
@@ -247,7 +245,8 @@ const currentDB = await spark.catalog.currentDatabase();
 Import SQL functions from the functions module:
 
 ```typescript
-import { col, lit, sum, avg, max, min, count, when, concat, upper } from './src/org/apache/spark/sql/functions';
+import { functions } from 'spark.js';
+const { col, lit, sum, avg, max, min, count, when, concat, upper } = functions;
 
 const df = spark.read.csv('data.csv');
 
@@ -265,7 +264,7 @@ See [docs/STATISTICAL_FUNCTIONS.md](docs/STATISTICAL_FUNCTIONS.md) for statistic
 Define schemas using the type system:
 
 ```typescript
-import { DataTypes, StructType, StructField } from './src/org/apache/spark/sql/types';
+import { DataTypes, StructType, StructField } from 'spark.js';
 
 const schema = new StructType([
   new StructField('name', DataTypes.StringType, false),
@@ -476,6 +475,40 @@ docker run --name sparkconnect -p 15002:15002 -d scs
 npm test
 docker stop sparkconnect && docker rm sparkconnect
 ```
+
+### Publishing to npm
+
+To publish a new version to npm (maintainers only):
+
+1. **Update the version** in `package.json`:
+   ```bash
+   npm version patch  # or minor, or major
+   ```
+
+2. **Build the package**:
+   ```bash
+   npm run build
+   ```
+
+3. **Test the package locally** (optional):
+   ```bash
+   npm pack
+   # This creates a .tgz file you can test with: npm install spark.js-0.1.0.tgz
+   ```
+
+4. **Publish to npm**:
+   ```bash
+   npm login  # Login to npm (first time only)
+   npm publish
+   ```
+
+5. **Tag the release** on GitHub:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+**Note**: The `prepublishOnly` script automatically runs the build before publishing.
 
 ## Roadmap
 
