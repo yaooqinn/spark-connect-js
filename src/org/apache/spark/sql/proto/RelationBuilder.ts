@@ -216,10 +216,10 @@ export class RelationBuilder {
         rightAsOf: rightAsOf,
         joinExpr: joinExpr,
         usingColumns: usingColumns,
-        joinType: joinType || "inner",
+        joinType: joinType ?? "inner",
         tolerance: tolerance,
-        allowExactMatches: allowExactMatches !== undefined ? allowExactMatches : true,
-        direction: direction || "backward"
+        allowExactMatches: allowExactMatches ?? true,
+        direction: direction ?? "backward"
       });
     this.relation.relType = { case: "asOfJoin", value: asOfJoin };
     return this;
@@ -336,7 +336,7 @@ export class RelationBuilder {
     });
     const naFill = create(NAFillSchema, {
       input: input,
-      cols: cols || [],
+      cols: cols ?? [],
       values: literalValues
     });
     this.relation.relType = { case: "fillNa", value: naFill };
@@ -346,7 +346,7 @@ export class RelationBuilder {
   withNADrop(cols: string[] | undefined, minNonNulls: number | undefined, input?: Relation) {
     const naDrop = create(NADropSchema, {
       input: input,
-      cols: cols || [],
+      cols: cols ?? [],
       minNonNulls: minNonNulls
     });
     this.relation.relType = { case: "dropNa", value: naDrop };
@@ -393,7 +393,7 @@ export class RelationBuilder {
     
     const naReplace = create(NAReplaceSchema, {
       input: input,
-      cols: cols || [],
+      cols: cols ?? [],
       replacements: replacements
     });
     this.relation.relType = { case: "replace", value: naReplace };

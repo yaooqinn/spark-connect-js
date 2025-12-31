@@ -32,7 +32,7 @@ export const sharedSpark = SparkSession.builder()
   .getOrCreate();
 
 export function currentUser(): string {
-  return process.env.USER || os.userInfo().username;
+  return process.env.USER ?? os.userInfo().username;
 }
 
 export function delay(ms: number) {

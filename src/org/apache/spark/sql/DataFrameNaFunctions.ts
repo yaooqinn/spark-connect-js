@@ -59,7 +59,7 @@ export class DataFrameNaFunctions {
 
     if (typeof howOrColsOrMinNonNulls === 'string') {
       // drop(how, cols?)
-      const how = howOrColsOrMinNonNulls as 'any' | 'all';
+      const how = howOrColsOrMinNonNulls;
       if (how === 'all') {
         minNonNulls = 1;
       }

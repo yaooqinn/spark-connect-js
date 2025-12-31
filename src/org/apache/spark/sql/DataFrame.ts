@@ -128,6 +128,7 @@ export class DataFrame {
   }
 
   async printSchema(level: number = 0): Promise<void> {
+    // eslint-disable-next-line no-console
     return this.printSchema0(b => b.withTreeString(this.plan.plan, level)).then(console.log);
   }
   /** @ignore */
@@ -139,6 +140,7 @@ export class DataFrame {
   async explain(mode: string): Promise<void>;
   async explain(mode: boolean): Promise<void>;
   async explain(mode?: any): Promise<void> {
+    // eslint-disable-next-line no-console
     return this.explain0(b => b.withExplain(this.plan.plan, mode)).then(console.log);
   }
   /** @ignore */
@@ -247,8 +249,12 @@ export class DataFrame {
    * @group basic
    */
   async checkpoint(eager: boolean = true): Promise<DataFrame> {
+    const relation = this.plan.relation;
+    if (!relation) {
+      throw new Error('DataFrame plan must have a relation for checkpoint operation');
+    }
     const plan = this.spark.planFromCommandBuilder(b =>
-      b.withCheckpointCommand(this.plan.relation!, false, eager)
+      b.withCheckpointCommand(relation, false, eager)
     );
     await this.spark.client.execute(plan.plan);
     return this;
@@ -270,8 +276,12 @@ export class DataFrame {
    * @group basic
    */
   async localCheckpoint(eager: boolean = true, storageLevel?: StorageLevel): Promise<DataFrame> {
+    const relation = this.plan.relation;
+    if (!relation) {
+      throw new Error('DataFrame plan must have a relation for localCheckpoint operation');
+    }
     const plan = this.spark.planFromCommandBuilder(b =>
-      b.withCheckpointCommand(this.plan.relation!, true, eager, storageLevel)
+      b.withCheckpointCommand(relation, true, eager, storageLevel)
     );
     await this.spark.client.execute(plan.plan);
     return this;
@@ -497,6 +507,7 @@ export class DataFrame {
       builder.withShowString(numRows, truncateValue, vertical, this.plan.relation);
     });
     return this.withResult(res => {
+      // eslint-disable-next-line no-console
       console.log(res.toArray()[0].getString(0));
     }, plan);
   }
@@ -1144,7 +1155,7 @@ export class DataFrame {
   unionByName(other: DataFrame): DataFrame;
   unionByName(other: DataFrame, allowMissingColumns: boolean): DataFrame;
   unionByName(other: DataFrame, allowMissingColumns?: boolean): DataFrame {
-    allowMissingColumns = allowMissingColumns || false;
+    allowMissingColumns = allowMissingColumns ?? false;
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true, true, allowMissingColumns));
   }
   /**
@@ -1351,7 +1362,7 @@ export class DataFrame {
     pythonVersion: string = '3.11'
   ): DataFrame {
     return this.toNewDataFrame(b => 
-      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation!, pythonVersion)
+      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation, pythonVersion)
     );
   }
 
@@ -1397,11 +1408,16 @@ export class DataFrame {
   ): DataFrame {
     const inputGroupingExprs = thisGroupingCols.map(col => col.expr);
     const otherGroupingExprs = otherGroupingCols.map(col => col.expr);
+    const thisRelation = this.plan.relation;
+    const otherRelation = other.plan.relation;
+    if (!thisRelation || !otherRelation) {
+      throw new Error('DataFrame plans must have relations for coGroupMap operation');
+    }
     return this.toNewDataFrame(b =>
       b.withCoGroupMap(
-        this.plan.relation!,
+        thisRelation,
         inputGroupingExprs,
-        other.plan.relation!,
+        otherRelation,
         otherGroupingExprs,
         pythonCode,
         outputSchema,
