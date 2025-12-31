@@ -1351,7 +1351,7 @@ export class DataFrame {
     pythonVersion: string = '3.11'
   ): DataFrame {
     return this.toNewDataFrame(b => 
-      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation!, pythonVersion)
+      b.withMapPartitions(pythonCode, outputSchema, this.plan.relation, pythonVersion)
     );
   }
 

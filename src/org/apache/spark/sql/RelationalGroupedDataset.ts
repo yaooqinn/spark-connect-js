@@ -154,7 +154,7 @@ export class RelationalGroupedDataset {
       });
       return this.toDF(...aggExprs);
     } else {
-      const allExprs = [exprsOrMap as Column, ...exprs];
+      const allExprs = [exprsOrMap, ...exprs];
       return this.toDF(...allExprs);
     }
   }
@@ -235,7 +235,7 @@ export class RelationalGroupedDataset {
       : this.groupingExprs.map((c) => (c as Column).expr);
 
     return this.df.spark.relationBuilderToDF((rb) => {
-      return rb.withGroupMap(groupingExprs, pythonCode, outputSchema, this.df.plan.relation!, pythonVersion);
+      return rb.withGroupMap(groupingExprs, pythonCode, outputSchema, this.df.plan.relation, pythonVersion);
     });
   }
 }
