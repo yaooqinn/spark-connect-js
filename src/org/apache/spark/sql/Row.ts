@@ -191,8 +191,8 @@ export class Row implements IRow {
     const value = this[i];
     if (value instanceof Uint8Array) {
       return value;
-    } else if (value instanceof String) {
-      return new Uint8Array(Buffer.from(value.toString()));
+    } else if (typeof value === 'string' || value instanceof String) {
+      return new Uint8Array(Buffer.from(String(value)));
     } else {
       throw new Error(`Value '${value}' for '${i}' is not a Uint8Array`);
     }
