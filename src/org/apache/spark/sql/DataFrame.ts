@@ -16,6 +16,7 @@
  */
 
 import { DataFrameWriter } from './DataFrameWriter';
+import { DataStreamWriter } from './DataStreamWriter';
 import { DataFrameWriterV2 } from './DataFrameWriterV2';
 import { DataFrameStatFunctions } from './DataFrameStatFunctions';
 import { DataFrameNaFunctions } from './DataFrameNaFunctions';
@@ -204,6 +205,8 @@ export class DataFrame {
     return new DataFrameWriter(this);
   }
 
+  get writeStream(): DataStreamWriter {
+    return new DataStreamWriter(this);
   /**
    * Create a write builder for writing to a table using V2 API
    */

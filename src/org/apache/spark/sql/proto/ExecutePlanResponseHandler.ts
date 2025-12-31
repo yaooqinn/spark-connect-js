@@ -58,6 +58,28 @@ export class ExecutePlanResponseHandler {
     return (this.resultValue as ExecutePlanResponse_SqlCommandResult).relation;
   }
 
+  get isStreamingQueryCommandResult(): boolean {
+    return this.resultType === "streamingQueryCommandResult";
+  }
+
+  get streamingQueryCommandResult(): any {
+    if (this.resultType !== "streamingQueryCommandResult") {
+      throw this.unexpectedType("streamingQueryCommandResult");
+    }
+    return this.resultValue;
+  }
+
+  get isWriteStreamOperationStartResult(): boolean {
+    return this.resultType === "writeStreamOperationStartResult";
+  }
+
+  get writeStreamOperationStartResult(): any {
+    if (this.resultType !== "writeStreamOperationStartResult") {
+      throw this.unexpectedType("writeStreamOperationStartResult");
+    }
+    return this.resultValue;
+  }
+
   private unexpectedType(expectedType: string): Error {
     return new Error(`Unexpected response type. Expected: ${expectedType}, Actual: ${this.resultType}`);
   }
