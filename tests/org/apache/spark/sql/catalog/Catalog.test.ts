@@ -55,11 +55,11 @@ test("list databases", async () => {
   await withDatabase(spark, "test_db", async () => {
     await spark.sql('CREATE DATABASE IF NOT EXISTS test_db')
     await spark.catalog.listDatabases().collect().then((databases) => {
-      expect(databases[0][0]).toBe("default");
-      expect(databases[1][0]).toBe("test_db");
+      expect(databases[0].get(0)).toBe("default");
+      expect(databases[1].get(0)).toBe("test_db");
     });
     await spark.catalog.listDatabases('test_db').collect().then((databases) => {
-      expect(databases[0][0]).toBe("test_db");
+      expect(databases[0].get(0)).toBe("test_db");
     });
   });
 });
@@ -107,11 +107,11 @@ test("table apis", async () => {
     await spark.catalog.createTable('test_db.t3', dbDir + "/t0").show() // parquet
     await spark.catalog.createTable('test_db.t4', dbDir + "/t1", 'orc').show() // orc
     await spark.catalog.listTables("test_db").collect().then((tables) => {
-      expect(tables[0][0]).toBe("t0");
-      expect(tables[1][0]).toBe("t1");
-      expect(tables[2][0]).toBe("t2");
-      expect(tables[3][0]).toBe("t3");
-      expect(tables[4][0]).toBe("t4");
+      expect(tables[0].get(0)).toBe("t0");
+      expect(tables[1].get(0)).toBe("t1");
+      expect(tables[2].get(0)).toBe("t2");
+      expect(tables[3].get(0)).toBe("t3");
+      expect(tables[4].get(0)).toBe("t4");
     });
     await spark.catalog.tableExists("test_db", "t0").then((exists) => {
       expect(exists).toBe(true);
@@ -152,17 +152,17 @@ test("table apis", async () => {
     await spark.catalog.refreshTable("test_db.t0")
 
     await spark.catalog.listColumns("test_db.t0").collect().then((columns) => {
-      expect(columns[0][0]).toBe("id");
-      expect(columns[0][2]).toBe("int");
-      expect(columns[1][0]).toBe("name");
-      expect(columns[1][2]).toBe("string");
+      expect(columns[0].get(0)).toBe("id");
+      expect(columns[0].get(2)).toBe("int");
+      expect(columns[1].get(0)).toBe("name");
+      expect(columns[1].get(2)).toBe("string");
     });
 
     await spark.catalog.listColumns("test_db", "t0").collect().then((columns) => {
-      expect(columns[0][0]).toBe("id");
-      expect(columns[0][2]).toBe("int");
-      expect(columns[1][0]).toBe("name");
-      expect(columns[1][2]).toBe("string");
+      expect(columns[0].get(0)).toBe("id");
+      expect(columns[0].get(2)).toBe("int");
+      expect(columns[1].get(0)).toBe("name");
+      expect(columns[1].get(2)).toBe("string");
     });
   });
 }, 30000);
@@ -227,19 +227,19 @@ test("functions api", async () => {
     await spark.sql('CREATE DATABASE IF NOT EXISTS test_db')
     await spark.sql('CREATE FUNCTION test_db.f AS "org.apache.spark.sql.catalyst.expressions.Not"')
     await spark.catalog.listFunctions().collect().then((rows) => {
-      expect(rows[0][0]).toBe('!');
-      expect(rows[0][1]).toBeNull;
-      expect(rows[0][2]).toBeNull;
-      expect(rows[0][3]).toBe('! expr - Logical not.');
-      expect(rows[0][4]).toBe('org.apache.spark.sql.catalyst.expressions.Not');
-      expect(rows[0][5]).toBe(true);
+      expect(rows[0].get(0)).toBe('!');
+      expect(rows[0].get(1)).toBeNull;
+      expect(rows[0].get(2)).toBeNull;
+      expect(rows[0].get(3)).toBe('! expr - Logical not.');
+      expect(rows[0].get(4)).toBe('org.apache.spark.sql.catalyst.expressions.Not');
+      expect(rows[0].get(5)).toBe(true);
     });
     await spark.catalog.listFunctions("test_db").collect().then((functions) => {
-      expect(functions[0][0]).toBe("!");
+      expect(functions[0].get(0)).toBe("!");
     });
     await spark.catalog.listFunctions("test_db", "f").collect().then((functions) => {
       expect(functions.length).toBe(1);
-      expect(functions[0][0]).toBe("f");
+      expect(functions[0].get(0)).toBe("f");
     });
     await spark.catalog.listFunctions("test_db", "f*").collect().then((functions) => {
       expect(functions.length).toBeGreaterThan(1);
@@ -264,12 +264,12 @@ test("catalog apis", async () => {
   const spark = await sharedSpark;
   await (
     spark.catalog.listCatalogs().collect().then((catalogs) => {
-      expect(catalogs[0][0]).toBe("spark_catalog");
+      expect(catalogs[0].get(0)).toBe("spark_catalog");
     })
   );
   await (
     spark.catalog.listCatalogs("spark*").collect().then((catalogs) => {
-      expect(catalogs[0][0]).toBe("spark_catalog");
+      expect(catalogs[0].get(0)).toBe("spark_catalog");
     })
   );
 
