@@ -241,7 +241,7 @@ test("persist", async () => {
         expect(level.equals(StorageLevel.MEMORY_AND_DISK)).toBe(true);
       })
     });
-    [
+    const levels = [
       StorageLevel.DISK_ONLY,
       StorageLevel.DISK_ONLY_2,
       StorageLevel.MEMORY_ONLY,
