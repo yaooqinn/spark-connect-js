@@ -488,7 +488,8 @@ class SparkSessionBuilder {
       logger.info("Updated configuration for new SparkSession", this._options);
       SparkSessionBuilder._cachedSparkSession = newSession;
     }).then(() => {
-      newSession.version().then(v => {
+      // Log version asynchronously (fire-and-forget is intentional for logging)
+      void newSession.version().then(v => {
         logger.info(`Spark Connect Server verison: ${v}`);
       });
       return newSession;
@@ -501,7 +502,8 @@ class SparkSessionBuilder {
       logger.debug("Reusing existing SparkSession", existing);
       await existing.conf.setAll(this._options);
       logger.info("Updated configuration for existing SparkSession", this._options);
-      existing.version().then(v => {
+      // Log version asynchronously (fire-and-forget is intentional for logging)
+      void existing.version().then(v => {
         logger.info(`The verion of Spark Connect Server is ${v}`);
       });
       return existing;

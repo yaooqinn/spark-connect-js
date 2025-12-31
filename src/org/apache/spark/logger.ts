@@ -70,6 +70,7 @@ const initializeLogger = () => {
   logger = log4js.getLogger();
 };
 
-initializeLogger();
+// Initialize logger on module load (fire-and-forget is intentional)
+void initializeLogger();
 
 export { logger };
