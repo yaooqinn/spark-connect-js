@@ -196,6 +196,7 @@ Located in `protobuf/spark/connect/`:
 - **File Naming:** Follow existing patterns (PascalCase for classes, camelCase preferred for utilities)
 - **Imports:** Use relative paths; generated protobuf imports use absolute from src/gen/
 - **Code Organization:** Keep functions focused and extract helpers when logic branches grow
+- **Space vs. Tabs:** Use spaces only, no spaces for alignment
 
 ### Type System Guidelines
 - **Minimize `any` usage:** While `@typescript-eslint/no-explicit-any` is OFF, prefer `unknown` with type narrowing when dealing with uncertain types

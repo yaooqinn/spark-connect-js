@@ -20,13 +20,16 @@ import { DecimalType } from "./types/DecimalType";
 import { StructType } from "./types/StructType";
 import { TimestampType } from "./types/TimestampType";
 
-export type NamedRow = { [name: string]: any }
+/**
+ * Represents a row as a key-value mapping where keys are column names.
+ */
+export type NamedRow = { [name: string]: unknown }
 
 export interface IRow {
   size(): number;
   schema(): StructType;
   isNullAt(i: number): boolean;
-  get(i: number): any;
+  get(i: number): unknown;
   getAs<T>(i: number): T;
   getBoolean(i: number): boolean;
   getByte(i: number): number;
@@ -42,9 +45,22 @@ export interface IRow {
   getDate(i: number): Date;
 }
 
-
+/**
+ * Represents a row of data in a DataFrame.
+ * 
+ * @remarks
+ * Row provides type-safe access to columnar data with support for
+ * various data types including primitives, dates, and binary data.
+ * 
+ * @example
+ * ```typescript
+ * const row = new Row(schema, { name: "Alice", age: 30 });
+ * const name = row.getString(0);
+ * const age = row.getInt(1);
+ * ```
+ */
 export class Row implements IRow {
-  [index: number]: any;
+  [index: number]: unknown;
 
   constructor(private schema_: StructType, data: NamedRow = {}) {
     schema_.fields.forEach((field, i) => {
@@ -68,7 +84,14 @@ export class Row implements IRow {
     return this[i] === null || this[i] === undefined;
   }
 
-  get(i: number): any {
+  /**
+   * Gets the value at the specified column index.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The value at the specified index as a plain JavaScript value
+   * @throws Error if the field does not exist
+   */
+  get(i: number): unknown {
     const dt = this.schema().fields[i]?.dataType;
     if (dt === undefined) {
       // TODO: Use spark error code
