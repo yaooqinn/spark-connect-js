@@ -1,4 +1,4 @@
-# Copilot Instructions for spark-connect-js
+# Copilot Instructions for spark.js
 
 ## Repository Overview
 
@@ -6,7 +6,7 @@ This is an **experimental** Apache Spark Connect client for JavaScript/TypeScrip
 
 **Key Facts:**
 - **Language:** TypeScript (compiled to JavaScript)
-- **Runtime:** Node.js (v20+ supported, CI uses Node 23)
+- **Runtime:** Node.js (always update/use latest LTS, e.g., Node 23.x)
 - **Package Manager:** npm
 - **Testing Framework:** Jest with ts-jest
 - **Linter:** ESLint with TypeScript plugin
@@ -44,7 +44,7 @@ npm install
    ```
    Look for: `Spark Connect server started at: [::]:15002`
 
-4. Run tests (~40-45 seconds):
+4. Run tests (~80-100 seconds):
    ```bash
    npm test
    ```
@@ -181,21 +181,68 @@ Located in `protobuf/spark/connect/`:
 ### License Headers
 **ALL source files** must include the Apache License 2.0 header (see existing files for template).
 
+### TypeScript & JavaScript Target
+- **TypeScript Version:** 5.x
+- **Target:** ES2020 (configured in tsconfig.json)
+- **Module System:** CommonJS (for Node.js compatibility)
+- **Strict Mode:** Enabled - leverage TypeScript's type safety features
+
 ### Code Style
 - **Indentation:** 2 spaces (configured in `.vscode/settings.json`)
-- **TypeScript strict mode:** Enabled in tsconfig.json
-- **Naming:** CamelCase for classes, camelCase for methods/variables
+- **Naming Conventions:**
+  - PascalCase for classes, interfaces, enums, and type aliases
+  - camelCase for methods, variables, and functions
+  - Avoid interface prefixes like `I` - rely on descriptive names
+- **File Naming:** Follow existing patterns (PascalCase for classes, camelCase preferred for utilities)
 - **Imports:** Use relative paths; generated protobuf imports use absolute from src/gen/
+- **Code Organization:** Keep functions focused and extract helpers when logic branches grow
+
+### Type System Guidelines
+- **Minimize `any` usage:** While `@typescript-eslint/no-explicit-any` is OFF, prefer `unknown` with type narrowing when dealing with uncertain types
+- **Use discriminated unions** for complex state or message types
+- **Express intent** with TypeScript utility types (`Readonly`, `Partial`, `Record`, etc.)
+- **Type guards:** Use type guards and validators for external data
+- **Centralize shared types:** Avoid duplicating type definitions
+
+### Async & Error Handling
+- **Prefer `async/await`** over raw Promises for readability
+- **Wrap awaits in try/catch** blocks with structured error handling
+- **Guard edge cases early** to avoid deep nesting
+- **Error reporting:** Use the project's logging utilities (log4js)
+- **Resource cleanup:** Ensure proper disposal of resources (connections, streams)
 
 ### ESLint Rules
-- `@typescript-eslint/no-explicit-any`: OFF (any is allowed)
+- `@typescript-eslint/no-explicit-any`: OFF (any is allowed, but use sparingly)
 - `@typescript-eslint/no-unused-expressions`: OFF
+
+### Security Practices
+- **Validate external input:** Use schema validators or type guards for protobuf responses
+- **Avoid dynamic code execution:** No `eval()` or `Function()` constructors
+- **Parameterized queries:** When working with Spark SQL, use proper parameter handling
+- **Dependency management:** Keep dependencies updated and monitor security advisories
+
+### Performance & Reliability
+- **Lazy-load heavy dependencies** when possible
+- **Batch or debounce** high-frequency operations
+- **Track resource lifetimes** to prevent memory leaks (especially gRPC streams)
+- **Dispose resources deterministically** using proper cleanup patterns
+
+### Documentation
+- **JSDoc for public APIs:** Add JSDoc comments to classes, methods, and functions
+- **Include `@param`, `@returns`, and `@throws`** in JSDoc as appropriate
+- **Add `@remarks` or `@example`** for complex APIs
+- **Keep comments up-to-date:** Remove stale comments during refactors
+- **Document design decisions:** Add comments explaining non-obvious implementation choices
 
 ### Testing Patterns
 - Use `sharedSpark` from `tests/helpers.ts` for SparkSession instance
 - Connect to `sc://localhost:15002/` (see helpers.ts)
 - Tests use Jest with 30-second timeout
 - Coverage is collected automatically
+- **Add or update unit tests** when modifying existing functionality
+- **Integration tests** should be added for cross-module behavior
+- **Avoid brittle timing assertions:** Use fake timers or controlled waits
+- **Test edge cases** including error conditions and boundary values
 
 ## GitHub Actions CI/CD
 
