@@ -66,7 +66,7 @@ const configureLogger = async () => {
 };
 
 const initializeLogger = () => {
-  configureLogger();
+  void configureLogger(); // Fire-and-forget async initialization
   logger = log4js.getLogger();
 };
 

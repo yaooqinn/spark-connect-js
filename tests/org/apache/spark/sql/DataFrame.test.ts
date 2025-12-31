@@ -140,7 +140,7 @@ test("explain api", async () => {
 
 test("printSchema api", async () => {
   const spark = await sharedSpark;
-  [-1, 0, 1].forEach(async level => {
+  for (const level of [-1, 0, 1]) {
     await (spark.sql("SELECT 1 + 1 as a").then(df => {
       return df.printSchema0(b => b.withTreeString(df.plan.plan, level)).then(schema => {
         expect(schema).toContain("a: int");
@@ -150,7 +150,7 @@ test("printSchema api", async () => {
     await (spark.sql("SELECT 1 + 1 as a").then(df => {
       return df.printSchema(level).then(() => {});
     }));
-  });
+  }
 });
 
 test("dtypes api", async () => {
@@ -185,7 +185,7 @@ test("isLocal", async () => {
   await (spark.sql("SELECT 1 + 1 as a").then(async df => {
     const schema = await df.schema();
     const rows = await df.collect();
-    spark.createDataFrame(rows, schema).isLocal().then(isLocal => {
+    await spark.createDataFrame(rows, schema).isLocal().then(isLocal => {
       expect(isLocal).toBe(true);
     })
   }));
@@ -254,18 +254,20 @@ test("persist", async () => {
       StorageLevel.MEMORY_AND_DISK_SER_2,
       StorageLevel.OFF_HEAP,
       StorageLevel.NONE
-    ].forEach(async (level, index) => {
+    ];
+    for (let index = 0; index < levels.length; index++) {
+      const level = levels[index];
       await df.persist(level).then(async persisted => {
-        return persisted.storageLevel().then(level => {
+        return persisted.storageLevel().then(async level => {
           expect(level.equals(level)).toBe(true);
-          persisted.unpersist(index % 2 === 0).then(async unpersisted => {
+          await persisted.unpersist(index % 2 === 0).then(async unpersisted => {
             return unpersisted.storageLevel().then(level => {
               expect(level.equals(StorageLevel.NONE)).toBe(true);
             });
           })
         })
       });
-    })
+    }
   }));
 });
 

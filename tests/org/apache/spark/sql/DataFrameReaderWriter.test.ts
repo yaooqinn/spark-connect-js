@@ -197,7 +197,7 @@ test("DataFrameWriter parquet", async () => {
 });
 
 test("DataFrameWriter orc", async () => {
-  sharedSpark.then(async spark => {
+  await sharedSpark.then(async spark => {
     return withTempDir(async dir => {
       return spark.sql("select 1 as a, 2 as b").then(async df => {
         return df.write

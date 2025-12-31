@@ -27,14 +27,14 @@ test("builder", async () => {
     .config('spark.kent.yao', 'awesome')
     .getOrCreate();
 
-    await spark.then(s => {
-      s.version().then(version => {
+    await spark.then(async s => {
+      await s.version().then(version => {
         expect(version).toContain("4.");
       });
-      s.conf.get("spark.sql.shuffle.partitions").then(value => {
+      await s.conf.get("spark.sql.shuffle.partitions").then(value => {
         expect(value).toBe("1024");
       });
-      s.conf.getAll().then(configs => {
+      await s.conf.getAll().then(configs => {
         expect(configs.get("spark.kent.yao")).toBe("awesome");
       });
     });
