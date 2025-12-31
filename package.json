@@ -1,15 +1,39 @@
 {
   "name": "spark.js",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "An experimental client for Apache Spark Connect written in TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "npx jest",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "build": "tsc --build",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "spark",
+    "apache-spark",
+    "spark-connect",
+    "dataframe",
+    "typescript",
+    "grpc"
+  ],
+  "author": "yaooqinn",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yaooqinn/spark.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yaooqinn/spark.js/issues"
+  },
+  "homepage": "https://github.com/yaooqinn/spark.js#readme",
   "devDependencies": {
     "@bufbuild/buf": "^1.47.2",
     "@bufbuild/protoc-gen-es": "^2.2.3",
@@ -17,6 +41,7 @@
     "@eslint/js": "^9.20.0",
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.27",
     "@types/tmp": "^0.2.6",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
