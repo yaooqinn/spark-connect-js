@@ -192,7 +192,7 @@ export class Row implements IRow {
     if (value instanceof Uint8Array) {
       return value;
     } else if (value instanceof String) {
-      return new Uint8Array(Buffer.from(value as any));
+      return new Uint8Array(Buffer.from(value.toString()));
     } else {
       throw new Error(`Value '${value}' for '${i}' is not a Uint8Array`);
     }
