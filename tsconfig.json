@@ -67,6 +67,6 @@
     "strict": true,
     "skipLibCheck": true,
   },
-  "include": ["src/**/*.ts", "index.ts"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "index.ts"],
+  "exclude": ["node_modules", "dist"]
 }

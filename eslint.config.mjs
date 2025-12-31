@@ -42,11 +42,37 @@ export default [
 
         languageOptions: {
             parser: tsParser,
+            parserOptions: {
+                project: './tsconfig.json',
+                tsconfigRootDir: __dirname,
+            },
         },
 
         rules: {
+            // Intentionally disabled (documented decisions)
             "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/no-unused-expressions": "off",
+            
+            // Phase 1: Promise handling (catches bugs)
+            "@typescript-eslint/no-floating-promises": "error",
+            "@typescript-eslint/no-misused-promises": "error",
+            "@typescript-eslint/await-thenable": "error",
+            
+            // Phase 1: Unused code detection
+            "@typescript-eslint/no-unused-vars": ["warn", {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_"
+            }],
+            
+            // Phase 1: Type safety improvements
+            "@typescript-eslint/no-non-null-assertion": "warn",
+            "@typescript-eslint/prefer-nullish-coalescing": "warn",
+            "@typescript-eslint/prefer-optional-chain": "warn",
+            "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+            
+            // Phase 1: Console usage (development aid)
+            "no-console": ["warn", { "allow": ["warn", "error"] }],
         },
     },
 ];

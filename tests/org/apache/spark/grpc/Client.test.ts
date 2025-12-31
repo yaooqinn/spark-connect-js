@@ -43,7 +43,7 @@ test('Client Basic', async () => {
 });
 
 test("get all configs", async () => {
-  withClient(async client => {
+  await withClient(async client => {
     const getAll = create(connect.ConfigRequest_GetAllSchema, {});
     const op = create(connect.ConfigRequest_OperationSchema,
       {
@@ -52,7 +52,7 @@ test("get all configs", async () => {
             case: "getAll"
         }
       });
-    client.config(op).then(resp => {
+    await client.config(op).then(resp => {
       const configs = new Map<string, string | undefined>();
       resp.pairs.forEach(pair => {
         configs.set(pair.key, pair.value);
