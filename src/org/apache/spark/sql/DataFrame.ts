@@ -1117,7 +1117,11 @@ export class DataFrame {
    * @since 4.0.0
    */
   scalar(): Column {
-    return new Column(b => b.withSubqueryExpression(this.plan.relation));
+    const relation = this.plan.relation;
+    if (!relation) {
+      throw new Error("Cannot create scalar subquery: DataFrame relation is undefined");
+    }
+    return new Column(b => b.withSubqueryExpression(relation));
   }
 
   // TODO: exists()
