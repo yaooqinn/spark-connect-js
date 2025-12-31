@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+// Metadata is inherently dynamic - keys and values are runtime-determined
+
 type MetadataType = { [key: string]: any };
 
 /**

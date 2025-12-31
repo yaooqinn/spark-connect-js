@@ -15,6 +15,11 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+// Test assertions access dynamic Row data which returns 'any'
+
 import { bigintToDecimalBigNum, DecimalBigNumToNumber, getAsPlainJS } from '../../../../../src/org/apache/spark/sql/arrow/ArrowUtils';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
 import { StructType } from '../../../../../src/org/apache/spark/sql/types/StructType';

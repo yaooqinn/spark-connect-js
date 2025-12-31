@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+// Test assertions access dynamic Row data
+
 import { Column } from '../../../../../src/org/apache/spark/sql/Column';
 import { AnalyzePlanRequestBuilder } from '../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
