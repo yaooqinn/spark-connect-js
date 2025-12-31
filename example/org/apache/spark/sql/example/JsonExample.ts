@@ -17,16 +17,19 @@
 import { rm } from "fs";
 import { SparkSession } from "../../../../../../src/org/apache/spark/sql/SparkSession";
 
+// Get data path - works both locally and in CI with remote Spark server
+const dataPath = process.env.SPARK_REMOTE_DATA_PATH || __dirname + "/data";
+
 async function runExample(): Promise<void> {
   const spark = await SparkSession.builder().appName("JsonExample").getOrCreate();
   const df = spark.read
-    .json(__dirname + "/data/employees.json");
+    .json(dataPath + "/employees.json");
   await df.show()
   const df2 = df.select(df.col("name"), df.col("salary").add(df.col("salary")).as("double_salary"));
   await df2.show()
   try {
-    await df2.write.mode("overwrite").parquet(__dirname + "/data/tmp");
-    const df3 = spark.read.parquet(__dirname + "/data/tmp");
+    await df2.write.mode("overwrite").parquet(dataPath + "/tmp");
+    const df3 = spark.read.parquet(dataPath + "/tmp");
     await df3.collect().then(rows => rows.forEach(r => console.log(r.toJSON())));
   } finally {
     rm(__dirname + "/data/tmp", { recursive: true }, () => {});

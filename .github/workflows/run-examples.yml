@@ -49,7 +49,7 @@ jobs:
         run: docker build -t scs .github/docker
 
       - name: Run Spark Connect Server
-        run: docker run --name sparkconnect -p 15002:15002 -d scs
+        run: docker run --name sparkconnect -p 15002:15002 -v ${{ github.workspace }}/example/org/apache/spark/sql/example/data:/opt/spark/work-dir/data -d scs
 
       - name: Wait for Spark Connect Server to be ready
         run: |
@@ -82,6 +82,8 @@ jobs:
 
       - name: Run CSVExample
         continue-on-error: false
+        env:
+          SPARK_REMOTE_DATA_PATH: /opt/spark/work-dir/data
         run: |
           echo "=========================================="
           echo "Running CSVExample"
@@ -90,6 +92,8 @@ jobs:
 
       - name: Run JsonExample
         continue-on-error: false
+        env:
+          SPARK_REMOTE_DATA_PATH: /opt/spark/work-dir/data
         run: |
           echo "=========================================="
           echo "Running JsonExample"
@@ -98,6 +102,8 @@ jobs:
 
       - name: Run ParquetExample
         continue-on-error: false
+        env:
+          SPARK_REMOTE_DATA_PATH: /opt/spark/work-dir/data
         run: |
           echo "=========================================="
           echo "Running ParquetExample"
@@ -106,6 +112,8 @@ jobs:
 
       - name: Run OrcExample
         continue-on-error: false
+        env:
+          SPARK_REMOTE_DATA_PATH: /opt/spark/work-dir/data
         run: |
           echo "=========================================="
           echo "Running OrcExample"
@@ -138,6 +146,8 @@ jobs:
 
       - name: Run CatalogExample
         continue-on-error: false
+        env:
+          SPARK_REMOTE_DATA_PATH: /opt/spark/work-dir/data
         run: |
           echo "=========================================="
           echo "Running CatalogExample"
