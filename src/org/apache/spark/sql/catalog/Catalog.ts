@@ -224,7 +224,12 @@ export class Catalog {
    */
   async getDatabase(dbName: string): Promise<Database> {
     const row = await this.catalogBuilderToDF(c => c.withGetDatabase(dbName)).head();
-    return new Database(row[0], row[1], row[2], row[3]);
+    return new Database(
+      row.getString(0),
+      row.isNullAt(1) ? null : row.getString(1),
+      row.isNullAt(2) ? null : row.getString(2),
+      row.getString(3)
+    );
   }
 
   /**
@@ -254,10 +259,24 @@ export class Catalog {
   async getTable(dbOrTableName: string, tableName?: string): Promise<Table> {
     if (tableName === undefined) {
       return this.catalogBuilderToRow(c => c.withGetTable(undefined, dbOrTableName)).then(row =>
-        new Table(row[0], row[1], row[2], row[3], row[4], row[5]));
+        new Table(
+          row.getString(0),
+          row.isNullAt(1) ? null : row.getString(1),
+          row.isNullAt(2) ? null : row.getAs<string[]>(2),
+          row.isNullAt(3) ? null : row.getString(3),
+          row.getString(4),
+          row.getBoolean(5)
+        ));
     } else  {
       return this.catalogBuilderToRow(c => c.withGetTable(dbOrTableName, tableName)).then(row =>
-        new Table(row[0], row[1], row[2], row[3], row[4], row[5]));
+        new Table(
+          row.getString(0),
+          row.isNullAt(1) ? null : row.getString(1),
+          row.isNullAt(2) ? null : row.getAs<string[]>(2),
+          row.isNullAt(3) ? null : row.getString(3),
+          row.getString(4),
+          row.getBoolean(5)
+        ));
     }
   }
 
@@ -283,10 +302,24 @@ export class Catalog {
   async getFunction(dbOrFunctionName: string, functionName?: string): Promise<CatalogFunction> {
     if (functionName === undefined) {
       return this.catalogBuilderToRow(c => c.withGetFunction(undefined, dbOrFunctionName)).then(row =>
-        new CatalogFunction(row[0], row[1], row[2], row[3], row[4], row[5]));
+        new CatalogFunction(
+          row.getString(0),
+          row.isNullAt(1) ? null : row.getString(1),
+          row.isNullAt(2) ? null : row.getAs<string[]>(2),
+          row.isNullAt(3) ? null : row.getString(3),
+          row.getString(4),
+          row.getBoolean(5)
+        ));
     } else  {
       return this.catalogBuilderToRow(c => c.withGetFunction(dbOrFunctionName, functionName)).then(row =>
-        new CatalogFunction(row[0], row[1], row[2], row[3], row[4], row[5]));
+        new CatalogFunction(
+          row.getString(0),
+          row.isNullAt(1) ? null : row.getString(1),
+          row.isNullAt(2) ? null : row.getAs<string[]>(2),
+          row.isNullAt(3) ? null : row.getString(3),
+          row.getString(4),
+          row.getBoolean(5)
+        ));
     }
   }
 

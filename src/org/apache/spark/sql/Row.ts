@@ -106,44 +106,49 @@ export class Row implements IRow {
   }
 
   getBoolean(i: number): boolean {
-    if (typeof this[i] === 'boolean') {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'boolean') {
+      return value;
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a boolean`);
+      throw new Error(`Value '${value}' for '${i}' is not a boolean`);
     }
   }
 
   getByte(i: number): number {
-    if (typeof this[i] === 'number' && this[i] <= 127 && this[i] >= -128) {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'number' && value <= 127 && value >= -128) {
+      return value;
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a byte`);
+      throw new Error(`Value '${value}' for '${i}' is not a byte`);
     }
   }
 
   getShort(i: number): number {
-    if (typeof this[i] === 'number' && this[i] <= 32767 && this[i] >= -32768) {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'number' && value <= 32767 && value >= -32768) {
+      return value;
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a short`);
+      throw new Error(`Value '${value}' for '${i}' is not a short`);
     }
   }
 
   getInt(i: number): number {
-    if (typeof this[i] === 'number' && this[i] <= 2147483647 && this[i] >= -2147483648) {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'number' && value <= 2147483647 && value >= -2147483648) {
+      return value;
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not an integer`);
+      throw new Error(`Value '${value}' for '${i}' is not an integer`);
     }
   }
 
   getLong(i: number): bigint {
-    if (typeof this[i] === 'bigint') {
-      return this[i];
-    } else if (typeof this[i] === 'number') {
-      return BigInt(this[i]);
+    const value = this[i];
+    if (typeof value === 'bigint') {
+      return value;
+    } else if (typeof value === 'number') {
+      return BigInt(value);
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a bigint`);
+      throw new Error(`Value '${value}' for '${i}' is not a bigint`);
     }
   }
 
@@ -156,23 +161,25 @@ export class Row implements IRow {
   }
 
   getDecimal(i: number): number {
-    if (typeof this[i] === 'number') {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'number') {
+      return value;
     } else {
       const dt = this.schema_.fields[i].dataType;
       if (dt instanceof DecimalType) {
-        return bigNumToNumber(this[i], dt.scale);
+        return bigNumToNumber(value, dt.scale);
       } else {
-        throw new Error(`Value '${this[i]}' for '${i}' is not a Decimal`);
+        throw new Error(`Value '${value}' for '${i}' is not a Decimal`);
       }
     }
   }
 
   getString(i: number): string {
-    if (typeof this[i] === 'string') {
-      return this[i];
+    const value = this[i];
+    if (typeof value === 'string') {
+      return value;
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a string`);
+      throw new Error(`Value '${value}' for '${i}' is not a string`);
     }
   }
 
@@ -181,22 +188,24 @@ export class Row implements IRow {
   }
 
   getUint8Array(i: number): Uint8Array {
-    if (this[i] instanceof Uint8Array) {
-      return this[i];
-    } else if (this[i] instanceof String) {
-      return new Uint8Array(Buffer.from(this[i]));
+    const value = this[i];
+    if (value instanceof Uint8Array) {
+      return value;
+    } else if (value instanceof String) {
+      return new Uint8Array(Buffer.from(value as any));
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a Uint8Array`);
+      throw new Error(`Value '${value}' for '${i}' is not a Uint8Array`);
     }
   }
 
   getDate(i: number): Date {
-    if (this[i] instanceof Date) {
-      return this[i];
-    } else if (typeof this[i] === 'number') {
-      return new Date(this[i]);
+    const value = this[i];
+    if (value instanceof Date) {
+      return value;
+    } else if (typeof value === 'number') {
+      return new Date(value);
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a Date`);
+      throw new Error(`Value '${value}' for '${i}' is not a Date`);
     }
   }
 
@@ -205,7 +214,8 @@ export class Row implements IRow {
     if (dt instanceof TimestampType) {
       return this.getDate(i);
     } else {
-      throw new Error(`Value '${this[i]}' for '${i}' is not a Timestamp`);
+      const value = this[i];
+      throw new Error(`Value '${value}' for '${i}' is not a Timestamp`);
     }
   }
 
