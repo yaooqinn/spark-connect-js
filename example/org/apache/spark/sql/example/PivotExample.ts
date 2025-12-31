@@ -22,7 +22,7 @@ import { Row } from '../../../../../../src/org/apache/spark/sql/Row';
 import { col } from '../../../../../../src/org/apache/spark/sql/functions';
 
 async function runPivotExample() {
-  const spark = SparkSession.builder()
+  const spark = await SparkSession.builder()
     .remote('sc://localhost:15002')
     .getOrCreate();
 
@@ -66,7 +66,7 @@ async function runPivotExample() {
 }
 
 async function runGroupingSetsExample() {
-  const spark = SparkSession.builder()
+  const spark = await SparkSession.builder()
     .remote('sc://localhost:15002')
     .getOrCreate();
 
