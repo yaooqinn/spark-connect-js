@@ -1,0 +1,49 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/org/apache/spark"],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "exclude": [
+    "**/*.test.ts",
+    "**/gen/**",
+    "**/tests/**",
+    "**/example/**",
+    "**/guides/**",
+    "**/*.md"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "readme": "README.md",
+  "plugin": [],
+  "name": "spark.js API Documentation",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Core",
+    "DataFrame Operations",
+    "SQL Functions",
+    "Data Types",
+    "Catalog",
+    "Configuration",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "visibilityFilters": {
+    "protected": true,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "searchInComments": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": false,
+    "notDocumented": false
+  },
+  "treatWarningsAsErrors": false,
+  "treatValidationWarningsAsErrors": false,
+  "hideGenerator": false,
+  "githubPages": true,
+  "gitRevision": "main"
+}

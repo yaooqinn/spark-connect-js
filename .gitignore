@@ -16,6 +16,7 @@
 #
 .vscode/
 coverage/
+docs/
 logs/
 node_modules/
 dist/

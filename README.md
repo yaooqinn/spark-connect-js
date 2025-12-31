@@ -1,11 +1,18 @@
 # Apache Spark Connect Client for JavaScript
 
 [![CI](https://github.com/yaooqinn/spark.js/actions/workflows/ci.yml/badge.svg)](https://github.com/yaooqinn/spark.js/actions/workflows/ci.yml)
+[![Documentation](https://github.com/yaooqinn/spark.js/actions/workflows/docs.yml/badge.svg)](https://github.com/yaooqinn/spark.js/actions/workflows/docs.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 An **experimental** client for [Apache Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html) written in [TypeScript](https://www.typescriptlang.org/). This library allows JavaScript and TypeScript applications to interact with Apache Spark using the Spark Connect protocol over gRPC.
 
 > ⚠️ **Experimental**: This library is in active development. APIs may change without notice.
+
+## Documentation
+
+📚 **[API Documentation](https://yaooqinn.github.io/spark.js/)** - Comprehensive API reference with examples
+
+The API documentation is automatically generated from JSDoc comments and TypeScript definitions.
 
 ## Features
 
@@ -203,7 +210,7 @@ await df.writeTo('my_table')
   .create();
 ```
 
-See [docs/DataFrameWriterV2.md](docs/DataFrameWriterV2.md) for more V2 Writer examples.
+See [guides/DataFrameWriterV2.md](guides/DataFrameWriterV2.md) for more V2 Writer examples.
 
 ### Catalog Operations
 
@@ -257,7 +264,7 @@ df.select(
 );
 ```
 
-See [docs/STATISTICAL_FUNCTIONS.md](docs/STATISTICAL_FUNCTIONS.md) for statistical functions.
+See [guides/STATISTICAL_FUNCTIONS.md](guides/STATISTICAL_FUNCTIONS.md) for statistical functions.
 
 ### Type System
 
