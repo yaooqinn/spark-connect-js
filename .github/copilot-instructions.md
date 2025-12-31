@@ -193,7 +193,11 @@ Located in `protobuf/spark/connect/`:
   - PascalCase for classes, interfaces, enums, and type aliases
   - camelCase for methods, variables, and functions
   - Avoid interface prefixes like `I` - rely on descriptive names
-- **File Naming:** Follow existing patterns (PascalCase for classes, camelCase preferred for utilities)
+- **File Naming:** 
+  - **Exception to TypeScript conventions:** This project uses **PascalCase** for TypeScript files (e.g., `SparkSession.ts`, `DataFrame.ts`)
+  - This aligns with Apache Spark ecosystem conventions (Java/Scala naming)
+  - Utilities and helpers may use camelCase (e.g., `helpers.ts`, `utils.ts`)
+  - **Do NOT rename files to kebab-case** - maintain consistency with Spark conventions
 - **Imports:** Use relative paths; generated protobuf imports use absolute from src/gen/
 - **Code Organization:** Keep functions focused and extract helpers when logic branches grow
 
