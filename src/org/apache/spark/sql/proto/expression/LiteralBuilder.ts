@@ -147,6 +147,8 @@ export class LiteralBuilder {
   }
 
   build(): Expression_Literal {
+    // Runtime validation for builder state
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!this.literal.literalType) {
       throw new Error('Literal type is not set');
     }

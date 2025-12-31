@@ -114,6 +114,8 @@ export class Row implements IRow {
    */
   get(i: number): any {
     const dt = this.schema().fields[i]?.dataType;
+    // Runtime bounds check for field access
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (dt === undefined) {
       // TODO: Use spark error code
       throw new Error(`Field ${i} does not exist`);
