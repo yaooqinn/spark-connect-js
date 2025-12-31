@@ -41,6 +41,44 @@ import { LogicalPlan } from './proto/LogicalPlan';
 import { UDFRegistration } from './UDFRegistration';
 
 /**
+ * The entry point to programming Spark with the Dataset and DataFrame API.
+ * 
+ * @remarks
+ * A SparkSession can be used to create DataFrames, register DataFrames as tables, execute SQL
+ * over tables, cache tables, and read data from various sources. A SparkSession is created using
+ * the {@link SparkSession.builder} method.
+ * 
+ * The SparkSession provides access to:
+ * - {@link sql} - Execute SQL queries and return results as DataFrames
+ * - {@link read} - Read data from external sources (CSV, JSON, Parquet, tables, etc.)
+ * - {@link createDataFrame} - Create DataFrames from in-memory data
+ * - {@link table} - Load tables as DataFrames
+ * - {@link range} - Generate DataFrames with sequences of numbers
+ * - {@link catalog} - Access the Spark catalog for metadata operations
+ * - {@link udf} - Register and manage user-defined functions
+ * - {@link conf} - Configure Spark runtime settings
+ * 
+ * @example
+ * ```typescript
+ * // Create a SparkSession
+ * const spark = await SparkSession.builder()
+ *   .remote("sc://localhost:15002")
+ *   .appName("MyApp")
+ *   .getOrCreate();
+ * 
+ * // Execute SQL
+ * const df = await spark.sql("SELECT * FROM users WHERE age > 21");
+ * await df.show();
+ * 
+ * // Read data
+ * const csvDf = spark.read.csv("data.csv");
+ * 
+ * // Create DataFrame from data
+ * const data = [new Row(schema, ["Alice", 30]), new Row(schema, ["Bob", 25])];
+ * const df2 = spark.createDataFrame(data, schema);
+ * ```
+ * 
+ * @group core
  * @since 1.0.0
  */
 export class SparkSession {
@@ -54,11 +92,47 @@ export class SparkSession {
     this.conf_ = new RuntimeConfig(client);
   }
 
+  /**
+   * Creates a SparkSessionBuilder for constructing a SparkSession.
+   * 
+   * @returns A new SparkSessionBuilder instance
+   * 
+   * @example
+   * ```typescript
+   * const spark = await SparkSession.builder()
+   *   .remote("sc://localhost:15002")
+   *   .appName("MyApplication")
+   *   .config("spark.sql.shuffle.partitions", "10")
+   *   .getOrCreate();
+   * ```
+   * 
+   * @group builder
+   */
   public static builder(): SparkSessionBuilder { return new SparkSessionBuilder(); }
 
 
+  /**
+   * Returns the session ID for this SparkSession.
+   * 
+   * @returns The unique session identifier
+   * 
+   * @group core
+   */
   public session_id(): string { return this.client.session_id_; }
 
+  /**
+   * Returns the Spark version this SparkSession is connected to.
+   * 
+   * @returns A promise that resolves to the Spark version string
+   * 
+   * @example
+   * ```typescript
+   * const version = await spark.version();
+   * console.log(`Connected to Spark ${version}`);
+   * ```
+   * 
+   * @group core
+   */
   public async version(): Promise<string> {
     if (!this.version_) {
       const resp = await this.analyze(b => b.withSparkVersion());
@@ -68,12 +142,59 @@ export class SparkSession {
     return this.version_ || "unknown";
   }
   
+  /**
+   * Runtime configuration interface for this SparkSession.
+   * 
+   * @returns The RuntimeConfig instance for getting/setting Spark configuration
+   * 
+   * @example
+   * ```typescript
+   * await spark.conf.set("spark.sql.shuffle.partitions", "200");
+   * const value = await spark.conf.get("spark.sql.shuffle.partitions");
+   * ```
+   * 
+   * @group config
+   */
   public get conf(): RuntimeConfig { return this.conf_; }
 
+  /**
+   * Returns an empty DataFrame.
+   * 
+   * @returns A DataFrame with no rows or columns
+   * 
+   * @example
+   * ```typescript
+   * const empty = spark.emptyDataFrame;
+   * const isEmpty = await empty.isEmpty(); // true
+   * ```
+   * 
+   * @group core
+   */
   public get emptyDataFrame(): DataFrame {
     return this.relationBuilderToDF(b => b.withLocalRelation(createLocalRelation()));
   }
 
+  /**
+   * Executes a SQL query and returns the result as a DataFrame.
+   * 
+   * @param sqlStr - The SQL query string to execute
+   * @returns A promise that resolves to a DataFrame containing the query results
+   * 
+   * @example
+   * ```typescript
+   * const df = await spark.sql("SELECT * FROM users WHERE age > 21");
+   * await df.show();
+   * 
+   * // Use with table joins
+   * const joined = await spark.sql(`
+   *   SELECT u.name, o.amount 
+   *   FROM users u 
+   *   JOIN orders o ON u.id = o.user_id
+   * `);
+   * ```
+   * 
+   * @group core
+   */
   // TODO: support other parameters
   public async sql(sqlStr: string): Promise<DataFrame> {
     const command = new CommandBuilder().withSqlCommand(sqlStr).build();
@@ -89,32 +210,185 @@ export class SparkSession {
     }
   }
 
+  /**
+   * Returns a DataFrameReader for reading data from external sources.
+   * 
+   * @returns A DataFrameReader instance
+   * 
+   * @example
+   * ```typescript
+   * // Read CSV
+   * const df = spark.read.csv("data.csv");
+   * 
+   * // Read JSON
+   * const df2 = spark.read.json("data.json");
+   * 
+   * // Read Parquet with options
+   * const df3 = spark.read
+   *   .option("mergeSchema", "true")
+   *   .parquet("data.parquet");
+   * 
+   * // Read from table
+   * const df4 = spark.read.table("my_table");
+   * ```
+   * 
+   * @group io
+   */
   public get read(): DataFrameReader {
     return new DataFrameReader(this);
   }
 
+  /**
+   * Creates a DataFrame from an array of Row objects with a specified schema.
+   * 
+   * @param data - An array of Row objects
+   * @param schema - The schema defining the structure of the DataFrame
+   * @returns A new DataFrame containing the provided data
+   * 
+   * @example
+   * ```typescript
+   * const schema = new StructType([
+   *   new StructField("name", DataTypes.StringType),
+   *   new StructField("age", DataTypes.IntegerType)
+   * ]);
+   * 
+   * const data = [
+   *   new Row(schema, { name: "Alice", age: 30 }),
+   *   new Row(schema, { name: "Bob", age: 25 })
+   * ];
+   * 
+   * const df = spark.createDataFrame(data, schema);
+   * await df.show();
+   * ```
+   * 
+   * @group core
+   */
   public createDataFrame(data: Row[], schema: StructType): DataFrame {
     const table = tableFromRows(data, schema);
     return this.createDataFrameFromArrowTable(table, schema);
   }
 
+  /**
+   * Creates a DataFrame from an Apache Arrow Table.
+   * 
+   * @param table - An Apache Arrow Table object
+   * @param schema - The Spark schema defining the structure of the DataFrame
+   * @returns A new DataFrame containing the Arrow table data
+   * 
+   * @example
+   * ```typescript
+   * import { Table } from 'apache-arrow';
+   * 
+   * // Assuming you have an Arrow table
+   * const arrowTable = ...; // Arrow Table
+   * const schema = new StructType([...]);
+   * 
+   * const df = spark.createDataFrameFromArrowTable(arrowTable, schema);
+   * await df.show();
+   * ```
+   * 
+   * @group core
+   */
   public createDataFrameFromArrowTable(table: Table, schema: StructType): DataFrame {
     const local = createLocalRelationFromArrowTable(table, schema);
     return this.relationBuilderToDF(b => b.withLocalRelation(local));
   }
 
+  /**
+   * Executes a Spark Connect command and returns the response handlers.
+   * 
+   * @param cmd - The command to execute
+   * @returns A promise that resolves to an array of response handlers
+   * 
+   * @remarks
+   * This is a low-level API used internally. Most users should use higher-level
+   * APIs like sql(), read, or DataFrame operations instead.
+   * 
+   * @group internal
+   * @ignore
+   */
   async execute(cmd: cmd.Command): Promise<ExecutePlanResponseHandler[]> {
     const plan = this.planFromCommand(cmd);
     return this.client.execute(plan.plan).then(resps => resps.map(resp => new ExecutePlanResponseHandler(resp)));
   }
 
+  /**
+   * Returns the specified table as a DataFrame.
+   * 
+   * @param name - The name of the table to load
+   * @returns A DataFrame representing the table
+   * 
+   * @example
+   * ```typescript
+   * const users = spark.table("users");
+   * await users.show();
+   * 
+   * // With database qualifier
+   * const logs = spark.table("production.logs");
+   * ```
+   * 
+   * @group io
+   */
   table(name: string): DataFrame {
     return this.read.table(name);
   }
 
+  /**
+   * Creates a DataFrame with a single column of Long values starting from 0 to end (exclusive).
+   * 
+   * @param end - The end value (exclusive)
+   * @returns A DataFrame with a single column named "id" containing values from 0 to end-1
+   * 
+   * @group core
+   */
   range(end: bigint | number): DataFrame;
+  /**
+   * Creates a DataFrame with a single column of Long values.
+   * 
+   * @param start - The start value (inclusive)
+   * @param end - The end value (exclusive)
+   * @returns A DataFrame with a single column named "id" containing values from start to end-1
+   * 
+   * @group core
+   */
   range(start: bigint | number, end: bigint | number): DataFrame;
+  /**
+   * Creates a DataFrame with a single column of Long values with a custom step.
+   * 
+   * @param start - The start value (inclusive)
+   * @param end - The end value (exclusive)
+   * @param step - The increment between consecutive values
+   * @returns A DataFrame with a single column named "id"
+   * 
+   * @group core
+   */
   range(start: bigint | number, end: bigint | number, step: bigint | number): DataFrame;
+  /**
+   * Creates a DataFrame with a single column of Long values with custom step and partitions.
+   * 
+   * @param start - The start value (inclusive)
+   * @param end - The end value (exclusive)
+   * @param step - The increment between consecutive values
+   * @param numPartitions - The number of partitions for the resulting DataFrame
+   * @returns A DataFrame with a single column named "id"
+   * 
+   * @example
+   * ```typescript
+   * // Generate 0 to 9
+   * const df1 = spark.range(10);
+   * 
+   * // Generate 5 to 14
+   * const df2 = spark.range(5, 15);
+   * 
+   * // Generate 0, 2, 4, 6, 8
+   * const df3 = spark.range(0, 10, 2);
+   * 
+   * // Generate with 4 partitions
+   * const df4 = spark.range(0, 100, 1, 4);
+   * ```
+   * 
+   * @group core
+   */
   range(start: bigint | number, end: bigint | number, step: bigint | number, numPartitions: number): DataFrame;
   range(start: bigint | number, end?: bigint | number, step?: bigint | number, numPartitions?: number): DataFrame {
     if (typeof start === 'number') start = BigInt(start);
