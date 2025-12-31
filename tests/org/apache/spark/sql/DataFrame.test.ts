@@ -19,6 +19,7 @@ import { Column } from '../../../../../src/org/apache/spark/sql/Column';
 import { AnalyzePlanRequestBuilder } from '../../../../../src/org/apache/spark/sql/proto/AnalyzePlanRequestBuilder';
 import { DataTypes } from '../../../../../src/org/apache/spark/sql/types/DataTypes';
 import { StorageLevel } from '../../../../../src/org/apache/spark/storage/StorageLevel';
+import { avg, col, max } from '../../../../../src/org/apache/spark/sql/functions';
 import { sharedSpark } from '../../../../helpers';
 
 test("to api", async () => {
@@ -392,5 +393,25 @@ test("localCheckpoint", async () => {
   expect(checkpointed3).toBeInstanceOf(Object);
   const count3 = await checkpointed3.count();
   expect(count3).toBe(99n);
+});
+
+test("scalar", async () => {
+  const spark = await sharedSpark;
+  
+  // Test basic scalar subquery - filter with average
+  const df = await spark.sql("SELECT id, id * 2 as salary FROM range(1, 11)");
+  const avgSalary = df.select(avg("salary")).scalar();
+  const result1 = await df.where(col("salary").gt(avgSalary)).collect();
+  // Average of 2,4,6,8,10,12,14,16,18,20 is 11, so values > 11 are: 12,14,16,18,20
+  expect(result1.length).toBe(5);
+  
+  // Test scalar in select clause
+  const maxSalary = df.select(max("salary")).scalar();
+  const result2 = await df.select(col("id"), col("salary"), maxSalary.as("max_salary")).head();
+  expect(result2[2]).toBe(20n); // max salary should be 20
+  
+  // Test that scalar returns a Column instance
+  const scalarCol = df.select(avg("id")).scalar();
+  expect(scalarCol).toBeInstanceOf(Column);
 });
 

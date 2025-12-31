@@ -1088,7 +1088,38 @@ export class DataFrame {
     return this.toNewDataFrame(b => b.withTranspose(indexColumn, this.plan.relation));
   }
 
-  // TODO: scalar()
+  /**
+   * Returns a Column representing this DataFrame as a scalar subquery.
+   * 
+   * This method is used to create scalar subqueries from a DataFrame that is expected to return 
+   * a single row and a single column. The resulting Column can be used in DataFrame operations
+   * like select(), filter(), and where() clauses, similar to SQL scalar subqueries.
+   * 
+   * @returns A Column representing this DataFrame as a scalar subquery
+   * 
+   * @example
+   * ```typescript
+   * // Filter employees with salary greater than the average salary
+   * const avgSalary = employees.select(avg("salary")).scalar();
+   * const result = employees.where(col("salary").gt(avgSalary));
+   * await result.show();
+   * ```
+   * 
+   * @example
+   * ```typescript
+   * // Use in select clause
+   * const maxSalary = employees.select(max("salary")).scalar();
+   * const df = employees.select(col("name"), col("salary"), maxSalary.as("max_salary"));
+   * await df.show();
+   * ```
+   * 
+   * @group untypedrel
+   * @since 4.0.0
+   */
+  scalar(): Column {
+    return new Column(b => b.withSubqueryExpression(this.plan.relation));
+  }
+
   // TODO: exists()
 
   /**
