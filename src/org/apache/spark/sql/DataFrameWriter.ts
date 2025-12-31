@@ -330,11 +330,12 @@ export class DataFrameWriter {
   }
 
   private executeWriteOperation(f: (builder: WriteOperationBuilder) => void): Promise<ExecutePlanResponseHandler[]> {
-    if (!this.df.plan.relation) {
+    const relation = this.df.plan.relation;
+    if (!relation) {
       throw new Error('DataFrame plan must have a relation for write operation');
     }
     const builder = new WriteOperationBuilder()
-      .withInput(this.df.plan.relation)
+      .withInput(relation)
       .withMode(this.mode_)
       .withPartitioningColumns(this.partitioningColumns_)
       .withClusteringColumns(this.clusteringColumns_)
