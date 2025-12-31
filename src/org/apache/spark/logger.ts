@@ -51,7 +51,10 @@ const defaultConfig = {
 const configureLogger = async () => {
   if (fs.existsSync(configFilePath)) {
     try {
+      // Dynamic import of configuration file - any type is unavoidable
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const customConfig = await import(configFilePath);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       log4js.configure(customConfig);
       // eslint-disable-next-line no-console
       console.info('Log4js configured using the provided configuration file.');
