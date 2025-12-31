@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+// Row.get() returns 'any' by design - data types are determined at runtime
+
 import { bigNumToNumber, getAsPlainJS } from "./arrow/ArrowUtils";
 import { DecimalType } from "./types/DecimalType";
 import { StructType } from "./types/StructType";

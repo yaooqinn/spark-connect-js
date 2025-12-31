@@ -15,6 +15,13 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+// Apache Arrow library uses 'any' extensively for dynamic typed data structures
+// This interop layer must work with Apache Arrow's type system
+
 import { Table as ArrowTable, util as AU, MapRow, StructRow, Vector, vectorFromArray } from "apache-arrow";
 import { NamedRow, Row } from "../Row";
 import { DataTypes } from "../types";

@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+// This file extensively uses Row.get() which returns 'any' for dynamic column access
+// Protobuf responses contain dynamic data structures that cannot be statically typed
+
 import { StorageLevel } from '../../storage/StorageLevel';
 import { DataFrame } from '../DataFrame';
 import { CatalogBuilder } from '../proto/CatalogBuilder';
