@@ -18,15 +18,15 @@
 import { Client } from "../../../../../src/org/apache/spark/sql/grpc/Client";
 import { RuntimeConfig } from "../../../../../src/org/apache/spark/sql/RuntimeConfig";
 
-function withClient(f: (client: Client) => void) {
+async function withClient(f: (client: Client) => Promise<void>) {
   const builder = Client.builder();
   builder.connectionString("sc://localhost:15002;user_id=yao;user_name=kent");
   const client = builder.build();
-  f(client);
+  await f(client);
 }
 
 test('runtime config - set, unset, get', async () => {
-  withClient(async client => {
+  await withClient(async client => {
     const config = new RuntimeConfig(client);
     await config.get("spark.executor.id").then(v => {
       expect(v).toBe("driver");
@@ -36,8 +36,8 @@ test('runtime config - set, unset, get', async () => {
       expect(v).toBe("local[*]");
     });
 
-    await config.set("spark.kent", "yao").then(() => {
-      config.get("spark.kent").then(v => {
+    await config.set("spark.kent", "yao").then(async () => {
+      await config.get("spark.kent").then(v => {
         expect(v).toBe("yao");
       });
     });
@@ -61,9 +61,9 @@ test('runtime config - set, unset, get', async () => {
 });
 
 test("runtime config - get all configs", async () => {
-  withClient(client => {
+  await withClient(async client => {
     const config = new RuntimeConfig(client);
-    config.getAll().then(configs => {
+    await config.getAll().then(configs => {
       expect(configs.get("spark.executor.id")).toBe("driver");
       expect(configs.get("spark.master")).toBe("local[*]");
     });
@@ -71,18 +71,18 @@ test("runtime config - get all configs", async () => {
 });
 
 test("runtime config - is modifiable", async () => {
-  withClient(client => {
+  await withClient(async client => {
     const config = new RuntimeConfig(client);
-    config.isModifiable("spark.sql.warehouse.dir").then(v => {
+    await config.isModifiable("spark.sql.warehouse.dir").then(v => {
       expect(v).toBe(false);
     });
-    config.isModifiable("spark.executor.id").then(v => {
+    await config.isModifiable("spark.executor.id").then(v => {
       expect(v).toBe(false);
     });
-    config.isModifiable("spark.master").then(v => {
+    await config.isModifiable("spark.master").then(v => {
       expect(v).toBe(false);
     });
-    config.isModifiable("spark.sql.ansi.enabled").then(v => {
+    await config.isModifiable("spark.sql.ansi.enabled").then(v => {
       expect(v).toBe(true);
     });
   });
