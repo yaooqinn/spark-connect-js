@@ -7,33 +7,6 @@ An **experimental** client for [Apache Spark Connect](https://spark.apache.org/d
 
 > ⚠️ **Experimental**: This library is in active development. APIs may change without notice.
 
-## Table of Contents
-
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-  - [Creating a SparkSession](#creating-a-sparksession)
-  - [Reading Data](#reading-data)
-  - [DataFrame Operations](#dataframe-operations)
-  - [SQL Queries](#sql-queries)
-  - [Writing Data](#writing-data)
-  - [Catalog Operations](#catalog-operations)
-- [API Overview](#api-overview)
-- [Configuration](#configuration)
-- [Development](#development)
-  - [Prerequisites](#prerequisites-1)
-  - [Setup](#setup)
-  - [Running Tests](#running-tests)
-  - [Linting](#linting)
-  - [Building](#building)
-  - [Project Structure](#project-structure)
-- [Examples](#examples)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [License](#license)
-
 ## Features
 
 - 🚀 **TypeScript-first**: Full TypeScript support with comprehensive type definitions
