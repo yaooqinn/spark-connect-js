@@ -106,6 +106,8 @@ describe('DataFrameNaFunctions', () => {
       // Check that nulls are filled
       const hasNull = rows.some(row => {
         try {
+          // Runtime null checks needed despite getInt() type signature
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           return row.getInt(0) === null || row.getInt(1) === null;
         } catch {
           return false;

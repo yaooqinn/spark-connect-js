@@ -44,6 +44,8 @@ export class WriteOperationBuilder {
         normalizedMode = "ERROR_IF_EXISTS";
       }
       const protoMode = WriteOperation_SaveMode[normalizedMode as keyof typeof WriteOperation_SaveMode];
+      // Runtime validation for invalid mode strings
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (protoMode === undefined) {
         throw new AnalysisException(
           "INVALID_SAVE_MODE",

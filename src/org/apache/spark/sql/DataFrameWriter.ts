@@ -54,6 +54,8 @@ export class DataFrameWriter {
         normalizedMode = "ERROR_IF_EXISTS";
       }
       this.mode_ = c.WriteOperation_SaveMode[normalizedMode as keyof typeof c.WriteOperation_SaveMode];
+      // Runtime validation for invalid mode strings
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (this.mode_ === undefined) {
         throw new AnalysisException(
           "INVALID_SAVE_MODE",

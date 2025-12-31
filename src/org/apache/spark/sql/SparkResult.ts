@@ -70,9 +70,12 @@ export class SparkResult {
       
       // TODO: Handle Metrics
 
+      // Initialization guard for operationId
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (this.operationId === undefined) {
         this.operationId_ = response.operationId;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       stop = stop || stopOnOperationId;
       
       const responseType = response.responseType

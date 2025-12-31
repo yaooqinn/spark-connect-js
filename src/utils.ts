@@ -20,6 +20,8 @@ export class PlanIdGenerator {
   private constructor() {}
 
   public static getInstance(): PlanIdGenerator {
+    // Singleton pattern initialization
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!PlanIdGenerator.instance) {
       PlanIdGenerator.instance = new PlanIdGenerator();
     }
