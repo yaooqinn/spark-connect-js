@@ -20,6 +20,9 @@ import { DecimalType } from "./types/DecimalType";
 import { StructType } from "./types/StructType";
 import { TimestampType } from "./types/TimestampType";
 
+/**
+ * Represents a row as a key-value mapping where keys are column names.
+ */
 export type NamedRow = { [name: string]: any }
 
 export interface IRow {
@@ -42,7 +45,20 @@ export interface IRow {
   getDate(i: number): Date;
 }
 
-
+/**
+ * Represents a row of data in a DataFrame.
+ * 
+ * @remarks
+ * Row provides type-safe access to columnar data with support for
+ * various data types including primitives, dates, and binary data.
+ * 
+ * @example
+ * ```typescript
+ * const row = new Row(schema, { name: "Alice", age: 30 });
+ * const name = row.getString(0);
+ * const age = row.getInt(1);
+ * ```
+ */
 export class Row implements IRow {
   [index: number]: any;
 
@@ -52,22 +68,50 @@ export class Row implements IRow {
     });
   }
 
+  /**
+   * Returns the number of elements in the Row.
+   * 
+   * @returns The number of columns in this row
+   */
   size(): number {
     return Object.keys(this).length - 1;
   }
 
+  /**
+   * Returns the number of elements in the Row (alias for size()).
+   * 
+   * @returns The number of columns in this row
+   */
   get length(): number {
     return this.size();
   }
 
+  /**
+   * Returns the schema of this Row.
+   * 
+   * @returns The StructType schema defining the fields in this row
+   */
   schema(): StructType {
     return this.schema_;
   }
 
+  /**
+   * Checks whether the value at position i is null.
+   * 
+   * @param i - The column index (0-based)
+   * @returns True if the value is null or undefined, false otherwise
+   */
   isNullAt(i: number): boolean {
     return this[i] === null || this[i] === undefined;
   }
 
+  /**
+   * Gets the value at the specified column index.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The value at the specified index as a plain JavaScript value
+   * @throws Error if the field does not exist
+   */
   get(i: number): any {
     const dt = this.schema().fields[i]?.dataType;
     if (dt === undefined) {
@@ -78,10 +122,24 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i, cast to type T.
+   * 
+   * @typeParam T - The type to cast the value to
+   * @param i - The column index (0-based)
+   * @returns The value at the specified index, cast to type T
+   */
   getAs<T>(i: number): T {
     return this.get(i) as T; // TODO: This is not working like in Scala
   }
 
+  /**
+   * Returns the value at position i as a boolean.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The boolean value at the specified index
+   * @throws Error if the value is not a boolean
+   */
   getBoolean(i: number): boolean {
     if (typeof this[i] === 'boolean') {
       return this[i];
@@ -90,6 +148,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a byte (8-bit signed integer).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The byte value at the specified index (range: -128 to 127)
+   * @throws Error if the value is not a valid byte
+   */
   getByte(i: number): number {
     if (typeof this[i] === 'number' && this[i] <= 127 && this[i] >= -128) {
       return this[i];
@@ -98,6 +163,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a short (16-bit signed integer).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The short value at the specified index (range: -32768 to 32767)
+   * @throws Error if the value is not a valid short
+   */
   getShort(i: number): number {
     if (typeof this[i] === 'number' && this[i] <= 32767 && this[i] >= -32768) {
       return this[i];
@@ -106,6 +178,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as an integer (32-bit signed integer).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The integer value at the specified index
+   * @throws Error if the value is not a valid integer
+   */
   getInt(i: number): number {
     if (typeof this[i] === 'number' && this[i] <= 2147483647 && this[i] >= -2147483648) {
       return this[i];
@@ -114,6 +193,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a long (64-bit signed integer).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The bigint value at the specified index
+   * @throws Error if the value cannot be converted to bigint
+   */
   getLong(i: number): bigint {
     if (typeof this[i] === 'bigint') {
       return this[i];
@@ -124,14 +210,33 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a float (32-bit floating point number).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The float value at the specified index
+   */
   getFloat(i: number): number {
     return this.getAs<number>(i);
   }
 
+  /**
+   * Returns the value at position i as a double (64-bit floating point number).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The double value at the specified index
+   */
   getDouble(i: number): number {
     return this.getAs<number>(i);
   }
 
+  /**
+   * Returns the value at position i as a decimal number.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The decimal value at the specified index
+   * @throws Error if the value is not a valid decimal
+   */
   getDecimal(i: number): number {
     if (typeof this[i] === 'number') {
       return this[i];
@@ -145,6 +250,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a string.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The string value at the specified index
+   * @throws Error if the value is not a string
+   */
   getString(i: number): string {
     if (typeof this[i] === 'string') {
       return this[i];
@@ -153,10 +265,24 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a Buffer (binary data).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The binary value as a Node.js Buffer
+   * @throws Error if the value cannot be converted to binary
+   */
   getBinary(i: number): Buffer {
     return Buffer.from(this.getUint8Array(i));
   }
 
+  /**
+   * Returns the value at position i as a Uint8Array.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The binary value as a Uint8Array
+   * @throws Error if the value is not a valid byte array
+   */
   getUint8Array(i: number): Uint8Array {
     if (this[i] instanceof Uint8Array) {
       return this[i];
@@ -167,6 +293,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a Date.
+   * 
+   * @param i - The column index (0-based)
+   * @returns The date value at the specified index
+   * @throws Error if the value cannot be converted to a Date
+   */
   getDate(i: number): Date {
     if (this[i] instanceof Date) {
       return this[i];
@@ -177,6 +310,13 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Returns the value at position i as a timestamp (Date).
+   * 
+   * @param i - The column index (0-based)
+   * @returns The timestamp value as a Date object
+   * @throws Error if the field is not a TimestampType or cannot be converted
+   */
   getTimestamp(i: number): Date {
     const dt = this.schema().fields[i].dataType;
     if (dt instanceof TimestampType) {
@@ -186,6 +326,11 @@ export class Row implements IRow {
     }
   }
 
+  /**
+   * Converts the Row to a plain JavaScript object with column names as keys.
+   * 
+   * @returns An object mapping column names to their values
+   */
   toJSON(): NamedRow {
     const obj: NamedRow = {};
     this.schema().fields.forEach((field, i) => {
