@@ -1,0 +1,173 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: Run Examples
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Spark Connect JS
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Spark Connect Server
+        run: docker build -t scs .github/docker
+
+      - name: Run Spark Connect Server
+        run: docker run --name sparkconnect -p 15002:15002 -d scs
+
+      - name: Wait for Spark Connect Server to be ready
+        run: |
+          echo "Waiting for Spark Connect Server to start..."
+          timeout=60
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if docker logs sparkconnect 2>&1 | grep -q "Spark Connect server started"; then
+              echo "Spark Connect Server is ready!"
+              docker logs sparkconnect
+              break
+            fi
+            echo "Waiting... ($elapsed seconds elapsed)"
+            sleep 5
+            elapsed=$((elapsed + 5))
+          done
+          if [ $elapsed -ge $timeout ]; then
+            echo "Timeout waiting for Spark Connect Server to start"
+            docker logs sparkconnect
+            exit 1
+          fi
+
+      - name: Run Pi Example
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running Pi Example"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/Pi.ts
+
+      - name: Run CSVExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running CSVExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/CSVExample.ts
+
+      - name: Run JsonExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running JsonExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/JsonExample.ts
+
+      - name: Run ParquetExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running ParquetExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/ParquetExample.ts
+
+      - name: Run OrcExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running OrcExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/OrcExample.ts
+
+      - name: Run JoinExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running JoinExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/JoinExample.ts
+
+      - name: Run PivotExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running PivotExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/PivotExample.ts
+
+      - name: Run StatisticalFunctionsExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running StatisticalFunctionsExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/StatisticalFunctionsExample.ts
+
+      - name: Run CatalogExample
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running CatalogExample"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/CatalogExample.ts
+
+      - name: Run misc Example
+        continue-on-error: false
+        run: |
+          echo "=========================================="
+          echo "Running misc Example"
+          echo "=========================================="
+          npx ts-node example/org/apache/spark/sql/example/misc.ts
+
+      - name: All Examples Passed
+        run: |
+          echo "=========================================="
+          echo "✅ All examples completed successfully!"
+          echo "=========================================="
+
+      - name: Display Spark Connect Server Logs on Failure
+        if: failure()
+        run: |
+          echo "=========================================="
+          echo "Spark Connect Server Logs"
+          echo "=========================================="
+          docker logs sparkconnect
+
+      - name: Stop and Remove Spark Connect Server
+        if: always()
+        run: |
+          docker stop sparkconnect || true
+          docker rm sparkconnect || true
