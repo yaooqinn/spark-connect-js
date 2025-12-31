@@ -209,7 +209,7 @@ export function collect_set(column: string | Column): Column {
 }
 
 export function count_min_sketch(e: Column, eps: Column, confidence: Column, seed?: Column): Column {
-  return Column.fn("count_min_sketch", e, false, eps, confidence, seed || long(randomInt()));
+  return Column.fn("count_min_sketch", e, false, eps, confidence, seed ?? long(randomInt()));
 }
 
 
@@ -295,7 +295,7 @@ export function first(column: Column): Column;
 export function first(column: string, ignoreNulls: boolean): Column;
 export function first(column: Column, ignoreNulls: boolean): Column;
 export function first(column: string | Column, ignoreNulls?: boolean): Column {
-  return Column.fn("first", column, false, lit(ignoreNulls || false));
+  return Column.fn("first", column, false, lit(ignoreNulls ?? false));
 }
 
 /**
@@ -311,7 +311,7 @@ export function first(column: string | Column, ignoreNulls?: boolean): Column {
 export function first_value(e: Column): Column;
 export function first_value(e: Column, ignoreNulls: boolean): Column;
 export function first_value(e: Column, ignoreNulls?: boolean): Column {
-  return Column.fn("first_value", e, false, lit(ignoreNulls || false));
+  return Column.fn("first_value", e, false, lit(ignoreNulls ?? false));
 }
 
 /**
@@ -385,19 +385,19 @@ export function last(column: Column): Column;
 export function last(column: string, ignoreNulls: boolean): Column;
 export function last(column: Column, ignoreNulls: boolean): Column;
 export function last(column: string | Column, ignoreNulls?: boolean): Column {
-  return Column.fn("last", column, false, lit(ignoreNulls || false));
+  return Column.fn("last", column, false, lit(ignoreNulls ?? false));
 }
 
 export function last_value(e: Column): Column;
 export function last_value(e: Column, ignoreNulls: boolean): Column;
 export function last_value(e: Column, ignoreNulls?: boolean): Column {
-  return Column.fn("last_value", e, false, lit(ignoreNulls || false));
+  return Column.fn("last_value", e, false, lit(ignoreNulls ?? false));
 }
 
 export function mode(column: Column): Column;
 export function mode(column: Column, deterministic: boolean): Column;
 export function mode(column: Column, deterministic?: boolean): Column {
-  return Column.fn("mode", column, false, lit(deterministic || false));
+  return Column.fn("mode", column, false, lit(deterministic ?? false));
 }
 
 export function max(column: string | Column): Column {
@@ -733,7 +733,7 @@ export function lead(column: string | Column, offset: number, defaultValue?: any
 export function nth_value(column: string | Column, offset: number): Column;
 export function nth_value(column: string | Column, offset: number, ignoreNulls: boolean): Column;
 export function nth_value(column: string | Column, offset: number, ignoreNulls?: boolean): Column {
-  return Column.fn("nth_value", column, false, int(offset), lit(ignoreNulls || false));
+  return Column.fn("nth_value", column, false, int(offset), lit(ignoreNulls ?? false));
 }
 
 export function ntile(n: number): Column {

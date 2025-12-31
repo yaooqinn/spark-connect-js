@@ -1144,7 +1144,7 @@ export class DataFrame {
   unionByName(other: DataFrame): DataFrame;
   unionByName(other: DataFrame, allowMissingColumns: boolean): DataFrame;
   unionByName(other: DataFrame, allowMissingColumns?: boolean): DataFrame {
-    allowMissingColumns = allowMissingColumns || false;
+    allowMissingColumns = allowMissingColumns ?? false;
     return this.toNewDataFrame(b => b.withSetOperation(this.plan.relation, other.plan.relation, "union", true, true, allowMissingColumns));
   }
   /**
