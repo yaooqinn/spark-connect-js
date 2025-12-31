@@ -22,7 +22,7 @@ import { Column } from '../../../../../../src/org/apache/spark/sql/Column';
  * Example demonstrating various join operations in Spark Connect JavaScript client.
  */
 async function runJoinExamples() {
-  const spark = SparkSession.builder()
+  const spark = await SparkSession.builder()
     .remote("sc://localhost:15002")
     .getOrCreate();
 

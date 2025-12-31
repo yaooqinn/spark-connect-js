@@ -22,7 +22,7 @@ import { Row } from '../../../../../../src/org/apache/spark/sql/Row';
 import { col } from '../../../../../../src/org/apache/spark/sql/functions';
 
 async function runPivotExample() {
-  const spark = SparkSession.builder()
+  const spark = await SparkSession.builder()
     .remote('sc://localhost:15002')
     .getOrCreate();
 
@@ -62,11 +62,11 @@ async function runPivotExample() {
   const pivoted3 = df.groupBy("country").pivot("year", [2019, 2020]).sum("amount");
   await pivoted3.show();
 
-  spark.stop();
+  // await spark.stop();
 }
 
 async function runGroupingSetsExample() {
-  const spark = SparkSession.builder()
+  const spark = await SparkSession.builder()
     .remote('sc://localhost:15002')
     .getOrCreate();
 
@@ -97,14 +97,20 @@ async function runGroupingSetsExample() {
   const result = grouped.sum("sales");
   await result.show();
 
-  spark.stop();
+  // await spark.stop();
 }
 
-// Run examples
-runPivotExample()
-  .then(() => console.log("Pivot example completed"))
-  .catch(console.error);
+// Run examples sequentially
+async function runAllExamples() {
+  try {
+    await runPivotExample();
+    console.log("Pivot example completed");
+    await runGroupingSetsExample();
+    console.log("GroupingSets example completed");
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
 
-runGroupingSetsExample()
-  .then(() => console.log("GroupingSets example completed"))
-  .catch(console.error);
+runAllExamples();

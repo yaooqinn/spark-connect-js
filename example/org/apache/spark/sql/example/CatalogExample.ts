@@ -19,6 +19,9 @@ import { AnalysisException } from "../../../../../../src/org/apache/spark/sql/er
 import { SparkSession } from "../../../../../../src/org/apache/spark/sql/SparkSession";
 import { DataTypes } from "../../../../../../src/org/apache/spark/sql/types";
 
+// Get data path - works both locally and in CI with remote Spark server
+const dataPath = process.env.SPARK_REMOTE_DATA_PATH || __dirname + "/data";
+
 async function catalogExample() {
   const dbName = "example_db";
   const tableName = "example_table";
@@ -48,9 +51,9 @@ async function catalogExample() {
     await spark.catalog.createTable(dbName + '.' + tableName2, 'orc', schema, "A COMMENT", new Map<string, string>()).show();
     await spark.sql(`INSERT INTO ${dbName}.${tableName2} VALUES (3, 'c'), (4, 'd')`);
     await spark.table(dbName + '.' + tableName2).show();
-    await spark.catalog.createTable(dbName + '.' + tableName3, __dirname + '/data/users.parquet').show();
+    await spark.catalog.createTable(dbName + '.' + tableName3, dataPath + '/users.parquet').show();
     await spark.table(dbName + '.' + tableName3).show();
-    await spark.catalog.createTable(dbName + '.' + tableName4, __dirname + '/data/people.json', 'json').head()
+    await spark.catalog.createTable(dbName + '.' + tableName4, dataPath + '/people.json', 'json').head()
     await spark.table(dbName + '.' + tableName4).show();
     await spark.catalog.listTables().show();
     let table = await spark.catalog.getTable(dbName, tableName);
