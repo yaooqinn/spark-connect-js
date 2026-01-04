@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["src/org/apache/spark"],
   "entryPointStrategy": "expand",
-  "out": "docs",
+  "out": "guides/api",
   "exclude": [
     "**/*.test.ts",
     "**/gen/**",
@@ -14,7 +14,7 @@
   "excludePrivate": true,
   "excludeProtected": false,
   "excludeInternal": true,
-  "readme": "README.md",
+  "readme": "guides/user/README.md",
   "plugin": [],
   "name": "spark.js API Documentation",
   "includeVersion": true,
@@ -45,5 +45,10 @@
   "treatValidationWarningsAsErrors": false,
   "hideGenerator": false,
   "githubPages": true,
-  "gitRevision": "main"
+  "gitRevision": "main",
+  "navigationLinks": {
+    "User Guides": "../user/README.md",
+    "Developer Guides": "../dev/README.md",
+    "GitHub": "https://github.com/yaooqinn/spark.js"
+  }
 }
