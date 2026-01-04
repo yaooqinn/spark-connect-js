@@ -47,12 +47,6 @@ npx buf generate
 - **[Protobuf](protobuf.md)** - Working with Protocol Buffers
 - **[Release](release.md)** - Release process and versioning
 
-## Contributing
-
-Before contributing, please read:
-- [Contributing Guidelines](../contributing/README.md)
-- [Code of Conduct](../contributing/code-of-conduct.md)
-
 ## Project Structure
 
 ```

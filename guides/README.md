@@ -35,12 +35,6 @@ Auto-generated API documentation (TypeDoc):
 - Generated from JSDoc comments in source code
 - Browse online at [yaooqinn.github.io/spark.js](https://yaooqinn.github.io/spark.js/)
 
-### 🤝 [Contributing](contributing/README.md)
-
-Help make spark.js better:
-- [Contributing Guidelines](contributing/README.md) - How to contribute
-- [Code of Conduct](contributing/code-of-conduct.md) - Community guidelines
-
 ## Quick Links
 
 - **GitHub Repository**: [yaooqinn/spark.js](https://github.com/yaooqinn/spark.js)

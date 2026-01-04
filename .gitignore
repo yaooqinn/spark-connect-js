@@ -20,3 +20,6 @@ docs/
 logs/
 node_modules/
 dist/
+
+# TypeDoc generated API documentation
+guides/api/
