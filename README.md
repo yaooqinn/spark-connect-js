@@ -316,90 +316,35 @@ Logging is configured in `log4js.json`. Logs are written to both console and `lo
 
 ## Development
 
-### Prerequisites
+For contributors, comprehensive documentation is available in the [Contributor Guide](guides/contributor/):
 
-- Node.js 20+ (CI uses Node 23)
-- Docker (for running Spark Connect server)
-- npm
+- **[Getting Started](guides/contributor/GETTING_STARTED.md)** - Set up your development environment
+- **[Code Style Guide](guides/contributor/CODE_STYLE.md)** - Coding conventions and best practices  
+- **[Build and Test](guides/contributor/BUILD_AND_TEST.md)** - Building, testing, and running the project
+- **[IDE Setup](guides/contributor/IDE_SETUP.md)** - Recommended IDE configurations
+- **[Submitting Changes](guides/contributor/SUBMITTING_CHANGES.md)** - How to submit pull requests
 
-### Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yaooqinn/spark.js.git
-   cd spark.js
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start Spark Connect server** (required for tests):
-   ```bash
-   # Build the Docker image (first time only, ~20-30 seconds)
-   docker build -t scs .github/docker
-
-   # Start the server
-   docker run --name sparkconnect -p 15002:15002 -d scs
-
-   # Wait 15-20 seconds for server to be ready
-   # Check logs to confirm it's running:
-   docker logs sparkconnect
-   # Look for: "Spark Connect server started at: [::]:15002"
-   ```
-
-4. **Stop the server** when done:
-   ```bash
-   docker stop sparkconnect
-   docker rm sparkconnect
-   ```
-
-### Running Tests
+### Quick Start for Contributors
 
 ```bash
-# Make sure Spark Connect server is running first!
+# Clone and install
+git clone https://github.com/yaooqinn/spark.js.git
+cd spark.js
+npm install
+
+# Start Spark Connect server for testing
+docker build -t scs .github/docker
+docker run --name sparkconnect -p 15002:15002 -d scs
+
+# Run tests and linting
 npm test
-```
-
-The test suite includes:
-- 28 test files
-- 179+ test cases
-- Tests for DataFrame operations, SQL, readers/writers, catalog, types, etc.
-
-Tests require a running Spark Connect server on port 15002.
-
-### Linting
-
-```bash
 npm run lint
+
+# Clean up
+docker stop sparkconnect && docker rm sparkconnect
 ```
 
-ESLint is configured with TypeScript support. Generated protobuf code in `src/gen/` is ignored.
-
-### Building
-
-Compile TypeScript to JavaScript:
-
-```bash
-npx tsc --build
-```
-
-Type check without emitting files:
-
-```bash
-npx tsc --noEmit
-```
-
-### Protobuf Code Generation
-
-If you modify `.proto` files in `protobuf/`:
-
-```bash
-npx buf generate
-```
-
-Generated TypeScript code is placed in `src/gen/`.
+For detailed instructions, see the [Contributor Guide](guides/contributor/).
 
 ### Project Structure
 
@@ -452,70 +397,22 @@ npx ts-node example/org/apache/spark/sql/example/Pi.ts
 
 ## Contributing
 
-Contributions are welcome! Here's how to contribute:
+Contributions are welcome! Please read the [Contributor Guide](guides/contributor/) for detailed information on:
 
-1. **Fork the repository** and create a feature branch
-2. **Make your changes** following the existing code style
+- Setting up your development environment
+- Code style and conventions
+- Building and testing
+- Submitting pull requests
+
+### Quick Contributing Guide
+
+1. **Fork** the repository and create a feature branch
+2. **Follow** the [Code Style Guide](guides/contributor/CODE_STYLE.md)
 3. **Add tests** for new functionality
-4. **Run linting**: `npm run lint`
-5. **Run tests**: `npm test` (requires Spark Connect server)
-6. **Submit a pull request** with a clear description
+4. **Run checks**: `npm run lint` and `npm test`
+5. **Submit** a pull request with a clear description
 
-### Code Style
-
-- Use 2 spaces for indentation
-- Follow TypeScript best practices
-- Add Apache License header to new files
-- Write descriptive commit messages
-
-### Running CI Checks Locally
-
-Before submitting a PR, ensure CI checks pass:
-
-```bash
-# Linting
-npm run lint
-
-# Tests (requires Docker)
-docker build -t scs .github/docker
-docker run --name sparkconnect -p 15002:15002 -d scs
-npm test
-docker stop sparkconnect && docker rm sparkconnect
-```
-
-### Publishing to npm
-
-To publish a new version to npm (maintainers only):
-
-1. **Update the version** in `package.json`:
-   ```bash
-   npm version patch  # or minor, or major
-   ```
-
-2. **Build the package**:
-   ```bash
-   npm run build
-   ```
-
-3. **Test the package locally** (optional):
-   ```bash
-   npm pack
-   # This creates a .tgz file you can test with: npm install spark.js-0.1.0.tgz
-   ```
-
-4. **Publish to npm**:
-   ```bash
-   npm login  # Login to npm (first time only)
-   npm publish
-   ```
-
-5. **Tag the release** on GitHub:
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-**Note**: The `prepublishOnly` script automatically runs the build before publishing.
+See [Submitting Changes](guides/contributor/SUBMITTING_CHANGES.md) for detailed instructions.
 
 ## Roadmap
 
