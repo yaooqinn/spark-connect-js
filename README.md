@@ -36,7 +36,7 @@ The API documentation is automatically generated from JSDoc comments and TypeScr
 Install from npm:
 
 ```bash
-npm install spark.js
+npm install @yaooqinn/spark.js
 ```
 
 Or clone the repository for development:
@@ -52,7 +52,7 @@ npm install
 Here's a minimal example to get started:
 
 ```typescript
-import { SparkSession } from 'spark.js';
+import { SparkSession } from '@yaooqinn/spark.js';
 
 async function main() {
   // Create a SparkSession connected to a Spark Connect server
@@ -83,7 +83,7 @@ main().catch(console.error);
 The `SparkSession` is the entry point for all Spark operations:
 
 ```typescript
-import { SparkSession } from 'spark.js';
+import { SparkSession } from '@yaooqinn/spark.js';
 
 // Connect to a remote Spark Connect server
 const spark = await SparkSession.builder()
@@ -125,7 +125,7 @@ const df = spark.read
 Perform transformations and actions on DataFrames:
 
 ```typescript
-import { functions } from 'spark.js';
+import { functions } from '@yaooqinn/spark.js';
 const { col, lit } = functions;
 
 // Select columns
@@ -252,7 +252,7 @@ const currentDB = await spark.catalog.currentDatabase();
 Import SQL functions from the functions module:
 
 ```typescript
-import { functions } from 'spark.js';
+import { functions } from '@yaooqinn/spark.js';
 const { col, lit, sum, avg, max, min, count, when, concat, upper } = functions;
 
 const df = spark.read.csv('data.csv');
@@ -271,7 +271,7 @@ See [guides/STATISTICAL_FUNCTIONS.md](guides/STATISTICAL_FUNCTIONS.md) for stati
 Define schemas using the type system:
 
 ```typescript
-import { DataTypes, StructType, StructField } from 'spark.js';
+import { DataTypes, StructType, StructField } from '@yaooqinn/spark.js';
 
 const schema = new StructType([
   new StructField('name', DataTypes.StringType, false),
