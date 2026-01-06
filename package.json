@@ -1,5 +1,5 @@
 {
-  "name": "spark.js",
+  "name": "@yaooqinn/spark.js",
   "version": "0.1.0",
   "description": "An experimental client for Apache Spark Connect written in TypeScript",
   "main": "dist/index.js",
