@@ -314,67 +314,6 @@ const valueOrDefault = await spark.conf.get('my.config', 'default_value');
 
 Logging is configured in `log4js.json`. Logs are written to both console and `logs/` directory.
 
-## Development
-
-For contributors, comprehensive documentation is available in the [Contributor Guide](guides/contributor/):
-
-- **[Getting Started](guides/contributor/GETTING_STARTED.md)** - Set up your development environment
-- **[Code Style Guide](guides/contributor/CODE_STYLE.md)** - Coding conventions and best practices  
-- **[Build and Test](guides/contributor/BUILD_AND_TEST.md)** - Building, testing, and running the project
-- **[IDE Setup](guides/contributor/IDE_SETUP.md)** - Recommended IDE configurations
-- **[Submitting Changes](guides/contributor/SUBMITTING_CHANGES.md)** - How to submit pull requests
-
-### Quick Start for Contributors
-
-```bash
-# Clone and install
-git clone https://github.com/yaooqinn/spark.js.git
-cd spark.js
-npm install
-
-# Start Spark Connect server for testing
-docker build -t scs .github/docker
-docker run --name sparkconnect -p 15002:15002 -d scs
-
-# Run tests and linting
-npm test
-npm run lint
-
-# Clean up
-docker stop sparkconnect && docker rm sparkconnect
-```
-
-For detailed instructions, see the [Contributor Guide](guides/contributor/).
-
-### Project Structure
-
-```
-spark.js/
-├── src/
-│   ├── gen/                      # Generated protobuf code (DO NOT EDIT)
-│   └── org/apache/spark/
-│       ├── sql/                  # Main API implementation
-│       │   ├── SparkSession.ts   # Entry point
-│       │   ├── DataFrame.ts      # DataFrame API
-│       │   ├── functions.ts      # SQL functions
-│       │   ├── types/            # Type system
-│       │   ├── catalog/          # Catalog API
-│       │   ├── grpc/             # gRPC client
-│       │   └── proto/            # Protocol builders
-│       └── storage/              # Storage levels
-├── tests/                        # Test suites
-├── example/                      # Example applications
-├── docs/                         # Additional documentation
-├── protobuf/                     # Protocol buffer definitions
-├── .github/
-│   ├── workflows/                # CI/CD workflows
-│   └── docker/                   # Spark Connect Docker setup
-├── package.json                  # Dependencies and scripts
-├── tsconfig.json                 # TypeScript configuration
-├── jest.config.js                # Jest test configuration
-├── eslint.config.mjs             # ESLint configuration
-└── buf.gen.yaml                  # Buf protobuf generation config
-```
 
 ## Examples
 
@@ -397,41 +336,12 @@ npx ts-node example/org/apache/spark/sql/example/Pi.ts
 
 ## Contributing
 
-Contributions are welcome! Please read the [Contributor Guide](guides/contributor/) for detailed information on:
+Contributions are welcome! Please read the [Contributor Guide](guides/contributor/) for detailed information.
 
-- Setting up your development environment
-- Code style and conventions
-- Building and testing
-- Submitting pull requests
-
-### Quick Contributing Guide
-
-1. **Fork** the repository and create a feature branch
-2. **Follow** the [Code Style Guide](guides/contributor/CODE_STYLE.md)
-3. **Add tests** for new functionality
-4. **Run checks**: `npm run lint` and `npm test`
-5. **Submit** a pull request with a clear description
-
-See [Submitting Changes](guides/contributor/SUBMITTING_CHANGES.md) for detailed instructions.
 
 ## Roadmap
 
-- [ ] For minor changes or some features associated with certain classes, SEARCH 'TODO'
-- [ ] Support Retry / Reattachable execution
-- [ ] Support Checkpoint for DataFrame
-- [ ] Support DataFrameNaFunctions
-- [ ] Support User-Defined Functions (UDF)
-  - [ ] UDF registration via `spark.udf.register()`
-  - [ ] Inline UDFs via `udf()` function
-  - [x] Java UDF registration via `spark.udf.registerJava()`
-  - [ ] UDAF (User-Defined Aggregate Functions)
-  - [ ] UDTF (User-Defined Table Functions)
-- [x] Support DataFrame Join
-- [ ] Support UserDefinedType
-  - [ ] UserDefinedType declaration
-  - [ ] UserDefinedType & Proto bidirectional conversions
-  - [ ] UserDefinedType & Arrow bidirectional conversions
-- [ ] Maybe optimize the logging framework
+See [ROADMAP.md](ROADMAP.md) for planned features and improvements.
 
 ## License
 
